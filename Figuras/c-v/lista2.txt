@@ -1,0 +1,139 @@
+\noindent 71. Cónyuge hablante de lengua indígena
+
+\noindent 72. Cónyuge con rezago educativo
+
+\noindent 73. Cónyuge con carencia por acceso a los servicios de salud
+
+\noindent 74. Forma en que desechan la basura
+
+\noindent 75. Indicador de presencia de menores de 6 a 15 años que no asisten a la escuela
+
+\noindent 76. Hogar ampliado
+
+\noindent 77. Hogar compuesto
+
+\noindent 78. Hogar corresidente
+
+\noindent 79. Hogar nuclear
+
+\noindent 80. Hogar unipersonal
+
+\noindent 81. Algún adulto tuvo poca variedad en sus alimentos
+
+\noindent 82. Algún adulto dejó de desayunar, comer o cenar
+
+\noindent 83. Algún adulto comió menos de lo que debería comer
+
+\noindent 84. Algún adulto se quedó sin comida
+
+\noindent 85. Algún adulto sintió hambre, pero por falta de dinero no comió
+
+\noindent 86. Algún adulto comió sólo una vez al día, o dejó de comer todo un día
+
+\noindent 87. Indicador de carencia de salud en el hogar
+
+\noindent 88. Indicador de carencia por calidad y espacios de la vivienda
+
+\noindent 89. Indicador de carencia por servicios basicos de la vivienda
+
+\noindent 90. Indicador de carencia por hacinamiento
+
+\noindent 91. Indicador de carencia de muros
+
+\noindent 92. Indicador de carencia de pisos
+
+\noindent 93. Indicador de carencia de techos
+
+\noindent 94. Indicador de presencia de menores de 18 años en el hogar
+
+\noindent 95. Dispone de conexión a internet el hogar
+
+\noindent 96. Indicador de carencia de agua
+
+\noindent 97. Indicador de carencia de combustible para cocinar
+
+\noindent 98. Indicador de carencia de drenaje
+
+\noindent 99. Indicador de carencia de luz
+
+\noindent 100. Prestaciones laborales del jefe Afore
+
+\noindent 101. Prestaciones laborales del jefe Aguinaldo
+
+\noindent 102. Jefe del hogar que no sabe leer y escribir
+
+\noindent 103. Jefe desocupado
+
+\noindent 104. Jefe hablante de lengua indígena
+
+\noindent 105. jefe con posición de independiente
+
+\noindent 106. Jefe ocupado
+
+\noindent 107. Jefe con carencia por rezago educativo
+
+\noindent 108. Sexo del jefe
+
+\noindent 109. Prestaciones laborales del jefe Servicios Médicos
+
+\noindent 110. Jefe con posición de subordinado
+
+\noindent 111. Indicador se personas jubiladas o pensionadas en el hogar
+
+\noindent 112. Prestaciones laborales del jefe Utilidades
+
+\noindent 113. Prestaciones laborales del jefe Prima vacacional
+
+\noindent 114. Dispone de al menos una lavadora el hogar
+
+\noindent 115. Dispone de al menos un microondas el hogar
+
+\noindent 116. Dispone de al menos un radio el hogar
+
+\noindent 117. Indicador de presencia de red de apoyo femenino
+
+\noindent 118. Dispone de al menos un refrigerador el hogar
+
+\noindent 119. Dispone de al menos un regadera el hogar
+
+\noindent 120. Condición de recepción de ingresos por remesas en el hogar
+
+\noindent 121. Sanitario para uso exclusivo
+
+\noindent 122. Indicador de disponibilidad de sanitario
+
+\noindent 123. Dispone de sanitario con descarga directa a la red en el hogar
+
+\noindent 124. Dispone de línea telefónica fija en el hogar
+
+\noindent 125. Vivienda con otra situación
+
+\noindent 126. Tenencia propia de la vivienda
+
+\noindent 127. Vivienda rentada
+
+\noindent 128. Hogar biparental
+
+\noindent 129. Hogar uniparental
+
+\noindent 130. Dispone de tinaco en el hogar
+
+\noindent 131. Indicador de presencia de mayor de 64 años trabajador
+
+\noindent 132. Indicador de presencia de menor de 16 años trabajador
+
+\noindent 133. Dispone de televisión en el hogar
+
+\noindent 134. Tipo de combustible para cocinar 2
+
+\noindent 135. Forma en que dispone de agua 1
+
+\noindent 136. Condición de actividad del jefe del hogar
+
+\noindent 137. Condición de actividad del jefe con ocupados subordinados o independientes
+
+\noindent 138. Sector económico del jefe del hogar
+
+\noindent 139. Tenencia de la viviendad
+
+\noindent 140. Tipo de unidad doméstica

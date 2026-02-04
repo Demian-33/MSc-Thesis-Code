@@ -1,0 +1,69 @@
+\chapter{CONCLUSIONES Y RECOMENDACIONES}
+\label{ch:vii-conclusion2}
+
+\begin{comment}
+
+En el \autoref{sec:normal-asimetrica} se enunciaron y mostraron los resultados principales con relación a la distribución normal sesgada y sus extensiones: parámetros centrados y el caso multivariado. Luego, en la \autoref{sec:bayes-variacional} se mostraron tres ejemplos para ilustrar el uso de métodos variacionales en inferencia Bayesiana. Concretamente, el tercer ejemplo desarrolla el ajuste del modelo de regresión log-normal sesgado (en una única región) que más adelante se presenta. En el \autoref{ch:v-metodologia} se plantean y deducen los modelos de regresión log-normal, probit latente y probit-ordenado latente, con errores normales asimétricos. Así mismo, se describieron las distribuciones \textit{a priori} empleadas y se mostró como obtener, salvo por una constante, la densidad \textit{a posteriori} para cada modelo de interés. De igual modo, se describió el planteamiento para las simulaciones, la descripción del conjunto de datos real y la programación en lenguaje \code{Stan}. En la aplicación a los datos del ICTPC, se identificaron covariables relevantes y se estimaron los porcentajes de la población bajo las dos líneas de pobreza en 2025, siguiendo los mismos criterios de procesamiento que el Coneval estableció.
+
+Los análisis y discusión acerca de los estudios de simulación y la aplicación real, indican que la implementación variacional Bayesiana es bastante competente para el caso de respuestas continuas, con respecto al método HMC propuesto.
+
+Para ambos modelos de clasificación, el rendimiento de este método Bayesiano variacional, en cuanto a la inferencia de los parámetros $\mu_{i}$ y $\rho_{i}$, se ve bastante comprometido; sin embargo, esta situación no impacta de manera sustantiva en los pronósticos acerca de $y_{ij}^{\star}$ (donde $n_{i}>0$). Sin observaciones en los dominios $(n_{i}=0)$, los el método HMC encuentra problemas al estimar $\mu_{i}$, mientras que el método BV propuesto encoge $\rho_{i}\to 0$.
+
+La implementación variacional Bayesiana que \code{Stan} ofrece es automática, lo cuál minimiza el trabajo analítico y de programación. Sin embargo, su propósito general significa que es posible encontrar alternativas especializadas que proporcionen mejores resultados, por ejemplo, en los modelos de clasificación, o bien, permitiendo que $\rho\in(-1, 1)$.
+
+Los métodos variacionales ofrecen alternativas al muestreo de la distribución \textit{a posteriori}, sin embargo, esta aproximación no siempre puede remplazar la calidad de ajsute obtenida con métodos MCMC.
+
+\end{comment}
+
+% Quizás puede emplearse un único \mu_{i}
+
+El presente estudio tuvo como objetivo principal presentar la estimación de dos clases de modelos de regresión Bayesiana en áreas pequeñas, empleando un enfoque variacional. La primera clase de modelos es de respuesta continua, donde se asume que los errores siguen una distribución normal asimétrica. Así mismo, el segundo tipo de modelos son de clasificación binaria y ordinal, a los cuáles denominamos probit sesgado y probit ordenado sesgado, el atributo sesgado se refiere a que la función liga es la distribución normal sesgada con escala unitaria. Para esta clase de modelos, se consideró el enfoque de variable latente, lo que facilita la implementación y ofrece una interpretación sencilla.
+
+%otorga
+
+La principal aportación de este trabajo, consistió en implementar un método de inferencia Bayesiana variacional (BV) para la estimación de diversos modelos de regresión en áreas pequeñas. Este paradigma de estimación convierte el problema de muestreo de la densidad \textit{a posteriori} a un problema de optimización, donde se busca la familia de densidades más próximas a la verdadera distribución en términos de la divergencia Kullback-Leibler. La motivación central de este método es aliviar el costo computacional de realizar inferencia Bayesiana, y particularmente, reducir los tiempos de cómputo.
+
+Para esta aplicación en concreto, los experimentos de simulación mostraron que 
+\begin{itemize}
+\item Cuando se emplean respuestas continuas, el método BV es bastante competitivo con respecto al método HMC, tanto para encontrar la señal de los parámetros verdaderos como en las métricas de ajuste para el caso de validación-prueba.
+
+\item En los modelos de clasificación, el método BV tiende a encoger las estimaciones de los parámetros de forma/correlación, y en cambio expande los parámetros de localidad $\mu_{i}$ y $\boldsymbol{\beta}$. Sin embargo, esto no compromete las métricas de ajuste obtenidas en el caso de validación-prueba.
+
+\end{itemize}
+
+Por su parte, en la aplicación con datos reales se observó que
+\begin{itemize}
+\item Con respuestas continuas, ambos métodos de estimación exhiben un comportamiento similar, tanto en estimaciones, métricas y porcentajes de la población bajo alguna línea de pobreza por ingresos. 
+
+\item En el modelo binario, al igual que en las simulaciones, el método BV encoge las estimaciones de los parámetros de forma/correlación. No obstante, los dos algoritmos obtienen porcentajes similares de la población bajo la línea de pobreza por ingresos (LPI).
+
+\item Los estadísticos de ajuste indican que, en general, el modelo continuo y binario tienen buen desempeño en el escenario de validación-prueba. Las métricas para el pronóstico generado con el modelo log-normal favorecen al método BV, aunque encoge las estimaciones $\rho_{8}$ y $\rho_{15}$; por su lado, HMC no puede muestrear de forma satisfactoria el parámetro de localidad $\mu_{15}$, lo que perjudica de forma importante la calidad de las predicciones.
+
+\item En el modelo ordinal es posible estimar porcentajes de la población bajo los umbrales LPI y LPEI. A diferencia del caso previo, los porcentajes obtenidos en la LPI discrepan casi en proporción 1:2. Así mismo, este modelo presentó el rendimiento más bajo en cuanto a los estadísticos de ajuste.
+
+\end{itemize}
+
+Los métodos variacionales ofrecen un alternativa al muestreo de la distribución \textit{a posteriori}, sin embargo, esta aproximación no siempre puede remplazar la calidad de ajuste obtenida con métodos MCMC, particularmente la estimación de parámetros sensibles o de interés.
+
+En el escenario de respuesta continua, la aproximación BV mostró un desempeño sobresaliente, es decir, es útil para predicción e interpretación, ya que, como se observó los experimentos de simulación, recupera la magnitud de todos los parámetros. Para los casos de clasificación binaria y ordinal, la aproximación BV redujo los tiempos de ejecución y produce pronósticos razonables - basado en las métricas de ajuste-; sin embargo, la desventaja principal es que el proceso de optimización opta por encoger la estimación de los parámetros de correlación/forma.
+
+La implementación Bayesiana variacional que ofrece {Stan} es automática, lo cuál minimiza el trabajo analítico y de programación. Sin embargo, su propósito general significa que es posible encontrar alternativas especializadas que proporcionen mejores resultados, por ejemplo, en las estimaciones de los modelos de clasificación, o bien, permitiendo que el parámetro de forma tome valores tanto positivos como negativos para alguna aplicación más general.
+
+
+\section{Recomendaciones}
+
+
+\begin{itemize}
+
+\item Desarrollar una alternativa Bayesiana Variacional híbrida usando el supuesto de campo medio para todos los parámetros y variables latentes, a excepción de los parámetros de forma o correlación $\rho_{i}$ y de varianza $\sigma^2$, este último resulta tampoco ser conjugado cuando se centran los parámetros de localidad y escala. Es decir, en lugar de implementar los modelos con el algoritmo de forma fija con densidades gausianas implícitas mediante el algoritmo ADVI de {Stan}, implementar este esquema híbrido, cuya base es el Ejemplo 3 de la \autoref{sec:bayes-variacional}. Si no se desea calcular derivadas de forma manual, puede emplearse diferenciación automática junto a integración Monte Carlo para estimar la esperanza de los gradientes, en cuyo caso aún se aprovecha el algoritmo CAVI para actualizar los parámetros conjugados $\mu_{i}$ y $\boldsymbol{\beta}$. De este modo, se obtienen aproximaciones analíticas que relajan el costo computacional y sobretodo, mejoran la precisión y calidad de la aproximación por medio de pasos analíticos adicionales.
+
+\item Emplear alguna estructura \textit{a priori} jerárquica que permita compartir información para mejorar las estimaciones de $\rho_{i}$, $\mu_{i}$ y las predicciones $y_{ij}^{\star}$ para dominios donde $n_{i}=0$. O bien, fuera del enfoque Bayesiano objetivo, puede emplearse una \textit{a priori} informativa y estudiar su efecto en las estimaciones y pronósticos.
+
+\item Por otro lado, como una actividad complementaria, puede estudiarse el planteamiento de los modelos con independencia marginal, es decir, considerar una variable latente por cada observación en el proceso de truncamiento oculto, lo cuál es útil para escenarios fuera de la estimación en áreas pequeñas, por ejemplo, estudiar realizaciones independientes e idénticamente distribuidas.
+
+\end{itemize}
+
+
+
+
+

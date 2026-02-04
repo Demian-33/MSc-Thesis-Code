@@ -1,0 +1,10 @@
+Exactitud & \bfseries 0.9035 & 0.9016\\
+\hline
+\makecell[l]{Verdaderos\\ positivos} & \bfseries 0.9348 & 0.9319\\
+\hline
+\makecell[l]{Verdaderos\\ negativos} & \bfseries 0.9348 & 0.9319\\
+\hline
+F1-Score & \bfseries 0.9292 & 0.9279\\
+\hline
+Tiempo (s) & \bfseries 20.92 & 102.3800\\
+\hline

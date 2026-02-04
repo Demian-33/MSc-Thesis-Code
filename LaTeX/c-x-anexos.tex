@@ -1,0 +1,483 @@
+%\chapter{Anexo}
+%El propósito de este apartado es presentar material complementario a la discusión realizada a lo largo de este documento. La primera parte sirve de referencia para las funciones de probabilidad o densidades que se emplean aquí.
+
+\addcontentsline{toc}{chapter}{ANEXOS}
+\chapter*{ANEXOS}
+
+\addcontentsline{toc}{section}{Anexo A}
+\section*{Anexo A}
+\renewcommand{\theequation}{A.\arabic{equation}}
+\setcounter{equation}{0}
+
+\hypertarget{anexo1}{}
+
+Este apartado presenta brevemente el concepto de identificabilidad en un modelo estadístico. Además, proporciona varias pruebas con referencia al proceso de truncamiento oculto y su relación con la distribución normal sesgada.
+
+\section*{Identificabilidad}
+
+La identificabilidad es una propiedad importante de un modelo estadístico, determina cuando los parámetros del modelo pueden recuperarse a partir de los datos observados\footnote{\url{https://www.sciencedirect.com/topics/mathematics/identifiability}}. \textcite{par-point-est} plantean que que el modelo $p(\boldsymbol{x}\mid \boldsymbol{\theta})$ es identificable si el mapeo $\boldsymbol{\theta}\to p(\boldsymbol{x} \mid \boldsymbol{\theta})$ es uno-a-uno, es decir que
+\begin{align}
+\forall \boldsymbol{\theta}_{1},\, \boldsymbol{\theta}_{2} \in \Theta,\,
+\left[
+p(\boldsymbol{x} \mid \boldsymbol{\theta}_{1}) = p(\boldsymbol{x} \mid \boldsymbol{\theta}_{2}) \Rightarrow \boldsymbol{\theta}_{1} = \boldsymbol{\theta}_{2},\quad \forall \boldsymbol{x}\right],
+\end{align}
+esto quiere decir que diferentes valores de $\boldsymbol{\theta}$ generan diferentes distribuciones, de este modo podemos estimar de forma única a $\boldsymbol{\theta}$ a partir de los datos.
+
+\section*{Normal sesgada, caso univariado. Método $i$}
+
+Primero, usando un teorema conocido sobre las distribuciones condicionales de la normal multivariada, sean $\boldsymbol{X}_{1}$ y $\boldsymbol{X}_{2}$ dos vectores aleatorios de dimensiones $p_{1}\times 1$ y $p_{2}\times 2$ tales que se distribuyen conjuntamente como $[\boldsymbol{X}_{1}, \, \boldsymbol{X}_{2}]^{T}\sim N_{p_{1}+p_{2}}\left([\boldsymbol{\mu}_{1}, \, \boldsymbol{\mu}_{2}]^{T}, \Sigma \right)$, además \parencite{AMSA-6, simar:2015}
+\begin{align}
+\Sigma&=\begin{bmatrix}\Sigma_{11} & \Sigma_{12} \\ \Sigma_{21} & \Sigma_{22} \end{bmatrix},
+\end{align}
+entonces $\boldsymbol{X}_{1}|(\boldsymbol{X}_{2}=\boldsymbol{x}_{2})\sim N_{p_{1}}(\boldsymbol{\mu^{\star}}, \, \Sigma^{\star})$, donde
+\begin{align}
+\begin{aligned}
+\boldsymbol{\mu}^{\star} &= \boldsymbol{\mu_{1}} + \Sigma_{12}\Sigma_{22}^{-1}, \\
+\Sigma^{\star} &= \Sigma_{11} - \Sigma_{12}\Sigma_{22}^{-1}\Sigma_{21}.
+\end{aligned}
+\end{align}
+Recordemos que se plantea
+\begin{equation}
+\begin{bmatrix}
+V \\ W
+\end{bmatrix} \sim N_{2}
+\left(
+\begin{bmatrix}
+\mu \\ 0
+\end{bmatrix},\, \sigma^2
+\begin{bmatrix}
+1 & \rho \\ \rho & 1
+\end{bmatrix}
+\right),
+\end{equation}
+y se define $U \equiv V \mid (W>0)$. Ahora, veamos que
+\begin{align}
+f_{U, \, W}(u,\, w) &\equiv f_{U|W}(u|w)\, f_{W}(w)
+\intertext{luego, al usar la definición de $U$ podemos escribir}
+&= \left[ \frac{f_{V|W}(v|w)}{\mathbb{P}(W>0)}\, I_{(0,\, \infty)}(w)\right] \, f_{W}(w),
+\intertext{en la última expresión cambiamos el soporte de $W$ de $\mathbb{R}$ a $\mathbb{R}^{+}$, por lo que es necesario normalizar esta densidad a fin de que integre uno; como $\mathbb{P}(W>0)=1/2$ se tiene que}
+f_{U,\, W}(u \mid w) &= 2f_{V\mid W}(v|w) \, f_{W}(w) \, I_{(0,\, \infty)}(w).
+\end{align}
+Note que tanto las densidades $f_{V\mid W}(v \mid w)$ como $f_{W}(w)$ se obtienen inmediatamente al usar los resultados previos. $V|(W=w)\sim N(\mu,\, \sigma^{2}[1-\rho^{2}])$ y $W\sim N(0,\, \sigma^{2})$; note que $2f_{W}(w)I_{(0,\, \infty)}(w)$ es una densidad normal truncada a la derecha en cero. Ahora probaremos que la densidad marginal de $U$ en
+\begin{align}
+f_{U,\, W}(u,\, w) &= 2\phi_{U \vert W}(u\vert \mu-\rho w,\, \sigma^{2}[1-\rho^{2}]) \, \phi_{W}(w \vert 0,\, \sigma^{2})I_{(0,\, \infty)}(w)
+\end{align}
+es $SN(u\mid \mu,\, \sigma^{2},\, \lambda)$, donde $\lambda = \rho/\sqrt{1-\rho^{2}}$. Ahora, escribimos
+\begin{align*}
+f_{U}(u) &\equiv \int_{\mathbb{R}} 2\phi_{U \vert W}(u\vert \mu-\rho w,\, \sigma^{2}(1-\rho^{2})) \, \phi_{W}(w \vert 0,\, \sigma^{2})I_{(0,\, \infty)}(w),\, dw \\
+&= 2\int_{0}^{\infty} \phi_{U \vert W}(u\vert \mu-\rho w,\, \sigma^{2}(1-\rho^{2})) \, \phi_{W}(w \vert 0,\, \sigma^{2})(w) \, dw \\
+&= 2\frac{1}{\sqrt{2\sigma^{2}(1-\rho^{2})}}\frac{1}{\sqrt{2\sigma^{2}}}\int_{0}^{\infty} \exp\{-\frac{(u-\mu-w\rho)^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, \exp\{-\frac{w^{2}}{2\sigma^{2}}\}\, dw 
+\intertext{desarollando el cuadrado en $w$}
+&= 2\frac{1}{\sqrt{2\sigma^{2}(1-\rho^{2})}}\frac{1}{\sqrt{2\sigma^{2}}}\int_{0}^{\infty} \exp\{-\frac{(u-\mu)^{2}+w^{2}\rho^{2}-2\rho(u-\mu)w + (1-\rho^{2})w^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, dw \\
+&= 2\underbrace{\frac{1}{\sqrt{2\sigma^{2}(1-\rho^{2})}}\frac{1}{\sqrt{2\sigma^{2}}}}_{C}\int_{0}^{\infty} \exp\{-\frac{(u-\mu)^{2}+w^{2}-2\rho(u-\mu)w}{2\sigma^{2}(1-\rho^{2})} \}\, dw 
+\intertext{completamos el término al cuadrado en $w$, sumamos y restamos $\rho^{2}(u-\mu^{2})$}
+&= 2C \int_{0}^{\infty}\exp\{-\frac{(u-\mu)^{2}+w^{2}-2\rho(u-\mu)w +\rho^{2}(u-\mu)^{2}-\rho^{2}(u-\mu)^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, dw \\
+&= 2C \int_{0}^{\infty}\exp\{-\frac{(u-\mu)^{2}+\left[ w-\rho(u-\mu)\right]^{2} - \rho^{2}(u-\mu)^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, dw 
+\intertext{factorizando $(u-\mu)^{2}$}
+&= 2C \int_{0}^{\infty}\exp\{-\frac{\left[ w-\rho(u-\mu)\right]^{2} + (1-\rho^{2})(u-\mu)^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, dw ,
+\intertext{podemos extraer el término constante,}
+&= 2\frac{1}{\sqrt{2\pi\sigma^{2}}}\frac{1}{\sqrt{2\pi}} \exp\{-\frac{1}{2\sigma^{2}}(u-\mu)^{2}\}\int_{0}^{\infty}\exp\{-\frac{\left[w-\rho(u-\mu)\right]^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, dw,
+\intertext{fuera de la integral podemos identificar una densidad normal en $u$, con media $\mu$ y varianza $\sigma^{2}$. Así mismo, podemos identificar el argumento en la integral como el kernel de una densidad normal en $w$, con media $\rho(u-\rho)$ y varianza $\sigma^{2}(1-\rho^{2})$, de hecho, note que las constantes en $C$ normalizan ambas densidades Gaussianas, para mejor visualización, re-acomodamos términos y escribimos}
+&= 2\frac{1}{\sqrt{2\pi\sigma^{2}}} \exp\{-\frac{1}{2\sigma^{2}}(u-\mu)^{2}\}\int_{0}^{\infty}\frac{1}{\sqrt{2\pi\sigma^{2}(1-\rho^{2})}}\exp\{-\frac{\left[w-\rho(u-\mu)\right]^{2}}{2\sigma^{2}(1-\rho^{2})} \}\, dw,
+\\
+&= 2\phi_{U}(u\vert \mu,\, \sigma^{2})\int_{0}^{\infty} \phi_{W}(w \vert \rho(u-\rho),\, \sigma^{2}[1-\rho^{2}])
+\, dw,
+\intertext{podemos identificar la integral como la probabilidad $\mathbb{P}(W > 0 )$, donde $W\sim N(\rho(u-\mu),\,\sigma^{2}[1-\rho^{2}])$, para calcular esta probabilidad, estandarizamos la densidad por su localidad y escala, así, podemos escribir}
+&= 2\phi_{U}(u\vert \mu,\, \sigma^{2}) \mathbb{P}(\frac{W-\rho(u-\mu)}{\sigma\sqrt{1-\rho^{2}}} > -\frac{\rho(u-\mu)}{\sigma\sqrt{1-\rho^{2}}}) \\
+&= 2\phi_{U}(u\vert \mu,\, \sigma^{2}) \left[1 - \Phi\left(-\frac{\rho(u-\mu)}{\sigma\sqrt{1-\rho^{2}}}\right) \right],
+\intertext{por simetría de la función de distribución $\Phi$, $1-\Phi(-x)= \Phi(x)$, por tanto escribimos}
+&= 2\phi_{U}(u\vert \mu,\, \sigma^{2})\,\Phi\left(-\frac{\rho(u-\mu)}{\sigma\sqrt{1-\rho^{2}}}\right) \\
+&= 2\phi\left(\frac{u-\mu}{\sigma}\right)\,\Phi\left(\lambda\frac{u-\mu}{\sigma}\right) \qquad \square
+\end{align*}
+
+% Ahora bien, sea $\boldsymbol{\theta}=(\mu,\, \sigma^{2},\, \rho)^{T}$, podemos escribir
+% \begin{align*}
+% f_{Z,\, W | \boldsymbol{\theta}}(z,\, w | \boldsymbol{\theta})&\equiv 2f_{Z|W,\, \boldsymbol{\theta}}(z|w, \boldsymbol{\theta}) \, f_{W|\boldsymbol{\theta}}(w|\boldsymbol{\theta}) \, I_{(0,\infty)}(w) \\ &=2f_{Z|W,\, \boldsymbol{\theta}}(z|w, \boldsymbol{\theta}) \, f_{W|\sigma^{2}}(w|\sigma^{2}) \, I_{(0,\infty)}(w)\\
+% &=\frac{1}{\sqrt{2\pi\sigma^{2}(1-\rho^{2})}}\exp\left\{-\frac{1}{2}\, \frac{(x-[\mu+\rho w])^{2}}{\sigma^{2}(1-\rho^{2})}\right\} \\
+% & \times \frac{2}{\sqrt{2\pi\sigma^{2}}}\exp\left\{-\frac{1}{2}\, \frac{w^{2}}{\sigma^{2}}\right\} \, I_{(0, \infty)}(w).
+% \end{align*}
+
+\section*{Normal sesgada, caso univariado. Método $ii$}
+
+Alternativamente, se muestra un camino más corto para mostrar que la densidad de $X$ obtenida mediante el proceso de truncamiento oculto es normal asimétrica. En general, usamos la definición de condicionar una o más variables aleatorias a un evento de estas \parencite{bertsekas:2018, degroot:2014, mood-graybill:1974}. Así, definimos $(X,\, W) \equiv (U,\, W) \mid (W>0)$. de este modo, podemos escribir que
+\begin{align*}
+f_{(U,\, W) \mid (W>0)}(u,\, w) &\equiv \frac{f_{U,\, W}(u,\, w)}{\mathbb{P}(W>0)}\, 1(w>0),
+\intertext{así, es posible obtener la densidad de $U\mid (W>0)$ marginalizando sobre $W$, es decir}
+f_{U\mid(W>0)}(u) &= \int \frac{f_{U,\, W}(u,\, w)}{\mathbb{P}(W>0)}\, 1(w>0) \, dw \\
+&= f_{U}(u)\int \frac{f_{W\mid U}(w\mid u)}{\mathbb{P}(W>0)}\, 1(w>0) \, dw
+\intertext{note que $\mathbb{P}(W>0)=1/2$ es constante, además, $W\mid U$ tiene ley Gaussiana dada por}
+f_{W \mid U=u}(w\mid u) &= N\big(w \mid \rho(u-\mu),\, \sigma^{2}(1-\rho^{2})\big),
+\intertext{juntado estas dos partes podemos escribir}
+&= 2 f_{U}(u) {\int_{0}^{\infty}N\big(w \mid \rho (u-\mu),\, \sigma^{2}(1-\rho^{2})\big)\, dw} \\
+&= 2 N(u \mid \mu,\, \sigma^{2})\, \Phi\left(\lambda\frac{u-\mu}{\sigma}\right),
+\intertext{con $\lambda = \rho/\sqrt{1-\rho^{2}}$.}
+\end{align*}
+
+\section*{Normal sesgada, caso univariado. Método $iii$}
+
+Otro método directo para encontrar la densidad marginal de $X$ consiste en emplear el teorema de Bayes a la densidad de $U \mid (W>0)$:
+\begin{align*}
+f_{U | (W>0)}(u) &= \frac{\mathbb{P}(W>0 \mid U=u)\, f_{U}(u)}{\mathbb{P}(W>0)},
+\intertext{ya mostramos que $W\mid (U=u)$ tiene densidad Gaussiana, por tanto}
+\mathbb{P}(W>0 \mid U=u) &\equiv 1 - \Phi\left(-\frac{\rho(u-\mu)}{\sqrt{\sigma^{2}(1-\rho^{2})}}\right) = \Phi\left(\lambda\, \frac{u-\mu}{\sigma}\right),
+\intertext{juntando estas partes, la densidad de $X \equiv U\mid(W>0)$ puede ser escrita como}
+f_{X}(x) \equiv f_{U\mid(W>0)}(u) &= 2N(u \mid \mu,\, \sigma^{2})\Phi\left(\lambda\, \frac{u-\mu}{\sigma}\right).
+\end{align*}
+
+En general, se evita el uso de la representación directa de la densidad normal asimétrica, es decir, la densidad marginal de $X$, y en cambio se considera la representación conjunta de $(X,\, W)$ generada a partir del proceso de truncamiento oculto. Así, a partir de las expresiones previas, esta se obtiene como
+\begin{align*}
+f_{(X,\, W)}(x,\, w) &\equiv \frac{f_{(U,\, W)}(u,\, w)}{\mathbb{P}(W>0)}\, 1(w>0) \\
+&= 2 f_{U \mid (W=w)}(u) f_{W}(w)\, 1(w>0),
+\intertext{note que $U \mid (W=w)$ tiene ley Gaussiana dada por}
+f_{U \mid (W=w)}(u, w) &= N\big(u \mid \mu + \rho w,\, \sigma^{2}(1-\rho^{2})\big),
+\intertext{así, la densidad conjunta $(X,\, W)$ está dada por}
+f_{X,\, W}(x,\, w)&= 2N\big(u \mid \mu + \rho w ,\, \sigma^{2}(1-\rho^{2}) \big) \, N(w \mid 0 ,\, \sigma^{2}) I_{(0,\, \infty)}(w).
+\end{align*}
+En general, en la última expresión reemplazamos la variable $u$ por $x$.
+
+
+\section*{Normal sesgada, caso multivariado. Método $i$}
+
+Ahora estudiemos el caso multivariado para obtener la densidad de $\boldsymbol{X}_{n}$, sea
+\begin{align*}
+\begin{bmatrix}
+\boldsymbol{U} \\ W
+\end{bmatrix} &\sim
+N_{n+1}\left(
+\begin{bmatrix}
+\boldsymbol{\mu} \\ 0
+\end{bmatrix},\, 
+\begin{bmatrix}
+\sigma^{2}\bar{\Sigma}_{U} & \sigma^{2}\rho\boldsymbol{1}_{n} \\
+\sigma^{2}\rho\boldsymbol{1}_{n}^{T} & \sigma^{2}
+\end{bmatrix}
+\right),
+\end{align*}
+donde $\bar{\Sigma}_{U} = \sigma^{2}\left((1-\rho^{2})I_{n} + \rho^{2}J_{n}\right)$, vale la pena notar que $(\bar{\Sigma}_{U})_{ij} = \sigma^{2}$ si $i=j$ y $\sigma^{2}\rho^{2}$ si $i\neq j$. Ahora, aunque la elección de esta matriz de covarianzas para $\boldsymbol{U}$ pueda resultar extraña, garantiza que $\boldsymbol{X}\equiv\boldsymbol{U} \mid W>0$ tenga ley normal asimétrica multivariada y particularmente cada $X_{j} \equiv U_{j} \mid (W>0)$ tiene ley normal asimétrica univariada. A continuación mostraremos estas dos afirmaciones y para ello, empleamos una estrategia similar para el caso bivariado: veamos que
+\begin{align*}
+f_{\boldsymbol{X}}(\boldsymbol{x} ) &\equiv f_{(\boldsymbol{U})\mid(W>0)}(\boldsymbol{u},\, w) \\
+&=\frac{\mathbb{P}\big(W> 0 \mid (\boldsymbol{U}=\boldsymbol{u})\big)f_{\boldsymbol{U}}(\boldsymbol{u})}{\mathbb{P}(W>0)},
+\end{align*}
+nuevamente, $\mathbb{P}(W>0)=1/2$ y necesitamos calcular la densidad de $W \mid (\boldsymbol{U} = \boldsymbol{u})$, la cuál sabemos es Gausiana:
+\begin{align*}
+f_{W \mid (\boldsymbol{u} = \boldsymbol{u})}(w \mid \boldsymbol{u}) &= N(w \mid 0 + \sigma^{2}\rho\boldsymbol{1}_{n}^{T}\left(\sigma^{2}\bar{\Sigma}_{U}\right)^{-1}(\boldsymbol{u}-\boldsymbol{\mu}),\, \sigma^{2} - \sigma^{2}\rho\boldsymbol{1}_{n}\left(\sigma^{2}\bar{\Sigma}_{U}\right)^{-1}\sigma^{2}\rho\boldsymbol{1}_{n}^{T}) \\
+&= N\big(w \mid \rho\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}(\boldsymbol{u}-\boldsymbol{\mu}),\, \sigma^{2}(1-\rho^{2}\boldsymbol{1}_{n}\bar{\Sigma}_{U}^{-1}\boldsymbol{1}_{n}^{T})\big),
+\end{align*}
+dada la estructura propuesta de $\bar{\Sigma}_{U}$, no es difícil calcular (1) la inversa $\bar{\Sigma}_{U}^{-1}$ y (2) la forma cuadrática $\boldsymbol{1}^{T}_{n}\bar{\Sigma}_{U}^{-1} \boldsymbol{1}_{n}$ asociada. Para la primera tarea, la fórmula de Sherman–Morrison, un caso particular de la fórmula Sherman–Morrison–Woodbury: sea $A$ una matriz con entradas reales e invertible, sean $\boldsymbol{a}$, $\boldsymbol{b}$ dos vectores columna, entonces $A + \boldsymbol{a}\boldsymbol{b}^{T}$ es invertible si y sólo si $1+\boldsymbol{b}^{T}{A}^{-1}\boldsymbol{a}\neq0$. Así, se tiene que
+\begin{equation}
+\label{eq:sherman-morrison}
+\left(A+\boldsymbol{a}\boldsymbol{b}^{T}\right)^{-1} = A^{-1} - \frac{A^{-1}\boldsymbol{a}\boldsymbol{b}^{T}A^{-1}}{1 + \boldsymbol{b}^{T}A^{-1}\boldsymbol{a}}.
+\end{equation}
+En nuestro caso podemos identificar $A = (1-\rho^{2})I_{n}$ y $\boldsymbol{a}=\boldsymbol{b}=\rho\boldsymbol{1}_{n}$. De este modo, escribimos
+\begin{align*}
+\left[(1-\rho^{2})I_{n} + \rho^{2}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T}\right]^{-1} &= \frac{1}{1-\rho^{2}}I_{n} - \frac{\frac{1}{1-\rho^{2}}I_{n}\, \rho\boldsymbol{1}_{n}\, \rho\boldsymbol{1}_{n}^{T}\, \frac{1}{1-\rho^{2}}I_{n} }{1 + \rho\boldsymbol{1}_{n}^{T}\, \frac{1}{1-\rho^{2}}I_{n}\, \rho\boldsymbol{1}_{n} } \\
+&=\frac{1}{1-\rho^{2}}I_{n} - \frac{\rho^{2}/(1-\rho^{2})^{2}}{1 + n\rho^{2}/(1-\rho^{2})} J_{n} \\
+&=\frac{1}{1-\rho^{2}}I_{n} - \frac{1}{1 -\rho^{2}}\frac{\rho^{2}}{(n-1)\rho^{2}+1} J_{n} \\
+&= \frac{1}{1-\rho^{2}} \left( I_{n} - \frac{\rho^{2}}{(n-1)\rho^{2}+1} J_{n}  \right) = \bar{\Sigma}_{U}^{-1},
+\intertext{luego, para la tarea (2) calculamos la forma cuadrática como sigue}
+\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}\boldsymbol{1}_{n} &= \boldsymbol{1}_{n}^{T} \, \frac{1}{1-\rho^{2}} \left( I_{n} - \frac{\rho^{2}}{(n-1)\rho^{2}+1} (\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T})  \right) \boldsymbol{1}_{n} \\
+&=  \frac{1}{1-\rho^{2}} \left( \cancelto{n}{\boldsymbol{1}_{n}^{T}\,I_{n}\,\boldsymbol{1}_{n}} - \frac{\rho^{2}}{(n-1)\rho^{2}+1} \cancelto{n^{2}}{(\boldsymbol{1}_{n}^{T}\boldsymbol{1}_{n})\,(\boldsymbol{1}_{n}^{T}\boldsymbol{1}_{n})}\right) \\
+&= \frac{n}{1-\rho^{2}}\left(1 - \frac{n\rho^{2}}{(n-1)\rho^{2}+1}\right) \\
+&= \frac{n}{(n-1)\rho^{2}+1}, \\
+\Rightarrow 1 - \rho^{2}\boldsymbol{1}_{n}^{T}\Sigma_{U}^{-1}\boldsymbol{1}_{n} &= \frac{1-\rho^{2}}{(n-1)\rho^{2}+1}
+\end{align*}
+por lo tanto, podemos escribir la densidad de $W \mid (\boldsymbol{U}=\boldsymbol{u})$ como
+\begin{align*}
+f_{W \mid \boldsymbol{U}_{n}}(w \mid \boldsymbol{u}_{n}) &= N\left(w \mid \rho\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}(\boldsymbol{u}_{n}-\boldsymbol{\mu}_{n}),\, \sigma^{2}\frac{1-\rho^{2}}{(n-1)\rho^{2}+1}\right),
+% ¿Desarrollar la media de W | (U=u) ?
+\intertext{desarrollando análogamente a la media de $W\mid (\boldsymbol{U}_{n}=\boldsymbol{u}_{n})$,}
+\boldsymbol{1}_{n}^{T} \, \frac{1}{1-\rho^{2}}\left(I_{n} - \frac{\rho^{2}}{(n-1)\rho^{2}+1}(\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T})\right)^{-1} &= \frac{1}{1-\rho^{2}}\left(\cancelto{\boldsymbol{1}_{n}^{T}}{\boldsymbol{1}_{n}^{T}I_{n}} - \frac{\rho^{2}}{(n-1)\rho^{2}+1}\cancelto{n}{(\boldsymbol{1}_{n}^{T}\boldsymbol{1}_{n})}\phantom{-} \boldsymbol{1}_{n}^{T}\right) \\
+&= \frac{1}{1-\rho^{2}}\boldsymbol{1}_{n}^{T}\left(1 - \frac{n\rho^{2}}{(n-1)\rho^{2}+1}\right) \\
+&= \frac{1}{(n-1)\rho^{2}+1}\boldsymbol{1}_{n}^{T} \\
+\Rightarrow f_{W\mid(\boldsymbol{U}=\boldsymbol{u})}&= N\left(w \mid  \rho\frac{1}{(n-1)\rho^{2}+1}\boldsymbol{1}_{n}^{T}(\boldsymbol{u}-\boldsymbol{\mu}), \sigma^{2}\frac{1-\rho^{2}}{(n-1)\rho^{2}+1}\right),
+\end{align*}
+note que es posible emplear la densidad donde hemos desarrollado la media de $\boldsymbol{W} \mid (\boldsymbol{U}=\boldsymbol{u})$, pero para mantener más simple la notación, continuamos así. Ahora, escribimos
+% \begin{align*}
+% \mathbb{P}\big(W>0 \mid (\boldsymbol{U}=\boldsymbol{u})\big) &= 1 - \left(\frac{0-\rho\frac{n}{(n-1)\rho^{2}+1}\boldsymbol{1}_{n}^{T}(\boldsymbol{u}-\boldsymbol{\mu})}{\sqrt{\sigma^{2}\frac{1-\rho^{2}}{(n-1)\rho^{2}+1}}} \right) \\
+% &= \Phi\left(\frac{n}{\sqrt{(n-1)\rho^{2}+1}}\frac{\rho}{\sqrt{1-\rho^{2}}}\boldsymbol{1}_{n}^{T}(\boldsymbol{u}-\boldsymbol{\mu})\right)
+% \end{align*}
+\begin{align*}
+\mathbb{P}\big(W>0 \mid (\boldsymbol{U}=\boldsymbol{u})\big) &= 1 - \left(\frac{0-\rho\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}(\boldsymbol{u}-\boldsymbol{\mu})}{\sqrt{\sigma^{2}\frac{1-\rho^{2}}{(n-1)\rho^{2}+1}}} \right) \\
+&= \Phi\left(\frac{\rho\sqrt{(n-1)\rho^{2}+1}}{\sqrt{1-\rho^{2}}}\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}(\boldsymbol{u}-\boldsymbol{\mu})\right) \\
+&= \Phi\left(\lambda\sqrt{(n-1)\rho^{2}+1}\,\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}(\boldsymbol{u}-\boldsymbol{\mu})\right), \tag{$\lambda = \rho/\sqrt{1-\rho^{2}}$}
+\intertext{y si preferimos desarrollar $\boldsymbol{1}_{n}^{T}\bar{\Sigma}_{U}^{-1}$:}
+\boldsymbol{1}_{n}^{T}\Sigma_{U}^{-1} &= \boldsymbol{1}_{n}^{T}\frac{1}{1-\rho^{2}} \left(I_{n} - \frac{\rho^{2}}{(n-1)\rho^{2} + 1}J_{n} \right) \\
+&= \boldsymbol{1}_{n}^{T} \frac{1}{1-\rho^{2}}\left( 1 - \frac{n\rho^{2}}{(n-1)\rho^{2}+1}\right) \\
+&= \lambda\boldsymbol{1}_{n}^{T}\frac{1}{1-\rho^{2}}\frac{1-\rho^{2}}{(n-1)\rho^{2}+1} \\
+&= \lambda\boldsymbol{1}_{n}^{T}\frac{1}{(n-1)\rho^{2}+1} \\
+&\Rightarrow \Phi\left(\frac{\lambda}{\sqrt{(n-1)\rho^{2}+1}}\, \boldsymbol{1}_{n}^{T}(\boldsymbol{u}-\boldsymbol{\mu})\right),
+\end{align*}
+¿es posible encontrar alguna relación entre el término $1/\sqrt{(n-1)\rho^{2}+1}$ con $\bar{\Sigma}_{U}$?, es decir, si $1/\sqrt{(n-1)\rho^{2}+1}$ resulta ser una potencia de $\bar{\Sigma}_{U}$, entonces sería posible escribir el parámetro de forma como $\boldsymbol{\lambda}_{n} \equiv \lambda\boldsymbol{1}_{n}$. Calculemos $\bar{\Sigma}_{U}^{1/2}$ recurriendo a la descomposición espectral: sea $A$ una matriz cuadrada con entradas reales, definimos la pareja $(\boldsymbol{v}_{i},\, \lambda_{i})$ como un eigenvector-eigenvalor de $A$ si satisfacen la ecuación
+\begin{align*}
+A\boldsymbol{v}_{i} &= \boldsymbol{v}_{i} \lambda_{i},
+\end{align*}
+de este modo, $A$ tiene exactamente $n$ eigenvectores-eigenvalores (no necesariamente diferentes). La descomposición espectral de $A$ está dada por
+\begin{align*}
+A &= \sum_{i=1}^{n} \lambda_{i} \boldsymbol{v}_{i}.
+\end{align*}
+Una ventaja de la descomposición espectral es que podemos calcular potencias de $A$ de forma simple. Ahora, encontraremos las $n$ parejas de eigenvectores-eigenvalores para $\boldsymbol{\Sigma}_{U}$, en \parencite[][Teorema 1. Sección (2.3)-(2.4)]{eigen} se muestra como encontrar todos los eigenvalores para una perturbación de rango uno de una matriz simétrica, $\bar{\Sigma}_{U}$ en nuestro caso. Sin embargo, simplificamos este proceso mediante propuestas apropiadas de $\boldsymbol{v}_{i}$ y $\lambda_{i}$: sea $\boldsymbol{v}_{1}=\frac{1}{\sqrt{n}}\boldsymbol{1}_{n}$, note que
+\begin{align*}
+\bar{\Sigma}_{U}\boldsymbol{v}_{1} &= \left((1-\rho^{2})I_{n} + \rho^{2}J_{n} \right) \, \frac{1}{\sqrt{n}}\boldsymbol{1}_{n} \\
+&= \left((1-\rho^{2}) \boldsymbol{1}_{n} + n\rho^{2}\boldsymbol{1}_{n}\right)\frac{1}{\sqrt{n}} \\
+&= \left((n-1)\rho^{2}+1\right)\frac{1}{\sqrt{n}}\boldsymbol{1}_{n} \\
+&= \big((n-1)\rho^{2} + 1\big) \boldsymbol{v}_{1},
+\end{align*}
+es decir, $\lambda_{1} = (n-1)\rho^{2}+1$ es el eigenvalor asociado a $\boldsymbol{v}_{1}$. Ahora, encontremos la segunda pareja de eigenvalores-eigenvectores: partiendo nuevamente de la definición
+\begin{align*}
+\bar{\Sigma}_{U}\boldsymbol{v}_{2} &= \left((1-\rho^{2})I_{n} + \rho^{2}J_{n} \right) \boldsymbol{v}_{2} \\
+&= (1-\rho^{2}) \boldsymbol{v}_{2} + \rho^{2}(J_{n}\, \boldsymbol{v}_{2}),
+\end{align*}
+ahora, queremos encontrar la pareja $(\lambda_{2},\, \boldsymbol{v}_{2})$ tal que $\bar{\Sigma}_{U} \boldsymbol{v}_{2} = \boldsymbol{v}_{2}\lambda_{2}$, por ejemplo, si tomamos $\lambda_{2}=1-\rho^{2}$, entonces escribimos
+\begin{align*}
+\bar{\Sigma}_{U}\boldsymbol{v}_{2}&= (1-\rho^{2})\boldsymbol{v}_{2} & &\Longleftrightarrow \\
+(1-\rho^{2})\boldsymbol{v}_{2} + \rho^{2}(J_{n}\boldsymbol{v}_{2})  &= (1-\rho^{2})\boldsymbol{v}_{2} & &\Longleftrightarrow \\
+\rho^{2}(J_{n}\, \boldsymbol{v}_{2}) &= \boldsymbol{0} & &\Longleftrightarrow \\
+J_{n}\, \boldsymbol{v}_{2} &= \boldsymbol{0} & &
+\end{align*}
+es decir, $\boldsymbol{v}_{2}$ es tal que $J_{n}\boldsymbol{v}_{2} = \boldsymbol{1}_{n}(\boldsymbol{1}_{n}^{T}\boldsymbol{v}_{2}) = \boldsymbol{0}$, en otras palabras, $\boldsymbol{v}_{2}$ es cualquier vector cuyas entradas suman cero. Ahora, sustituyendo la condición previa, se tiene que
+\begin{align*}
+\bar{\Sigma}_{U}\boldsymbol{v}_{2} &= (1-\rho^{2})\boldsymbol{v}_{2} + \rho^{2}\cancelto{\boldsymbol{0}}{(J_{n}\, \boldsymbol{v}_{2})},
+\end{align*}
+así, de acuerdo con la definición, $\lambda_{2}=1-\rho^{2}$. Así, $\lambda_{1}$ es de multiplicidad uno y $\lambda_{2}$ es de multiplicidad $n-1$, como tenemos únicamente dos eigenvalores diferentes, podemos escribir
+\begin{align*}
+\bar{\Sigma}_{U} &= \lambda_{1}P + \lambda_{2}Q,
+\end{align*}
+donde $P$, $Q$ son matrices de proyección definidas como $P=\frac{1}{n}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T}$ y $Q=I_{n}-P$. Debido a que son matrices de proyección, $\sum_{i}^{n} \lambda_{i} \, \boldsymbol{v}_{i}\boldsymbol{v}_{i}^{T} = I_{n}$; luego, esta suma puede escribirse como $\lambda_{1}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T}+\sum_{i=2}^{n} \lambda_{i}\, \boldsymbol{v}_{i}\boldsymbol{v}_{i}^{T}$ y de ahí obtenemos que $Q = \sum_{i=2}^{n} \lambda_{i} \boldsymbol{v}_{i}\boldsymbol{v}_{i}^{T} = I - \frac{1}{n}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T} = I-P$. Por tanto, se tiene que
+\begin{align*}
+\bar{\Sigma}_{U} &= \big((n-1)\rho^{2}+1\big) \frac{1}{n}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T} + (1-\rho^{2})(I_{n} - \frac{1}{n}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T}) \\
+\Rightarrow \bar{\Sigma}_{U}^{1/2} &= \big((n-1)\rho^{2}+1\big)^{1/2} \frac{1}{n}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T} + (1-\rho^{2})^{1/2}(I_{n} - \frac{1}{n}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T}) \\
+\Rightarrow \left( \Sigma_{U}^{1/2} \right)_{ii}&= \frac{\sqrt{(n-1)\rho^{2}+1}}{n} + (1-\rho^{2})\frac{n-1}{n},
+\end{align*}
+es decir, la entrada $(i, i)$ de $\bar{\Sigma}_{U}^{1/2}$ no reensambla el término $\sqrt{(n-1)\rho^{2}+1}$, esto significa que el parámetro de forma debe absorber esta constante. Esto es, $\boldsymbol{\lambda}_{n}=\rho/\sqrt{(n-1)\rho^{2}+1}\sqrt{1-\rho^2}\boldsymbol{1}_{n}$ y por lo tanto, $\boldsymbol{\sigma} = \text{diag}\{\sigma, \ldots, \sigma\}$. De esta forma, podemos escribir la densidad marginal de $X$ como
+\begin{align}
+f_{\boldsymbol{X}}(\boldsymbol{x})
+%&\equiv \frac{\mathbb{P}(W>0 \mid (\boldsymbol{U}=\boldsymbol{u}))f_{(\boldsymbol{U}) }(\boldsymbol{u})}{\mathbb{P}(W>0)} 1(w>0) 
+&= 2N(\boldsymbol{u}_{n} \mid \boldsymbol{\mu}_{n}, \sigma^2\bar{\Sigma}_{U})\, \Phi\left(\boldsymbol{\lambda}_{n}^{T}\boldsymbol{\sigma}^{-1}(\boldsymbol{u}_{n}-\boldsymbol{\mu}_{n})\right).
+\end{align}
+
+
+\section*{Normal sesgada, caso multivariado. Método $ii$}
+
+Es posible aplicar la misma idea de completar una densidad normal en la variable $w$, para el caso de $n$ observaciones $\boldsymbol{U}=(U_{1},\,\ldots,\, U_{n})^{T}$ para mostrar que la densidad marginal de $\boldsymbol{U}_{n}$ es normal asimétrica multivariada. Entonces, nuevamente se plantea
+\begin{equation}
+\begin{aligned}
+f_{\boldsymbol{X}_{n}, W}(\boldsymbol{x}_{n}, w) &\equiv f_{X_{n} \mid w}(\boldsymbol{x}_{n} \mid w)\, f_{W}(w) = \left[\frac{f_{\boldsymbol{U}_{n} \mid (W=w)}(\boldsymbol{u}_{n} \mid w)}{\mathbb{P}(W>0)}I_{(0, \infty)}\right]f_{W}(w),
+\end{aligned}
+\end{equation}
+es inmediato obtener la densidad $p(\boldsymbol{u}_{n} \mid w)$:
+\begin{equation}
+\begin{aligned}
+p(\boldsymbol{u}_{n} \mid w) &= N(\boldsymbol{u}_{n} \mid \boldsymbol{\mu}_{n} + \sigma^{2}\rho\boldsymbol{1}_{n}(\sigma^{2})^{-1}(w-0), \sigma^{2}(1-\rho^{2})I_{n}+\cancelto{0}{\sigma^{2}\rho^{2}J_{n} - \sigma^{2}\rho^{2}\boldsymbol{1}_{n}\boldsymbol{1}_{n}^{T}}) \\
+&= N(\boldsymbol{u}_{n} \mid \boldsymbol{\mu}_{n} + w\rho\boldsymbol{1}_{n},\, \sigma^{2}(1-\rho^{2})I_{n}),
+\end{aligned}
+\end{equation}
+aquí se hace evidente el por qué de la inclusión del término $\rho^{2}J_{n}$, de otra manera, la matriz de covarianza $\sigma^{2}((1-\rho^{2})I_{n} - \rho^{2}J_{n})$ no es definida positiva para ciertas elecciones de $\rho\in(-1, 1)$. Dado que la $\sigma^2(1-\rho^2)I_{n}$ es diagonal, es posible factorizar esta distribución con elementos condicionalmente independientes, es decir
+\begin{align}
+f_{\boldsymbol{U}_{n} \mid W}(\boldsymbol{u}_{n} \mid w ) = 2\prod_{i=1}^{n} N(u_{i} \mid \mu_{i} + \rho w,\, \sigma^{2}(1-\rho^{2})),
+\intertext{por lo tanto,}
+%f_{\boldsymbol{U},\, W}(\boldsymbol{u},\, w) \equiv f_{\boldsymbol{U} \mid W}(\boldsymbol{u},\mid w) \, f_{W}(w)
+f_{\boldsymbol{U}_{n}, \, W}(\boldsymbol{u}_{n},\, w ) = 2\prod_{i=1}^{n} N(u_{i} \mid \mu_{i} + \rho w,\, \sigma^{2}(1-\rho^{2}))\, N(w \mid 0,\, \sigma^{2}) I_{(0,\, \infty)}(w),
+\end{align}
+ahora, obtenemos la densidad marginal de $\boldsymbol{U}$ al integrar fuera $w$:
+\begin{align*}
+&f_{\boldsymbol{U}}(\boldsymbol{u}) = \frac{2}{ab^{n}}\int_{0}^{\infty} \exp\{ -\frac{\sum_{i=1}^{n}(u_{i}-\mu_{i}-\rho w)^{2}}{2\sigma^{2}(1-\rho^{2})} \} \, \exp\{-\frac{w^{2}}{2\sigma^{2}}\} \, dw,
+\intertext{aquí, $a=1/\sqrt{2\pi\sigma^{2}}$ y $b=1/\sqrt{2\pi\sigma^{2}(1-\rho^{2})}$; no obstante, por simplicidad no haremos especial énfasis en determinar exactamente las constantes. Ahora, escribimos}
+&= \frac{2}{ab^{n}}\int_{0}^{\infty} \exp\{ -\frac{\sum_{i=1}^{n}((u_{i}-\mu_{i})^{2} + \rho^{2}w^{2} - 2\rho{w}(u_{i}-\mu_{i})) + (1-\rho^{2})w^{2}}{2\sigma^{2}(1-\rho^{2})} \} \, dw,
+\intertext{expandimos la suma y factorizamos $w^{2}$}
+&= \frac{2}{ab^{n}}\int_{0}^{\infty} \exp\{ -\frac{\sum_{i=1}^{n}(u_{i}-\mu_{i})^{2} + ((n-1)\rho^{2}+1)w^{2} - 2{\rho}{w}\sum_{i=1}^{n}(u_{i}-\mu_{i})}{2\sigma^{2}(1-\rho^{2})} \} \, dw,
+\intertext{completamos el cuadrado en $w^{2}$, para ello factorizamos $(n-1)\rho^{2}+1$, luego sumamos y restamos $\rho^{2}(\sum_{i=1}^{n}(u_{i}-\mu_{i}))^{2}/((n-1)\rho^{2}+1)^{2}$,}
+&= \frac{2}{ab^{n}}\int_{0}^{\infty} \exp\{ -\frac{\sum_{i=1}^{n}(u_{i}-\mu_{i})^{2} + ((n-1)\rho^{2}+1)
+\left[
+\left(
+w-\frac{\rho\sum_{i=1}^{n}(u_{i}-\mu_{i})}{(n-1)\rho^{2}+1}
+\right)^{2}
+-\frac{\rho^{2}(\sum_{i=1}^{n}(u_{i}-v_{i}))^{2}}{((n-1)\rho^{2}+1)^{2}}
+\right]}{2\sigma^{2}(1-\rho^{2})} \} \, dw,
+\end{align*}
+en la función $\exp$ identificamos dos términos, uno no depende de $w$ y en el otro podemos identificar un kernel gaussiano en $w$, es decir $p(w)=N(w\mid \mu_{w},\, \sigma^{2}_{2})$, donde
+\begin{equation}
+\begin{aligned}
+\mu_{w} &= \frac{\rho\sum_{i=1}^{n}(u_{i}-v_{i})}{((n-1)\rho+1)} ,\\
+\sigma^{2}_{w} &= \frac{\sigma^{2}(1-\rho^{2})}{(n-1)\rho^{2}+1},
+\end{aligned}
+\end{equation}
+luego, sacamos los términos que no dependen de $w$, y por simplicidad ignoramos las constantes $1/ab^{n}$ ya que no las necesitamos. Ahora, escribimos
+\begin{align*}
+&\propto 2 \exp\{-\frac{\sum[u_{i}-\mu_{i}]^{2} -\frac{\rho^{2}(\sum[u_{i}-\mu_{i}])^{2}}{(n-1)\rho^{2}+1} }{2\sigma^{2}(1-\rho^{2})} \}\, \int_{0}^{\infty}  \exp\{-\frac{1}{2\sigma^{2}_{w}} (w-\mu_{w})^{2} \} \, dw,
+\intertext{note que $\sum_{i=1}^{n}(u_{i}-\mu_{i})^{2} = (\boldsymbol{u}-\boldsymbol{\mu})^{T}(\boldsymbol{u}-\boldsymbol{\mu})$, además, $\sum_{i=1}^{n}(u_{i}-\mu_{i})=\boldsymbol{1}^{T}(\boldsymbol{u}-\boldsymbol{\mu})$; así, de esta última igualdad se tiene que $(\sum_{i=1}^{n}(u_{i}-v_{i}))^{2} = \boldsymbol{1}^{T}(\boldsymbol{u}-\boldsymbol{\mu})\, \boldsymbol{1}^{T}(\boldsymbol{u}-\boldsymbol{\mu}) = (\boldsymbol{u}-\boldsymbol{\mu})^{T}\boldsymbol{1}\boldsymbol{1}^{T}(\boldsymbol{u}-\boldsymbol{\mu}) = (\boldsymbol{u}-\boldsymbol{\mu})^{T} J (\boldsymbol{u}-\boldsymbol{\mu})$. Ahora, nos concentramos en la integral en $w$: así como en el caso univariado, podemos identificar la integral como $\mathbb{P}[W>0]$, mediante normalización, podemos escribir esta probabilidad como}
+\mathbb{P}[W>0] &= 1 - \Phi
+\left(
+-\frac{\rho\sum_{i=1}^{n}(u_{i}-\mu_{i}) / (n-1)\rho +1}{\sigma\sqrt{1-\rho^{2}}/\sqrt{(n-1)\rho^{2}+1}}
+\right) \\
+&= \Phi\left(
+\frac{\lambda\boldsymbol{1}^{T}_{n}(\boldsymbol{u}-\boldsymbol{\mu})}{\sigma\sqrt{(n-1)\rho^{2}+1}}\right) \\
+&= \Phi\left(\boldsymbol{\lambda}^{T}_{n} \boldsymbol{\sigma}^{-1}(\boldsymbol{u}-\boldsymbol{\mu}) \right), \tag{$\boldsymbol{\lambda}^{T}_{n} \triangleq \rho/(\sqrt{1-\rho^{2}}\sqrt{(n-1)\rho^{2}+1})\boldsymbol{1}^{T}_{n}$}
+\intertext{donde hemos definido $\boldsymbol{\sigma} \triangleq \diag\left(\sigma,\, \ldots,\, \sigma\right)$. Ahora, usando los resultados previos, escribimos}
+f_{\boldsymbol{U}}(\boldsymbol{u})&\propto \exp\left(-\frac{1}{2\sigma^{2}(1-\rho^{2})} (\boldsymbol{u}-\boldsymbol{\mu})^{T}\left[I - \frac{\rho^{2}}{(n-1)\rho^{2}+1}J\right](\boldsymbol{u}-\boldsymbol{\mu}) \right) \, \Phi(\boldsymbol{\lambda}^{T}\boldsymbol{\sigma}^{-1}(\boldsymbol{u}-\boldsymbol{\mu})),
+\end{align*}
+ahora, dado que estamos parametrizando con la covarianza, entonces, este parámetro está dado por
+\begin{equation}
+\Sigma_{U} \equiv \left( \frac{1}{\sigma^{2}(1-\rho^{2})} \left[I - \frac{\rho^{2}}{(n-1)\rho^{2}+1}J\right] \right)^{-1} = \sigma^{2}(1-\rho^{2})\left[I - \frac{\rho^{2}}{(n-1)\rho^{2}+1}J\right]^{-1},
+\end{equation}
+por tanto, ahora la tarea es encontrar esta inversa y se emplea nuevamente la fórmula Sherman–Morrison de la \autoref{eq:sherman-morrison}, aquí identificamos $A=I_{n}$, $\boldsymbol{a}=\rho/\sqrt{(n-1)\rho^{2}+1}\boldsymbol{1}_{n}$, $\boldsymbol{b}=-\boldsymbol{a}$. Por tanto, se tiene que
+\begin{equation}
+\begin{aligned}
+%\Sigma_{U}^{-1} &= I_{n} + \frac{I \rho/\sqrt{(n-1)\rho^{2}+1}\boldsymbol{1}_{n}  \,\boldsymbol{1}_{n}^{T} \rho/\sqrt{(n-1)\rho^{2}+1}}{1 - \boldsymbol{1}_{n}^{T} \rho/\sqrt{(n-1)\rho^{2}+1} \, I \,  \rho/\sqrt{(n-1)\rho^{2}+1}\boldsymbol{1}_{n}}
+\Sigma_{U}^{-1} &= I + \frac{\rho^{2}}{(n-1)\rho^{2}+1} \times \frac{I_{n} J_{n} I_{n}}{ 1 - \frac{\rho^{2}}{(n-1)\rho^{2}+1}(\cancelto{n}{\boldsymbol{1}^{T}_{n}I_{n}\boldsymbol{1}_{n})}} \\
+&= I_{n} + \frac{\rho^{2}}{(n-1)\rho^{2}+1} \times \frac{1}{1 - \frac{n\rho^{2}}{(n-1)\rho^{2}+1}} J_{n} \\
+&= I_{n} + \frac{\rho^{2}}{(n-1)\rho^{2}+1} \times \frac{(n-1)\rho^{2}+1}{1-\rho^{2}} = I_{n} + \frac{\rho^{2}}{1-\rho^{2}} J_{n},
+\end{aligned}
+\end{equation}
+por lo tanto, la matriz de covarianza está dada por
+\begin{equation}
+\Sigma_{U} = \sigma^{2}(1-\rho^{2}) \left[ I_{n} + \frac{\rho^{2}}{1-\rho^{2}} \right] = \sigma^{2} \left[(1-\rho^{2})I_{n} + \rho^{2} J_{n} \right],
+\end{equation}
+por lo tanto, $f_{U}(\boldsymbol{u})$ tiene kernel de una densidad Gaussiana multivariada, así, podemos concluir que
+\begin{equation}
+f_{\boldsymbol{U}_{n}}(\boldsymbol{u}_{n}) = 2\phi_{\boldsymbol{U}_{n}}(\boldsymbol{u}_{n} \mid \boldsymbol{\mu}_{n},\, \Sigma_{U})
+\, 
+\Phi\left(\boldsymbol{\lambda}_{n}^{T} \boldsymbol{\sigma}^{-1} (\boldsymbol{u}_{n}-\boldsymbol{\mu}_{n})\right) \equiv SN(\boldsymbol{u}_{n} \mid \boldsymbol{\mu}_{n}, \, \Sigma_{u},\, \boldsymbol{\lambda}_{n}^{T}).
+\end{equation}
+
+
+Aunque la definición de $\boldsymbol{\sigma}$ pueda parecer arbitraria, garantiza que sea definida positiva, además de que con $n=1$, es decir, en el caso univariado, se recupere correctamente el proceso de truncamiento oculto. Por ejemplo, si se emplea $\bar{\Sigma}_{U}=\sigma^{2}I_{n}$, entonces, siguiendo el desarrollo al inicio del anexo, se tiene que
+\begin{equation}
+p(w | \boldsymbol{u}_{n}) = N(w \mid \rho\boldsymbol{1}_{n}^{T}(\boldsymbol{u}_{n}-\boldsymbol{\mu}_{n}),\, \sigma^{2}(1-n\rho^{2})),
+\end{equation}
+efectivamente, con $n=1$ se recupera la varianza $\sigma^2(1-\rho^{2})$, sin embargo, $|\rho| < \frac{1}{\sqrt{n}}$, ya que de otro modo se obtiene una varianza negativa.
+
+\begin{comment}
+
+\section*{Prueba (ignorar)}
+
+Sea $U\sim N\left(\frac{\rho}{\sqrt{1-\rho^{2}}} \mu,\, \sigma^{2}\right)$ tal que $U\perp V$. No es difícil ver que $\rho V-\sqrt{1-\rho^{2}}U\sim N(0,\, \sigma^{2})$, por otra parte, $\mathbb{C}\text{ov}(\rho V -\sqrt{1-\rho^{2}}U,\, V)=\rho\mathbb{V}\text{ar}(V)=\rho\sigma^{2}$; estos dos elementos permiten establecer que las variables aleatorias $W$ y $\rho U-\sqrt{1-\rho^{2}}V$ son equivalentes. Ahora bien, para encontrar la densidad de $Z$ podemos emplear el método de la función de distribución
+\begin{align*}
+F_{Z}(z) &\triangleq \mathbb{P}(Z \leq z) \\
+&=
+\mathbb{P}(V\leq z | W>0)
+\\
+&=\mathbb{P}(V\leq z | \rho U-\sqrt{1-\rho^{2}}V>0)\\
+&= \mathbb{P}(V \leq z | \cancelto{\lambda}{\frac{\rho}{\sqrt{1-\rho^{2}}}}U > V) \\
+&= \mathbb{P}(V \leq z | \lambda U > V) \\
+&= \mathbb{P}(\underbrace{\frac{V-\mu}{\sigma}}_{Z_{1}} < \frac{z-\mu}{\sigma} \Big| \frac{\lambda U - \lambda\mu}{\sigma} > \frac{V - \lambda\mu}{\sigma}),
+\intertext{donde $Z_{1}\sim N(0,\, 1)$, reagrupando términos se tiene que}
+&= \mathbb{P}(Z_{1} < \frac{z-\mu}{\sigma} \Big| \lambda \underbrace{\frac{U-\mu}{\sigma}}_{Z_{1}} > \underbrace{\frac{V-\lambda\mu}{\sigma}}_{Z_{2}}),
+\intertext{donde $Z_{2}\sim N(0,\, 1)$, por tanto escribimos}
+&= \mathbb{P}(Z_{1} < \frac{z-\mu}{\sigma} \Big| \lambda Z_{1} > Z_{2}) \\
+&\triangleq \frac{\mathbb{P}(Z_{1} < \frac{z-\mu}{\sigma},\, \lambda Z_{1}>Z_{2})}{\mathbb{P}(\lambda Z_{1} > Z_{2})},
+\intertext{como asumimos que $U\perp V$, también es cierto que $Z_{1}\perp Z_{2}$ al tratarse de funciones de estas variables aleatorias. Por tanto, la densidad conjunta de $Z_{1},\, Z_{2}$ se factoriza como $f_{Z_{1},\, Z_{2}}(z_{1},\, z_{2}) = f_{Z_{1}}(z_{1})f_{Z_{2}}(z_{2})=\phi(z_{1})\phi(z_{2})$. Ahora bien, podemos escribir}
+&= \int\limits_{-\infty}^{\frac{z-\mu}{\sigma}}\left\{\int\limits_{-\infty}^{\lambda z_{1}}\phi(z_{1})\phi(z_{2}) \, dz_{2}\right\} dz_{1} \, \Big/ \mathbb{P}(\lambda Z_{1}>Z_{2}),
+\intertext{sea $Z_{3}\triangleq\lambda Z_{1}-Z_{2}$, como $Z_{1}\perp Z_{2}$ se tiene que $Z_{3}\sim N(0,\, \sigma^2(\lambda+1))$, no es difícil ver que $\mathbb{P}(Z_{3}>0)=1/2$, ya que es simétrica en torno a cero, por tanto escribimos}
+&= 2\int\limits_{-\infty}^{\frac{z-\mu}{\sigma}}\phi(z_{1})\underbrace{\left\{\int\limits_{-\infty}^{\lambda z_{1}}\phi(z_{2}) \, dz_{2}\right\}}_{\Phi(\lambda z_{1})} dz_{1} \\
+F_{Z}(z) &= 2\int\limits_{-\infty}^{\frac{z-\mu}{\sigma}}\phi(z_{1}) \Phi(\lambda z_{1}) \, dz_{1},
+\intertext{ahora, derivando con respecto a $z$ de ambos lados}
+f_{Z}(z) &= 2 \frac{d}{dz} \int\limits_{-\infty}^{\frac{z-\mu}{\sigma}}\phi(z_{1}) \Phi(\lambda z_{1}) \, dz_{1},
+\intertext{aplicando la regla de Leibniz (diferenciar bajo el signo de la integral)}
+&= \frac{2}{\sigma} \phi\left(\frac{z-\mu}{\sigma}\right)\Phi\left(\lambda \frac{z-\mu}{\sigma}\right) \square
+\end{align*}
+\end{comment}
+
+\addcontentsline{toc}{section}{Anexo B}
+\section*{Anexo B}
+\renewcommand{\theequation}{B.\arabic{equation}}
+\setcounter{equation}{0}
+
+\hypertarget{anexo2}{}
+
+En este apartado se muestran algunos resultados en cuanto al método campo medio de inferencia Bayesiana variacional.
+
+\section*{Restricción Campo Medio: prueba}
+
+El método basado en el supuesto Campo Medio aproxima la densidad \textit{a posteriori} con
+\begin{align*}
+q(\boldsymbol{\theta})&= q(\boldsymbol{\theta}_{1}) \, q(\boldsymbol{\theta}_{2}), \, \ldots, \, q(\boldsymbol{\theta}_{G}),
+\end{align*}
+donde $G$ es el número de grupos: si $\boldsymbol{\theta}$ es se dimensión $p$, entonces $G\leq p$. Ahora, de acuerdo con \cite{bishop, explaining-VI}, la justificación usual sobre la forma de las densidades óptimas $q^{\star}(\boldsymbol{\theta}_{i})$ emplea gradientes y multiplicadores de Lagrange.
+%, por tanto, escribimos
+%\begin{align*}
+%proof
+%\end{align*}
+Así mismo, \cite{VI-a_review} considera un argumento meramente probabilístico. Recordando que el límite inferior de la evidencia para la aproximación $q$ está dado por
+\begin{align*}
+\ELBO{q} &= \E_{q}[\log\, p(\boldsymbol{y},\, \boldsymbol{\theta})] - \E_{q}[\log\, q(\boldsymbol{\theta})] \\
+&= \E_{q}[\log\,p(\boldsymbol{y},\, \boldsymbol{\theta}_{-i},\, \boldsymbol{\theta}_{i})] - \E_{q}[\log\,q(\boldsymbol{\theta}_{-i},\, \boldsymbol{\theta}_{i})],
+\intertext{ahora, usamos la esperanza iterada en el primer término y en el segundo término desarrollamos, por tanto escribimos}
+\ELBO{q} &= \E_{i}\left[\E_{-i}[\log\, p(\boldsymbol{\theta}_{i},\, \boldsymbol{\theta}_{-i},\, \boldsymbol{y})]\right] - \E_{i}[\log\, q_{i}(\boldsymbol{\theta}_{i})] - \underbrace{\E_{-i}[\log\, q_{-i}(\boldsymbol{\theta}_{-i})]}_{c},
+\intertext{note que el último término es constante con respecto a $\boldsymbol{\theta}_{i}$. Finalmente, escribimos esta expresión únicamente como función del factor variacional $q(\boldsymbol{\theta}_{i})$}
+\ELBO{q_{i}} &= \E_{i}\left[\E_{-i}[\log\, p(\boldsymbol{\theta}_{i},\, \boldsymbol{\theta}_{-i},\, \boldsymbol{y})]\right] - \E_{i}[\log\, q_{i}(\boldsymbol{\theta}_{i})] + c,
+\end{align*}
+ahora bien, salvo por una constante, es posible identificar la última expresión como la divergencia KL negativa entre $q(\boldsymbol{\theta}_{i})$ y $q^{\star}(\boldsymbol{\theta}_{i})$ -obtenida de forma analítica-, ya que
+\begin{align*}
+-\KL{q(\boldsymbol{\theta}_{i})}{q^{\star}(\boldsymbol{\theta}_{i})} &=-\int q(\boldsymbol{\theta}_{i}) \, \log\,\frac{q(\boldsymbol{\theta}_{i})}{q^{\star}(\boldsymbol{\theta}_{i})}\, d\boldsymbol{\theta}_{i} \\
+&= -\E_{q(\boldsymbol{\theta}_{i})}[\log\,q(\boldsymbol{\theta}_{i})] + \E_{q(\boldsymbol{\theta}_{i})}[\log\,q^{\star}(\boldsymbol{\theta}_{i})] \\
+&= -\E_{q(\boldsymbol{\theta}_{i})}[\log\,q(\boldsymbol{\theta}_{i})] + \E_{q(\boldsymbol{\theta}_{i})}[\log\,\E_{q(\boldsymbol{\theta}_{-i})}[\log\, p(\boldsymbol{\theta}_{i},\, \boldsymbol{\theta}_{-i},\, \boldsymbol{y})]],
+\end{align*}
+de esta manera, el límite inferior de la evidencia con respecto a $q_{i}$ se  maximiza cuando hacemos que $q_{i}(\boldsymbol{\theta}_{i}) = q^{\star}_{i}(\boldsymbol{\theta}_{i})$, este es un resultado básico acerca de la divergencia KL.
+
+\addcontentsline{toc}{section}{Anexo C}
+\section*{Anexo C}
+\renewcommand{\theequation}{C.\arabic{equation}}
+\setcounter{equation}{0}
+
+\hypertarget{anexo3}{}
+
+% Me dan ganas de quitar este anexo..., tiene muy poca información que bien podría ponerse en las secciones correspondientes.
+% creo que le vamos a dar matarile para incluir la lista de covariables
+
+En este apartado se incluye la lista de covariables empleadas para el ajuste de los modelos de regresión en áreas pequeñas usando el conjunto de datos del ICTPC. Las primeras 52 covariables son continuas, y el resto son binarias. En general, la presencia de algún indicador se codifica como uno y cero en caso contrario.
+
+\begin{paracol}{2}
+\begin{spacing}{1.0}
+{\footnotesize
+\input{Figuras/c-v/lista1.txt}
+
+\switchcolumn
+
+\input{Figuras/c-v/lista2.txt}
+}
+\end{spacing}
+\end{paracol}
+
+
+% hay que acomodar esto en la metodologia, no es necesario emplear la densidad con variable latente, se puede dar un argumento similar usando solamente las funciones Phi_{SN}, similar al modelo probit
+
+\addcontentsline{toc}{section}{Anexo D}
+\section*{Anexo D}
+
+\hypertarget{anexo4}{}
+
+En este apartado se facilitan los códigos empleados para para realizar el ajuste de los modelos de regresión Bayesiana en areas pequeña propuestos -log-normal sesgado, y probit (ordenado) sesgado con variable latente-, y para reproducir las figuras mostradas en el documento.
+
+Se prefiere no colocar explicitamente los códigos empleados por comodidad del usuario interesado en reproducir los resultados o modificarlos a su conveniencia: parece que es más sencillo acceder a ellos de forma sistemática y libre de errores de copiado. Por tanto, se dispone de ellos en la plataforma \textit{Git-Hub} en el siguiente proyecto: \url{https://github.com/Demian-33/MSc-Thesis-Code}.
+
+%Como nota general, todas las figuras se costruyeron en el lenguaje \code{Python} y describimos a continuación los principales librerías usadas, así como su correspondiente versión.
+%\begin{table}[H]
+%\centering
+%\caption[]{}
+%\begin{tabular}{lll}
+%\hline
+%Módulo & Sub-módulo(s) & Versión \\
+%\hline
+%\code{numpy} & & 12.1 \\
+%\code{scipy.stats} & \code{invgamma}, \code{norm}, \makecell{\code{normal\_inverse\_gamma}} & 1.15.1 \\
+%\code{matplotlib} & & 10.1 \\
+%\hline
+%\end{tabular}
+%% \label{}
+%\end{table}
+
+Por otro lado, los análisis se realizaron en el lenguaje {Stan} por medio de la librería \code{cmdstanr} del lenguaje {R}. A continuación describimos también aspectos sobre aquellas librerías y versiones empleadas que son más relevantes. En este caso, se debe tener especial cuidado con realizar previamente la instalación de \code{Stan} a través de su página web oficial, ya que hasta la fecha actual, no se encuentra en el la lista de paquetes del CRAN.
+\begin{table}[H]
+\centering
+%\caption[]{}
+\begin{tabularx}{\textwidth}{lXl}
+\hline
+Librería & Función(es) & Versión \\
+\hline
+\code{sn} & \code{psn}, \code{selm}, \code{dmsn} & 1.2 \\
+\code{cmdstanr} & \code{\$compile}, \code{\$variational}, \code{\$sample} & 2.37 \\
+\code{ggplot2} & &  \\
+\hline
+\end{tabularx}
+% \label{}
+\end{table}

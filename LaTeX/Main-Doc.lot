@@ -1,0 +1,62 @@
+\contentsline {table}{\numberline {2.3}{\ignorespaces Resumen de los métodos de inferencia Bayesiana variacional.}}{55}{table.2.3}%
+\contentsline {table}{\numberline {3.1}{\ignorespaces Resumen sobre los tres modelos de regresión a nivel unidad.}}{69}{table.caption.40}%
+\contentsline {table}{\numberline {3.2}{\ignorespaces Bloques de un programa {Stan}.}}{97}{table.3.2}%
+\contentsline {table}{\numberline {3.3}{\ignorespaces Cantidades fijadas para los experimentos de simulación.}}{108}{table.3.3}%
+\contentsline {table}{\numberline {3.4}{\ignorespaces Métricas básicas del ajuste.}}{110}{table.3.4}%
+\contentsline {table}{\numberline {3.5}{\ignorespaces Valores iniciales para la simulación.}}{112}{table.caption.44}%
+\contentsline {table}{\numberline {3.6}{\ignorespaces Tamaño del hogar ajustado.}}{117}{table.caption.45}%
+\contentsline {table}{\numberline {4.1}{\ignorespaces Modelo log-normal con único intercepto en cada área pequeña. Porcentaje de muestreo: 25\%.}}{124}{table.caption.49}%
+\contentsline {table}{\numberline {4.2}{\ignorespaces Modelo probit sesgado con único intercepto en cada área pequeña. Porcentaje de muestreo: 25\%.}}{124}{table.caption.51}%
+\contentsline {table}{\numberline {4.3}{\ignorespaces Modelo probit ordenado sesgado con único intercepto en cada área pequeña. Porcentaje de muestreo: 25\%.}}{125}{table.caption.53}%
+\contentsline {table}{\numberline {4.4}{\ignorespaces Modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{126}{table.caption.55}%
+\contentsline {table}{\numberline {4.5}{\ignorespaces Métricas del ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{127}{table.caption.57}%
+\contentsline {table}{\numberline {4.6}{\ignorespaces Modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{128}{table.caption.59}%
+\contentsline {table}{\numberline {4.7}{\ignorespaces Métricas del ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{129}{table.caption.61}%
+\contentsline {table}{\numberline {4.8}{\ignorespaces Modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{130}{table.caption.63}%
+\contentsline {table}{\numberline {4.9}{\ignorespaces Métricas del ajuste del modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{131}{table.caption.65}%
+\contentsline {table}{\numberline {4.10}{\ignorespaces Modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{131}{table.caption.67}%
+\contentsline {table}{\numberline {4.11}{\ignorespaces Métricas del ajuste del modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{132}{table.caption.69}%
+\contentsline {table}{\numberline {4.12}{\ignorespaces Modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{133}{table.caption.71}%
+\contentsline {table}{\numberline {4.13}{\ignorespaces Métricas del ajuste del modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{134}{table.caption.73}%
+\contentsline {table}{\numberline {4.14}{\ignorespaces Modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{135}{table.caption.75}%
+\contentsline {table}{\numberline {4.15}{\ignorespaces Métricas del ajuste del modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{136}{table.caption.77}%
+\contentsline {table}{\numberline {4.16}{\ignorespaces Modelo probit sesgado latente con único intercepto para todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}}{137}{table.caption.79}%
+\contentsline {table}{\numberline {4.17}{\ignorespaces Métricas del ajuste del modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}}{138}{table.caption.81}%
+\contentsline {table}{\numberline {4.18}{\ignorespaces Modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}}{139}{table.caption.83}%
+\contentsline {table}{\numberline {4.19}{\ignorespaces Métricas del ajuste del modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}}{140}{table.caption.85}%
+\contentsline {table}{\numberline {4.20}{\ignorespaces Modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{141}{table.caption.87}%
+\contentsline {table}{\numberline {4.21}{\ignorespaces Métricas del ajuste del modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{142}{table.caption.89}%
+\contentsline {table}{\numberline {4.22}{\ignorespaces Modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{143}{table.caption.91}%
+\contentsline {table}{\numberline {4.23}{\ignorespaces Métricas del ajuste del modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{144}{table.caption.93}%
+\contentsline {table}{\numberline {4.24}{\ignorespaces Modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{145}{table.caption.95}%
+\contentsline {table}{\numberline {4.25}{\ignorespaces Métricas del ajuste del modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}}{146}{table.caption.97}%
+\contentsline {table}{\numberline {4.26}{\ignorespaces Modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{146}{table.caption.99}%
+\contentsline {table}{\numberline {4.27}{\ignorespaces Métricas del ajuste del modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}}{147}{table.caption.101}%
+\contentsline {table}{\numberline {4.28}{\ignorespaces Modelo probit ordenado sesgado latente con único intercepto para todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}}{148}{table.caption.103}%
+\contentsline {table}{\numberline {4.29}{\ignorespaces Métricas del ajuste del modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}}{149}{table.caption.105}%
+\contentsline {table}{\numberline {4.30}{\ignorespaces Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}}{149}{table.caption.107}%
+\contentsline {table}{\numberline {4.31}{\ignorespaces Métricas del ajuste del modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}}{150}{table.caption.109}%
+\contentsline {table}{\numberline {4.32}{\ignorespaces Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito.}}{152}{table.4.32}%
+\contentsline {table}{\numberline {4.32}{\ignorespaces Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito.}}{153}{table.4.32}%
+\contentsline {table}{\numberline {4.33}{\ignorespaces Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito. Fuente: elaboración propia con información de la ENIGH 2024.}}{153}{table.caption.112}%
+\contentsline {table}{\numberline {4.34}{\ignorespaces Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{154}{table.4.34}%
+\contentsline {table}{\numberline {4.34}{\ignorespaces Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{155}{table.4.34}%
+\contentsline {table}{\numberline {4.35}{\ignorespaces Los porcentajes de población bajo la LPI y LPEI son de 18.81\% y 2.58\% para el método VB, y de 31.14\% y 5.60\% para el método HMC. La medición estatal oficial es de 25.70\% y 4.45\%.}}{156}{table.4.35}%
+\contentsline {table}{\numberline {4.36}{\ignorespaces Sesgo promedio calculado a partir de la muestra \textit {a posteriori}.}}{158}{table.4.36}%
+\contentsline {table}{\numberline {4.37}{\ignorespaces Métricas del ajuste entre los valores observados y pronósticos en escala original.}}{159}{table.caption.117}%
+\contentsline {table}{\numberline {4.38}{\ignorespaces Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{160}{table.4.38}%
+\contentsline {table}{\numberline {4.39}{\ignorespaces Métricas del ajuste entre los valores observados y pronósticos en escala original.}}{161}{table.caption.119}%
+\contentsline {table}{\numberline {4.40}{\ignorespaces Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{161}{table.4.40}%
+\contentsline {table}{\numberline {4.41}{\ignorespaces Métricas del ajuste entre los valores observados y pronósticos en escala original.}}{162}{table.caption.121}%
+\contentsline {table}{\numberline {4.42}{\ignorespaces Ajuste del modelo probit sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{162}{table.4.42}%
+\contentsline {table}{\numberline {4.42}{\ignorespaces Ajuste del modelo probit sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{163}{table.4.42}%
+\contentsline {table}{\numberline {4.43}{\ignorespaces Los porcentajes de población bajo la LPI son de 31.70\% para el método VB y 27.25\% para el método HMC.}}{163}{table.4.43}%
+\contentsline {table}{\numberline {4.43}{\ignorespaces Los porcentajes de población bajo la LPI son de 31.70\% para el método VB y 27.25\% para el método HMC.}}{164}{table.4.43}%
+\contentsline {table}{\numberline {4.44}{\ignorespaces Métricas del ajuste entre los valores binarios observados y pronósticos.}}{166}{table.caption.124}%
+\contentsline {table}{\numberline {4.45}{\ignorespaces Ajuste del modelo probit ordenado sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{166}{table.4.45}%
+\contentsline {table}{\numberline {4.45}{\ignorespaces Ajuste del modelo probit ordenado sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}}{167}{table.4.45}%
+\contentsline {table}{\numberline {4.46}{\ignorespaces Ajuste del modelo probit ordenado sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible. Los porcentajes obtenidos con BV son 19.26\% y 7.59\%, con HMC son 22.61\% y 4.88\%. Los totales estales oficiales son 25.7\% y 4.5\%. Fuente: elaboración propia.}}{168}{table.4.46}%
+\contentsline {table}{\numberline {4.47}{\ignorespaces Métricas del ajuste entre los valores ordinales observados y pronósticos}}{170}{table.caption.128}%
+\contentsline {table}{\numberline {4.48}{\ignorespaces Estimaciones de los coeficientes de regresión en el modelo log-normal sesgado.}}{171}{table.4.48}%
+\contentsline {table}{\numberline {4.49}{\ignorespaces Estimaciones de los coeficientes de regresión en el modelo probit sesgado.}}{172}{table.4.49}%
+\contentsline {table}{\numberline {4.50}{\ignorespaces Estimaciones de los coeficientes de regresión en el modelo probit ordenado sesgado.}}{172}{table.4.50}%

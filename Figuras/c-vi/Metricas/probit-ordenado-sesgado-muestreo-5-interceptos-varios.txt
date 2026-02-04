@@ -1,0 +1,6 @@
+Exactitud & 0.8077 & \bfseries 0.8104\\
+\hline
+$\tau$ de Kendall & 0.8012 & \bfseries 0.8063\\
+\hline
+Tiempo (s) & \bfseries 15.35 & 64.8\\
+\hline

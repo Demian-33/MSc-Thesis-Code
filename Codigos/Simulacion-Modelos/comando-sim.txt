@@ -1,0 +1,13 @@
+Rscript Simulacion-Modelo-SkewNorm.R
+Rscript Simulacion-Modelo-ProbitSkew.R
+Rscript Simulacion-Modelo-OrderedProbitSkew.R
+
+Rscript Ajuste-CDMX-8020.R
+Rscript Ajuste-CDMX-fitted.R
+Rscript Ajuste-CDMX-8020VB.R
+Rscript Ajuste-CDMX-fittedVB.R
+shutdown /s
+
+
+Rscript Ajuste-CDMX-pronostico.R
+Rscript Ajuste-CDMX-pronosticoVBVB.R

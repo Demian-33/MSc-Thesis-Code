@@ -1,0 +1,5 @@
+Acc. & 0.800788954635108 & \bfseries 0.824457593688363\\
+\hline
+$\tau$ de Kendall & 0.346914277168708 & \bfseries 0.425223229302042\\
+\hline
+Tiempo (s) & \bfseries 100.28 & 3147.07

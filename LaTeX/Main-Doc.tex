@@ -1,0 +1,91 @@
+\documentclass[12pt, oneside]{book}
+%
+%Command             10pt    11pt    12pt
+%\tiny               5       6       6
+%\scriptsize         7       8       8
+%\footnotesize       8       9       10
+%\small              9       10      10.95
+%\normalsize         10      10.95   12
+%\large              12      12      14.4
+%\Large              14.4    14.4    17.28
+%\LARGE              17.28   17.28   20.74
+%\huge               20.74   20.74   24.88
+%\Huge               24.88   24.88   24.88
+
+\input{preamble}
+
+
+\usepackage[backend=biber, language=spanish, giveninits=true, style=authoryear, uniquename=init, dashed=false]{biblatex}
+
+%giveninits=true ?: muestra solo las iniciales, o no
+%uniquename=init ?: desambiguación, mismo nombre de dos autores diferentes, false: no hace desambiguación
+
+\addbibresource{referencias.bib}
+
+\title{Estimación de los modelos de regresión log-normal sesgado y probit sesgado latente en áreas pequeñas mediante Inferencia Bayesiana Variacional}
+
+
+\author{Saul Arturo Ortíz Muñoz \\ 12333058}
+\date{\today{}}
+
+
+\begin{document}
+
+%\maketitle
+
+\pagenumbering{roman}
+
+\includepdf{Portada-firmas/01_portada.pdf}
+%\includepdf{Portada-firmas/02_firmas.pdf}
+
+\include{c-0-preambulo}
+
+\newpage
+
+\setcounter{tocdepth}{3}
+
+\pagestyle{plain}
+\tableofcontents
+\newpage
+
+\phantomsection
+\addcontentsline{toc}{chapter}{LISTA DE FIGURAS}
+\listoffigures
+\newpage
+
+\phantomsection
+\addcontentsline{toc}{chapter}{LISTA DE CUADROS}
+\listoftables
+\newpage
+
+\pagenumbering{arabic}
+\setcounter{page}{1}
+\pagestyle{fancy}
+
+%% include: inserts a clearpage at the end, works better with chapters. Since c-ii, c-iii and c-iv are now sections, we switch to \input
+
+\include{c-i-introduccion}
+
+\input{c-ii-normal-asimetrica}
+
+\input{c-iii-inferencia-bayesiana}
+
+\input{c-iv-bayes-variacional}
+
+\include{c-v-metodologia}
+
+\include{c-vi-resultados}
+
+\include{c-vii-discusion}
+
+\include{c-viii-conclusiones}
+
+\begin{spacing}{1.0}
+\nocite{*}
+\printbibliography
+\end{spacing}
+
+\include{c-x-anexos}
+	
+
+\end{document}

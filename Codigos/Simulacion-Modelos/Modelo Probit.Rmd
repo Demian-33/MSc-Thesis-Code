@@ -1,0 +1,276 @@
+---
+title: "Modelo Probit"
+author: "Saul Arturo Ortiz Muñoz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(cmdstanr)
+source('./funciones.R')
+```
+
+# Modelo probit 
+
+```{r}
+stan_code_probit <- '
+data {
+  int<lower=1> K;                         // Number of groups (municipios)
+  int<lower=0> N_obs;                     // Number of observed data
+  int<lower=0> N_mis;                     // Number of missing data
+  int<lower=1> p;                         // Number of explanatory variables
+  matrix[N_obs, p] X_obs;                     // Matrix of observed explanatory variables for all groups
+  matrix[N_mis, p] X_mis;                 // Matrix of observed explanatory variables for all groups with missing y
+  array[N_obs] int<lower=1, upper=K> group;     // Group assignment for each observation
+  array[N_mis] int<lower=1, upper=K> groupmis;  // Group assignment for each missing observation
+  // Restrictions
+  int<lower=0> N0;                        // Number of 0 observations
+  int<lower=0> N1;                        // Number of 1 observations
+  array[N0] int<lower=1, upper=N_obs> n0; // Position of 0 observations
+  array[N1] int<lower=1, upper=N_obs> n1; // Position of 1 observations
+  // SSVS
+  real<lower=0> tau2;                     // Estimation of zero
+  real<lower=0> c2;                       // Estimation of a wide range of values
+  real epsilon;                           // Threshold for significant coefficient
+}
+
+transformed data {
+  real<lower=0> sigma=1.0;                // standard error parameter for latent variable z
+}
+
+parameters {
+  vector<lower=0, upper=1>[K] rho;       // Correlation coefficient for each group
+  vector<lower=0>[K] w;                  // hidden truncated variable w_{i}
+  vector[K] mu;
+  vector[p] beta;                           // Regression coefficients for explanatory variables
+  vector<upper=0>[N0] z0;                // No. of z_{ij} < 0, N0 < N_obs, restricted
+  vector<lower=0>[N1] z1;                // No. of z_{ij} > 0, N1 < N_obs, restricted
+  //vector[N_mis] z_mis;                    // Latent variable for missing y_{ij}, no restriccions
+  vector<lower=0, upper=1>[p] pr;        // Inclusion probability of each beta_i
+}
+
+transformed parameters {
+  // Restricciones en el modelo probit
+  vector[N_obs] z;  
+  for (n in 1:N1) {
+    z[n1[n]] = z1[n];
+  }
+  for (n in 1:N0) {
+    z[n0[n]] = z0[n];
+  }
+}
+
+model {
+  // a priori de referencia para rho
+  target += sum(0.5*log1p(square(rho)) - log1m(square(rho)));
+  // a priori plana para mu
+  mu ~ normal(0, 10);
+  // a priori para pr (probabilidad de inclusión)
+  pr ~ beta(0.5, 0.5);
+  // a priori SSVS para beta (selección de variables)
+  for(i in 1:p){
+    target += log_mix(pr[i],
+    normal_lpdf(beta[i] | 0, tau2*c2),
+    normal_lpdf(beta[i] | 0, tau2));
+  }
+  
+  // Para centrar parametros
+  vector[K]       sd_sn        = sqrt(1 - 2*square(rho)/pi());
+  vector[N_obs] sd_group_sn    = sqrt(1 - 2*square(rho[group])/pi());
+  vector[N_mis] sd_groupmis_sn = sqrt(1 - 2*square(rho[groupmis])/pi());
+  
+  // Prior for w (hidden truncated variable) for each group
+  w ~ normal(0, sigma ./ sd_sn);  // Truncated normal prior for latent variables
+  
+  // Likelihood for observed y given z and b for each group
+  // `sig` means the square root of variance parameter in the centered skew normal model
+  
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sd_group_sn;
+  vector[N_obs] intercept = (rho[group] .* w[group]) - (sigma * rho[group] .* sqrt(2/pi()) ./ sd_group_sn);
+  vector[N_obs] eta = mu[group] + X_obs*beta + intercept;
+
+  //vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[groupmis]))./ sd_groupmis_sn;
+  //vector[N_mis] interceptmis = (rho[groupmis] .* w[groupmis]) - (sigma * rho[groupmis] .* sqrt(2/pi()) ./ sd_groupmis_sn);
+  //vector[N_mis] etamis = mu[groupmis] + X_mis*beta + interceptmis;
+  
+  // Latent variable for observed y_{ij}
+  z ~ normal(eta, sig);
+  
+  // Latent variable for missing y_{ij}
+  //z_mis ~ normal(etamis, sigmis);
+}
+
+generated quantities {
+  // SSVS
+  vector<lower=0, upper=1>[p] m_ind;
+  for (j in 1:p) {
+      if (abs(beta[j]) > epsilon) {
+          m_ind[j] = 1;
+      } else {
+          m_ind[j] = 0;
+      }
+  }
+  // generate z_mis
+  vector[N_mis] z_mis;
+  int j;
+  real eta_ij;
+  real<lower=0> sigma_i;
+  for(i in 1:N_mis){
+    j = groupmis[i];
+    eta_ij = mu[j] + X_mis[i]*beta + rho[j]*z[j] - sigma*rho[j]*sqrt(2/pi()) / sqrt(1 - 2*square(rho[j])/pi());
+    sigma_i = sigma * sqrt(1 - square(rho[j])) / sqrt(1 - 2*square(rho[j])/pi());
+    z_mis[i] = normal_rng(eta_ij, sigma_i);
+  }
+}
+'
+```
+
+
+```{r message=FALSE, warning=TRUE}
+stan_model_probit <- write_stan_file(stan_code_probit) # write .stan file
+mod_probit <- cmdstan_model(stan_model_probit, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos
+
+```{r}
+set.seed(1)
+datos <- get_sim(prop=0.2)
+yb_obs <- ifelse(datos$y_obs>0, 1, 0)
+yb_mis <- ifelse(datos$y_mis>0, 1, 0)
+table(yb_obs)
+n0 <- which(yb_obs == 0)
+n1 <- which(yb_obs == 1)
+N0 <- length(n0)
+N1 <- length(n1)
+
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis,
+  N0=N0,
+  N1=N1,
+  n0=n0,
+  n1=n1,
+  tau2=100,
+  c2=0.1,
+  epsilon=0.1
+)
+
+tmp <- data.frame(yb_obs, datos$X_obs)
+r1 <- glm(yb_obs~ . , data=tmp, family=binomial(link='probit'))
+z_mishat <- predict(r1, type='link', newdata = data.frame(datos$X_mis))
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  rho=rep(0.9, each=datos$K),
+  # mu=rep(6, each=datos$K),
+  w=c(0.3, 0.3, 0.3, 0.3),
+  z_mis=z_mishat
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_vb_probit <- mod_probit$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 75000,
+  draws= 1000,
+  grad_samples = 1,
+  elbo_samples = 100,
+  eval_elbo = 100,
+  adapt_iter = 5000,
+  adapt_engaged = F,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+
+```{r}
+apply(fit_vb_probit$draws('rho'), 2, mean)
+datos$rho
+
+apply(fit_vb_probit$draws('mu'), 2, mean)
+datos$mu
+
+apply(fit_vb_probit$draws('beta'), 2, mean)
+datos$b
+
+apply(fit_vb_probit$draws('m_ind'), 2, mean)
+```
+
+
+## Ajuste con HMC
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_hmc_probit <- mod_probit$sample(
+  data = dat,
+  seed = 123,
+  chains=1,
+  init = list(init_list),
+  iter_sampling = 1000,
+  iter_warmup = 4000
+)
+```
+
+
+```{r}
+apply(drop(fit_hmc_probit$draws('rho')), 2, mean)
+datos$rho
+
+apply(drop(fit_hmc_probit$draws('mu')), 2, mean)
+datos$mu
+
+apply(drop(fit_hmc_probit$draws('beta')), 2, mean)
+datos$b
+
+apply(drop(fit_hmc_probit$draws('m_ind')), 2, mean)
+```
+
+
+
+```{r}
+fitted_vb_probit <- ifelse(apply(fit_vb_probit$draws('z_mis'), 2, mean)>0, 1, 0)
+fitted_hmc_probit <- ifelse(apply(drop(fit_hmc_probit$draws('z_mis')), 2, mean)>0, 1, 0)
+```
+
+
+```{r}
+caret::confusionMatrix(table(yb_mis, fitted_vb_probit))
+caret::confusionMatrix(table(yb_mis, fitted_hmc_probit))
+```
+
+
+```{r}
+caret::confusionMatrix(table(yb_mis, ifelse(z_mishat>0, 1, 0)))
+```
+
+
+
+```{r}
+library(bayesplot)
+x11();mcmc_hist(fit_vb_probit$draws('rho'))
+x11();mcmc_hist(fit_vb_probit$draws('mu'))
+```
+

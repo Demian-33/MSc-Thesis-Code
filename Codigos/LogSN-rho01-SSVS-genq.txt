@@ -1,0 +1,72 @@
+data {
+  int<lower=1> K;
+  int<lower=0> N_obs;
+  int<lower=0> N_mis;
+  int<lower=1> p;
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+  matrix[N_obs + N_mis, p] X_all;
+  array[N_obs] int<lower=1, upper=K> group;
+  array[N_mis] int<lower=1, upper=K> group_mis;
+  array[N_obs+N_mis] int<lower=1, upper=K> group_all;
+  real<lower=0> c;
+  real<lower=0> tau;
+  real epsilon;
+}
+parameters {
+  real<lower=0> sigma; 
+  vector<lower=0, upper=1>[K] rho;
+  vector[K] mu;
+  vector[p] b;
+  vector<lower=0>[K] z_tilde;
+  vector<lower=0, upper=1>[p] pr;
+}
+
+transformed parameters{
+vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  // a priori de rho
+  target += sum(0.5 * log1p(square(rho)) - log1m(square(rho)));
+  // a priori de sigma
+  // target += -sigma;
+  sigma ~ inv_gamma(0.001, 0.001);
+  // distribución de z_tilde
+  z_tilde ~ normal(0, 1);
+  // a priori de mu
+  mu ~ normal(0, 100);
+  // a priori de beta (SSVS)
+  pr ~ beta(0.5, 0.5);
+  for (i in 1:p) {
+    target += log_mix(pr[i],
+                      normal_lpdf(b[i] | 0, tau * c),
+                      normal_lpdf(b[i] | 0, tau));
+  }
+  // Verosimilitud p(y^s | \theta, z_{1:K})
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  vector[N_obs] intercept = rho[group].* z[group] - sigma*rho[group] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu[group] + intercept, b, sig);
+}
+generated quantities {
+  // SSVS
+  vector<lower=0, upper=1>[p] m_ind;
+  for (j in 1:p) {
+    if (abs(b[j]) > epsilon) {
+      m_ind[j] = 1;
+        } else {
+      m_ind[j] = 0;
+    }
+  }
+  // Valores ajustados
+  int<lower=1, upper=N_obs+N_mis> j;
+  vector[N_obs+N_mis] y_all;
+  real eta_ij;
+  real<lower=0> sigma_i;
+  for(i in 1:(N_obs+N_mis)){
+    j = group_all[i];
+    eta_ij = mu[j] + X_all[i]*b + rho[j] .* z[j]- sigma .* rho[j] .* sqrt(2/pi()) ./ sqrt(1 - 2*square(rho[j])/pi());
+    sigma_i = sigma * sqrt(1 - square(rho[j]))./ sqrt(1 - 2/pi() * square(rho[j]));
+    y_all[i] = normal_rng(eta_ij, sigma_i);
+  }
+}

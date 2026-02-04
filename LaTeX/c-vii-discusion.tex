@@ -1,0 +1,228 @@
+\chapter{DISCUSIÓN DE LOS RESULTADOS}
+\label{ch:vii-conclusion}
+
+Este es el apartado final del documento donde se discutirán las dos clases de resultados obtenidos en el capítulo previo: con simulación y a partir del conjunto de datos real. Este análisis se realiza de acuerdo al orden de aparición de los hallazgos.
+
+\section{Estudio de simulación}
+
+\subsection{Interacción entre $\rho_{i}$ y $\mu_{i}$}
+
+Este sencillo experimento busca ilustrar la relación entre el efecto de los parámetros $\rho_{i}$ y $\mu_{i}$ en la generación de varibles $y_{ij}$ binarias, el razonamiento es similar si $y_{ij}$ es ordinal. La intuición dice que si $\rho_{i}\to\pm{1}$, entonces esperamos una mayor proporción de $y_{ij}=1$ o $y_{ij}=0$. No obstante, el proceso para generar $y_{ij}$ depende también del parámetro de localidad $\mu_{i}$, cuya intución dicta lo mismo: $\mu_{i}\to\pm\infty$ resulta en una mayor proporción de $y_{ij}=1$ o $y_{ij}=0$. Es posible observar que
+\begin{itemize}
+\item Cuando $\vert\mu_{i}\vert$ crece, este parámetro domina la proporción de $y_{i}=1$ en la simulación.
+\item Tal como se espera, cuando $\rho\to 1$, se observa una mayor proporción de $y_{i}=1$. $\rho\to 0$ tiene el efecto contrario.
+\end{itemize}
+
+En el siguientes apartados, se empleó el método del signo para simular variables aleatorias binarias $y_{ij}$. Esta discusión sugiere que para evitar que todos los $y_{ij}$ colapsen a cero o uno, deben de fijarse con cuidado los valores de $\mu_{i}$. 
+
+\subsection{Identificación de $\rho_{i}$}
+
+El segundo experimento realizado compara el ajuste de los tres modelos de regresión propuestos, permitiendo que $\rho_{i}$ varíe de negativos a positivos. Se considera que, para un modelo en áreas pequeñas, este ajuste es generoso en el sentido de que se entrena con 25\% de la información disponible en cada dominio, lo que mitiga el posible efecto de sesgo.
+
+En general, estos resultados indican que el método Bayesiano variacional de campo medio genera aproximaciones \textit{a posteriori} para $\rho_{i}$ cuya naturaleza es unimodal, mientras que el método Hamiltoniano MC induce densidades \textit{a posteriori} bimodales: esto sugiere que los valores $-\rho_{i}$ y $\rho_{i}$ producen valores de la verosimilitud cercanos entre sí. No obstante, la estructura propuesta para cada modelo de regresión permite que los parámetros sean identificables, es decir, es posible aprenderlos a partir de la muestra.
+
+De manera concreta, para cada modelo de regresión podemos señalar los siguientes aspectos:
+\begin{itemize}
+\item Log-normal sesgado: el método BV puede encontrar el signo de $\rho_{i}$ cuando su señal o efecto es grande, en caso contrario, sitúa la aproximación en el promedio de los dos extremos, es decir, en cero. Con valores negativos de $\rho_{i}$, el método HMC no puede explorar de forma satisfactoria la densidad y colapsa hacia los extremos del soporte.
+
+\item Probit sesgado latente: el método BV genera aproximaciones cercanas en magnitud, pero con el sentido contrario.\footnote{Lo cuál recuerda al fenómeno de \textit{label switching}.} Por su lado, las medias \textit{a posteriori} generadas con HMC recuperan el signo, sin embargo, similar al caso anterior, tampoco genera de forma adecuada la densidad y colapsa hacia los extremos del soporte.
+
+\item Probit ordenado sesgado latente: el método VB tiene un comportamiento similar al modelo probit: magnitud cercana pero dirección opuesta. Ahora, el método HMC decide muestrear sólo una region del soporte, pero genera estimaciones con signo contrario.
+\end{itemize}
+
+En general, conforme $|\rho_{i}|$ se acerca a cero, su efecto sobre $y_{ij}$ disminuye, entonces, si el objetivo es predicción, una estimación pequeña de $\rho_{i}$ podría reemplazarse de forma segura por $-\rho_{i}$. Sin embargo, en un modelo cuyo objetivo primordial es la interpretación, el sentido de $|\rho_{i}|$ adquiere mayor relevancia.
+
+Como se comentó en el \autoref{ch:v-metodologia}, los coeficientes de correlación $\rho_{i}\in(-1, 1)$, lo que significa que es posible modelar sesgo tanto a la izquierda como a la derecha. Sin embargo, la aplicación real que nos ocupa sugiere la presencia de sesgo a la derecha. El resultado de estos dos experimentos encausan el resto de las simulaciones: restringimos la atención a los valores de $\rho_{i}\in(0, 1)$, y para los modelos binarios y ordinales se fijan valores pequeños para $\mu_{i}$.
+
+% Quizás conviene decir cual es la proporcion de 0's y 1's en las simulaciones
+%
+%
+
+\subsection{Modelo log-normal sesgado}
+
+En términos generales, una vez que se han considerado las dos modificaciones previas, este ajuste es el más sencillo y robusto de implementar en comparación con el resto de los modelos. Por tal motivo, podemos considerar el caso general de incluir un intercepto $\mu_{i}$ en cada área pequeña. 
+\begin{itemize}
+\item Con ambos ajustes, el método BV encuentra las señales más grandes, que corresponden a $\rho_{3}$ y $\rho_{4}$, mientras que el método HMC encuentra todas las señales de $\rho_{1}$ a $\rho_{4}$. Por su parte, VB estima con mayor precisión a la varianza $\sigma^{2}$. En general, el resto de las estimaciones generadas con HMC producen valores más cercanos a los reales.
+\item Dado que $\rho_{1}=0.5$ puede considerarse un valor pequeño de sesgo, es plausible permitir que la estimación BV encoja esta señal.
+\item Los gráficos de dispersión de los valores ajustados por ambos métodos contra los valores observados, junto a una recta identidad. A simple vista, no se aprecia diferencia entre ambos ajustes.
+\item Las métricas de ajuste de ámbos métodos son similares. Para el muestreo del 5\%, la técnica BV es aproximadamente 5 veces más rápida, mientras que para 25\%, la técnica BV es 14 veces más rápida.
+\item Con ambos porcentajes de muestreo, los dos métodos no exploran muchos modelos, asímismo, son capaces de encontrar el modelo real.
+\end{itemize}
+
+\subsection{Modelo probit sesgado latente}
+
+En términos generales, la aproximación BV de este modelo tiende a encoger las estimaciones de $\rho_{i}$. Con el propósito de abordar esta situación y basados en el primer experimento, se ajustan tres tipos de modelos: uno sin interceptos, un único intercepto y varios interceptos. Cuando se omite este parámetro, se observó que los parámetros de forma $\rho_{i}$ estimados con el método BV toman valores más grandes, sin embargo, no lograron ser capaces de identificar de forma precisa la señal original. Por otro lado, el método HMC tuvo mejor desempeño al momento de estimar los parámetros $\rho_{i}$, $\mu_{i}$ (cuando se incluye) y $\boldsymbol{\beta}$ en todos los escenarios.
+
+\begin{itemize}
+\item A pesar de que no se aprecian diferencias evidentes en las matrices de confusión (tablas de valores observados contra ajustados), en algunos casos, las métricas de ajuste favorecen al método BV sobre el método HMC.
+
+\item El punto anterior sugiere que la técnica BV aplicada a este modelo prefiere estimar a los parámetros de localidad, es decir, $\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}$, para producir un buen ajuste. Así mismo, tiende a expandir las estimaciones de $\mu_{i}$ (si se incluyen) y de $\boldsymbol{\beta}$.
+
+\item La estimación BV siempre fue más rápida, la diferencia más pequeña es en el modelo sin interceptos y muestra del 5\%, donde fue aproximadamente 1.6 veces más rápida, mientras que la diferencia más grande es en el modelo con interceptos en cada área pequeña y muestreo 25\%: el método BV fue aproximadamente 6 veces más rápida.
+
+\item Es posible mejorar la estimación BV de esta colección de parámetros al asignar valores más grandes para \code{grad\_samples} y \code{elbo\_samples} en el método \code{variational} de la implementación en \code{cmdstanr}, sin embargo, el tiempo adicional de este ajuste tendría como consecuencia que el muestreo HMC sea más rápido, y entonces se optaría por este método.
+%$
+
+\item Sólo en el modelo sin interceptos y muestreo 5\%, la aproximación VB no fue capaz de encontrar el modelo real. En todos los demás escenarios, esta técnica y HMC le asignaron la probabilidad de aparición más alta al modelo correcto.
+
+\item El modelo de regresión probit sesgado latente en áreas pequeñas, ajustado con el método BV, sería preferible sólo ante una gran número de observaciones o de parámetros, es decir, cuando el método HMC sea intratable.
+
+\end{itemize}
+
+% Es decir, pese a los inconvenientes, el método VB aún realiza correctamente la selección de variables o modelos.
+
+
+\subsection{Modelo probit ordenado sesgado latente}
+
+
+Conforme el número de categorías en un modelo ordinal crece sin límite, este se asemeja a un modelo con respuesta continua, de modo que esperamos que la calidad de las estimaciones se encuentre entre el modelo log-normal sesgado y el probit sesgado latente. Sin embargo, aquí se simula únicamente de dos categorías ordenadas, y los hallazgos son similares a los obtenidos con el modelo binario.
+\begin{itemize}
+\item Las estimaciones de $\rho_{i}$ se encogen con el método BV, mientras que las estimaciones de $\mu_{i}$ (si se incluyen) y $\boldsymbol{\beta}$ tienden a expandirse. En contraste, la técnica HMC tiene mejor desempeño para encontrar las señales de $\rho_{1}$ a $\rho_{4}$.
+
+\item Adicionalmente, la estimación del punto de corte $\delta_{1}$ es en cierta medida consistente en cada uno de los ajustes presentados. Nuevamente, el método HMC estima de forma más precisa a esta parámetro.
+
+\item Todas las métricas de ajuste favorecen al método basado en MCMC, no obstante, el tiempo de ejecución es mayor, en el mejor de los casos, el ajuste BV es aproximadamente 1.8 veces más rápido y 7.6 veces más lento en el escenario contrario.
+
+\item De igual modo, todos los ajustes son capaces de encontrar el modelo real. De igual modo, se prefiere al ajuste BV únicamente cuando la alternativa basada en MCMC sea intratable debido al número de observaciones o parámetros.
+\end{itemize}
+
+
+\section{Datos del ICTPC}
+
+%los coeficientes de correlación/parámetros de forma $\rho_{i}$ tienen la mayor relevancia de estudio, y dado que están involucrados en todos los términos de la verosimilitud, resultan ser sensibles a la muestra.
+
+% Que cangrejos significa rho_i > 0
+% interpretar algunos betas
+
+% Para describir figuras podemos emplear esto
+% ¿Que es?
+% ¿Como es?
+% ¿Por que es importante?
+% ¿por que es asi?
+
+Iniciamos la discusión con un estudio descriptivo acerca del conjunto de datos en la Ciudad de México. En esta entidad, se tienen observaciones en cada uno de los $M=16$ dominios. A su vez, cada hogar, observado o no, es clasificado de acuerdo al ámbito donde se localiza: urbano o rural. Se observa que únicamente en cuatro alcaldías se tienen registros urbanos y rurales: Milpa Alta, Tlalpan, Tláhuac y Xochimilco.
+\begin{itemize}
+\item En la \autoref{ch-vi-cdmx-hist-log-ictpc-b} se muestra la estimación kernel de las densidades del log-ICTPC de acuerdo al tipo de rubro. La densidad estimada en los hogares rurales muestra menor dispersión, lo que se traduce en una mayor concentración de esta variable, esto se confirma en el \autoref{ch-vi-cdmx-tabla-descripcion-ambito} con los estadísticos descriptivos por tipo de corte. Así mismo, dentro de este ámbito, la distancia entre la media y la mediana podrían sugerir que la presencia de sesgo en este ámbito no está muy marcada.
+
+\item Por su lado, la \autoref{ch-vi-cdmx-hist-log-ictpc-b} también muestra que los hogares urbanos exhiben mayor dispersión, por lo que no se observa un pico en su densidad, además, se nota un ligero sesgo a la derecha. Nuevamente, los estadísticos descriptivos del \autoref{ch-vi-cdmx-tabla-descripcion-ambito} confirman que en promedio, los ingresos en este ámbito están más dispersos.
+
+\item De forma complementaria, en el \autoref{ch-vi-cdmx-tabla-descripcion-ambito} se muestra que la dispersión en el ICTPC de los hogares urbanos es aproximadamente cuatro veces menor a la de los hogares rurales. Adicionalmente, el ICTPC medio en los hogares urbanos es aproximadamente el doble con respecto a los hogares rurales. Esto indica que los ingresos en el contexto rural son más homogéneos pero pequeños.
+
+\item Similar a lo anterior, el \autoref{ch-vi-cdmx-tabla-descripcion} muestra que el ICTPC promedio más alto corresponde a Miguel Hidalgo con \$26,668, mientras que el más pequeño se encuentra en el contexto rural de Milpa Alta con \$5,483.
+
+\item La \autoref{ch-vi-cdmx-hist-log-ictpc-a} muestra la estimación kernel de la densidad para todos lo hogares en la Ciudad, este suavizado reesambla una densidad normal asimétrica con sesgo postivo o a la derecha.
+\end{itemize}
+
+% creo que esto debe estar en metodologia
+
+%Para cada modelo, se consideran dos tipos de resultados comparativos principales:
+%\begin{itemize}
+%\item Estimaciones de parámetros y cantidades de interés, derivadas de la muestra \textit{a posteriori}. Estas cantidades son el porcentaje de la población bajo alguna línea de pobreza por ingresos.
+%\item Un análisis de las métricas de ajuste cuando se divide aleatoriamente la muestra disponible en un conjunto de entrenamiento y prueba. Así mismo, se dibuja un gráfico de dispersión (o una matriz de confusión) entre los valores observados y los pronósticos.
+%\end{itemize}
+
+
+%En los siguientes apartados se describe de forma específica el ajuste obtenido a partir de estos tres modelos. Para el modelo con respuesta continua, se consideró un análisis adicional que es recurrente en la estimación de áreas pequeñas, el cuál consiste en realizar predicciones en algún dominio del cuál no se disponde de información ($n_{i}=0$). Para el ajuste HMC se usó una única cadena, en este caso, \code{Stan} calcula una versión de $\hat{R}$ (estadístico de Gelman-Rubin) que divide $m$ cadenas paralelas en $2m$ cadenas, permitiendo estimar esta cantidad incluso cuando se usa una única trayectoria de muestreo HMC.
+
+En los siguientes apartados, se analizan los resultados obtenidos a partir del ajuste de los tres modelos propuestos. Para el modelo con respuesta continua, se consideró un análisis adicional que es recurrente en la estimación de áreas pequeñas, el cuál consiste en realizar predicciones en algún dominio del cuál no se dispone de información ($n_{i}=0$).
+
+\subsection{Modelo log-normal sesgado}
+
+En este modelo, se encontró un desempeño similar entre ámbos métodos de inferencia, especialmente en la estimación de $\sigma^{2}$. Se observó que el método HMC tiende a expandir $\rho_{i}$ y $\mu_{i}$ con respecto al método BV. Este hecho se refleja al momento de calcular los porcentajes de población por debajo de las líneas de pobreza por ingresos: HMC reporta porcentajes más grandes -especialmente en la LPI- con respecto al método BV.
+
+Con respecto al ajuste del 80\% entrenamiento - 20\% prueba, basados en las métricas calculadas y en el gráfico de dispersión, ámbos procedimientos tienen desempeños similares, no obstante, se observa una reducción del tiempo con el método VB de aproximadamente 50 veces: en general, en aplicaciones con datos reales, el muestreo HMC se realiza con más de una cadena paralela y con un mayor número de iteraciones, lo que significa mayor tiempo de cómputo. Sin embargo, con el número de iteraciones que se definió, la mayoría de los valores de $\hat{R} < 1.05$ no sugieren falta de convergencia severa.
+
+Por otro lado, cuando $n_{i}=0$, la inferencia \textit{a posteriori} representa un reto mayor. En ambos escenarios, el método BV encoge $\tilde{\rho}_{i}$ hacia cero, lo que implica pronósticos más simétricos de $y_{ij}^{\star}$. Cuando se usa un intercepto para cada región, las estimaciones $\tilde{\mu}_{8}= -0.896$ y $\tilde{\mu}_{8}= -14.589$ obtenidas con el método HMC indican problemas en el muestreo, aunado a los valores $\hat{R}$ de 1.7 y 1.1. En el primer escenario, las métricas favorecen al método VB, especialmente en los tiempos de ejecución. Cuando se ajuste el modelo con un único intercepto, este parámetro es informado directamente por el resto de áreas pequeñas, por lo que se corrigen las estimaciones. En este segundo escenario, las métricas de ajuste que corresponden al error, MAE, RMSE y MAPE, favorecen al método HMC.
+
+\subsection{Modelo probit sesgado latente}
+
+En este escenario, la estimación sobre los parámetros $\rho_{i}$ generada con ambos métodos, obtuvo resultados diferentes. Al igual que en el caso de simulación, los $\rho_{i}$ estimados con el método BV tienden a encogerse.
+% (sin embargo, esto se observo con 10 grad_samples, es decir, aqui no es evidente que se expanden.)
+%, además de que esta técnica prefiere estimar a los parámetros de localidade $\mu_{i}$ y por tanto, los expande.
+Las estimaciones negativas de los $\mu_{i}$, obtenidas con ámbos algoritmos, corresponden a que, una vez discretizada la respuesta, la mayoría de las observaciones de la variable de estudio son $y_{ij}=0$, es decir, la población con ICTPC por encima de la línea de pobreza por ingresos (LPI).
+
+Sin embargo, las métricas de ajuste son bastante similares para ámbos métodos, siendo que el tiempo de ejecución del método BV sea aproximadamente 45 veces más rápido. Incluso, las estimaciones del porcentaje de la población bajo la LPI son semejantes entre sí. Por tal motivo, el modelo ajustado con BV es relevante si la intención principal es realizar pronósticos acerca de nuevas observaciones $y_{ij}^{\star}$ binarias.
+
+Por otro lado, los experimentos de simulación indican que es posible mejorar las estimaciones de $\rho_{i}$ al emplear un único intercepto, o bien, prescindir de este. Sin embargo, esta alternativa sería mas adecuada si se busca ganar interpretación sobre los parámetros de correlación/forma.
+
+De forma general, al considerar un mayor número de muestras del gradiente en la implementación variacional de ADVI, es decir, incrementar el argumento \code{grad\_samples}, se pueden obtener estimaciones más precisas en las estimaciones de $\mu_{i}$ y $\rho_{i}$, a costa de un aumento considerable en el tiempo de ejecución, no obstante, aún menor al muestreo con el método HMC.
+
+\subsection{Modelo probit ordenado sesgado latente}
+
+Este ajuste tiene un comportamiento similar al modelo binario: el método BV encoge las estimaciones de $\rho_{i}$. Aún así, ambos métodos generan valores similares para el umbral $\delta_{1}$. En este caso, las estimaciones de $\mu_{i}$ obtenidas con HMC son notablemente mayores a las obtenidas con el método BV, y están centradas en torno a 2.0. Nuevamente, esta estimación refleja que la mayor proporción de valores $y_{ij}$ observados están en la categoría dos, es decir, sin carencias, por lo que estas observaciones exceden el umbral $\tilde{\delta}_{1}\simeq 1.24$. A pesar de esto, los valores de $\hat{R}^{2}>1.3$ para las estimaciones de $\mu_{i}$ sugieren falta de convergencia severa.
+
+En contraste con el método anterior, aquí las proporciones de la población bajo las líneas de pobreza son discrepantes. Los porcentaje estimados con el método BV son aproximadamente la mitad de los porcentajes estimados con el método HMC. Además, al comparar estas proporciones con respecto a las obtenidas con el modelo log-normal sesgado, los porcentajes obtenidos aquí son más conservadores, en el sentido de que encogen ciertos porcentajes de cada alcaldía.
+
+
+%\section{Conclusiones}
+%
+%
+%\begin{comment}
+%
+%En el \autoref{sec:normal-asimetrica} se enunciaron y mostraron los resultados principales con relación a la distribución normal sesgada y sus extensiones: parámetros centrados y el caso multivariado. Luego, en la \autoref{sec:bayes-variacional} se mostraron tres ejemplos para ilustrar el uso de métodos variacionales en inferencia Bayesiana. Concretamente, el tercer ejemplo desarrolla el ajuste del modelo de regresión log-normal sesgado (en una única región) que más adelante se presenta. En el \autoref{ch:v-metodologia} se plantean y deducen los modelos de regresión log-normal, probit latente y probit-ordenado latente, con errores normales asimétricos. Así mismo, se describieron las distribuciones \textit{a priori} empleadas y se mostró como obtener, salvo por una constante, la densidad \textit{a posteriori} para cada modelo de interés. De igual modo, se describió el planteamiento para las simulaciones, la descripción del conjunto de datos real y la programación en lenguaje \code{Stan}. En la aplicación a los datos del ICTPC, se identificaron covariables relevantes y se estimaron los porcentajes de la población bajo las dos líneas de pobreza en 2025, siguiendo los mismos criterios de procesamiento que el Coneval estableció.
+%
+%Los análisis y discusión acerca de los estudios de simulación y la aplicación real, indican que la implementación variacional Bayesiana es bastante competente para el caso de respuestas continuas, con respecto al método HMC propuesto.
+%
+%Para ambos modelos de clasificación, el rendimiento de este método Bayesiano variacional, en cuanto a la inferencia de los parámetros $\mu_{i}$ y $\rho_{i}$, se ve bastante comprometido; sin embargo, esta situación no impacta de manera sustantiva en los pronósticos acerca de $y_{ij}^{\star}$ (donde $n_{i}>0$). Sin observaciones en los dominios $(n_{i}=0)$, los el método HMC encuentra problemas al estimar $\mu_{i}$, mientras que el método BV propuesto encoge $\rho_{i}\to 0$.
+%
+%La implementación variacional Bayesiana que \code{Stan} ofrece es automática, lo cuál minimiza el trabajo analítico y de programación. Sin embargo, su propósito general significa que es posible encontrar alternativas especializadas que proporcionen mejores resultados, por ejemplo, en los modelos de clasificación, o bien, permitiendo que $\rho\in(-1, 1)$.
+%
+%Los métodos variacionales ofrecen alternativas al muestreo de la distribución \textit{a posteriori}, sin embargo, esta aproximación no siempre puede remplazar la calidad de ajsute obtenida con métodos MCMC.
+%
+%\end{comment}
+%
+%% Quizás puede emplearse un único \mu_{i}
+%
+%El presente estudio tuvo como objetivo principal presentar la estimación de dos clases de modelos de regresión Bayesiana en áreas pequeñas, empleando un enfoque variacional. La primera clase de modelos es de respuesta continua, donde se asume que los errores siguen una distribución normal asimétrica. Así mismo, el segundo tipo de modelos son de clasificación binaria y ordinal, a los cuáles denominamos probit sesgado y probit ordenado sesgado, el atributo sesgado se refiere a que la función liga es la distribución normal sesgada con escala unitaria. Para esta clase de modelos, se consideró el enfoque de variable latente, lo que facilita la implementación y ofrece una interpretación sencilla.
+%
+%%otorga
+%
+%La principal aportación de este trabajo, consistió en implementar un método de inferencia Bayesiana variacional (BV) para la estimación de diversos modelos de regresión en áreas pequeñas. Este paradigma de estimación convierte el problema de muestreo de la densidad \textit{a posteriori} a un problema de optimización, donde se busca la familia de densidades más próximas a la verdadera distribución en términos de la divergencia Kullback-Leibler. La motivación central de este método es aliviar el costo computacional de realizar inferencia Bayesiana, y particularmente, reducir los tiempos de cómputo.
+%
+%Para esta aplicación en concreto, los experimentos de simulación mostraron que 
+%\begin{itemize}
+%\item Cuando se emplean respuestas continuas, el método BV es bastante competitivo con respecto al método HMC, tanto para encontrar la señal de los parámetros verdaderos como en las métricas de ajuste para el caso de validación-prueba.
+%
+%\item En los modelos de clasificación, el método BV tiende a encoger las estimaciones de los parámetros de forma/correlación, y en cambio expande los parámetros de localidad $\mu_{i}$ y $\boldsymbol{\beta}$. Sin embargo, esto no compromete las métricas de ajuste obtenidas en el caso de validación-prueba.
+%
+%\end{itemize}
+%
+%Por su parte, en la aplicación con datos reales se observó que
+%\begin{itemize}
+%\item Con respuestas continuas, ambos métodos de estimación exhiben un comportamiento similar, tanto en estimaciones, métricas y porcentajes de la población bajo alguna línea de pobreza por ingresos. 
+%
+%\item En el modelo binario, al igual que en las simulaciones, el método BV encoge las estimaciones de los parámetros de forma/correlación. No obstante, los dos algoritmos obtienen porcentajes similares de la población bajo la línea de pobreza por ingresos (LPI).
+%
+%\item Los estadísticos de ajuste indican que, en general, el modelo continuo y binario tienen buen desempeño en el escenario de validación-prueba. Las métricas para el pronóstico generado con el modelo log-normal favorecen al método BV, aunque encoge las estimaciones $\rho_{8}$ y $\rho_{15}$; por su lado, HMC no puede muestrear de forma satisfactoria el parámetro de localidad $\mu_{15}$, lo que perjudica de forma importante la calidad de las predicciones.
+%
+%\item En el modelo ordinal es posible estimar porcentajes de la población bajo los umbrales LPI y LPEI. A diferencia del caso previo, los porcentajes obtenidos en la LPI discrepan casi en proporción 1:2. Así mismo, este modelo presentó el rendimiento más bajo en cuanto a los estadísticos de ajuste.
+%
+%\end{itemize}
+%
+%Los métodos variacionales ofrecen un alternativa al muestreo de la distribución \textit{a posteriori}, sin embargo, esta aproximación no siempre puede remplazar la calidad de ajuste obtenida con métodos MCMC, particularmente la estimación de parámetros sensibles o de interés.
+%
+%En el escenario de respuesta continua, la aproximación BV mostró un desempeño sobresaliente, es decir, es útil para predicción e interpretación, ya que, como se observó los experimentos de simulación, recupera la magnitud de todos los parámetros. Para los casos de clasificación binaria y ordinal, la aproximación BV redujo los tiempos de ejecución y produce pronósticos razonables - basado en las métricas de ajuste-; sin embargo, la desventaja principal es que el proceso de optimización opta por encoger la estimación de los parámetros de correlación/forma.
+%
+%La implementación Bayesiana variacional que ofrece {Stan} es automática, lo cuál minimiza el trabajo analítico y de programación. Sin embargo, su propósito general significa que es posible encontrar alternativas especializadas que proporcionen mejores resultados, por ejemplo, en las estimaciones de los modelos de clasificación, o bien, permitiendo que el parámetro de forma tome valores tanto positivos como negativos para alguna aplicación más general.
+%
+%
+%\section{Recomendaciones}
+%
+%
+%\begin{itemize}
+%
+%\item Desarrollar una alternativa Bayesiana Variacional híbrida usando el supuesto de campo medio para todos los parámetros y variables latentes, a excepción de los parámetros de forma o correlación $\rho_{i}$ y de varianza $\sigma^2$, este último resulta tampoco ser conjugado cuando se centran los parámetros de localidad y escala. Es decir, en lugar de implementar los modelos con el algoritmo de forma fija con densidades gausianas implícitas mediante el algoritmo ADVI de {Stan}, implementar este esquema híbrido, cuya base es el Ejemplo 3 de la \autoref{sec:bayes-variacional}. Si no se desea calcular derivadas de forma manual, puede emplearse diferenciación automática junto a integración Monte Carlo para estimar la esperanza de los gradientes, en cuyo caso aún se aprovecha el algoritmo CAVI para actualizar los parámetros conjugados $\mu_{i}$ y $\boldsymbol{\beta}$. De este modo, se obtienen aproximaciones analíticas que relajan el costo computacional y sobretodo, mejoran la precisión y calidad de la aproximación por medio de pasos analíticos adicionales.
+%
+%\item Emplear alguna estructura \textit{a priori} jerárquica que permita compartir información para mejorar las estimaciones de $\rho_{i}$, $\mu_{i}$ y las predicciones $y_{ij}^{\star}$ para dominios donde $n_{i}=0$. O bien, fuera del enfoque Bayesiano objetivo, puede emplearse una \textit{a priori} informativa y estudiar su efecto en las estimaciones y pronósticos.
+%
+%\item Por otro lado, como una actividad complementaria, puede estudiarse el planteamiento de los modelos con independencia marginal, es decir, considerar una variable latente por cada observación en el proceso de truncamiento oculto, lo cuál es útil para escenarios fuera de la estimación en áreas pequeñas, por ejemplo, estudiar realizaciones independientes e idénticamente distribuidas.
+%
+%\end{itemize}
+
+
+
+
+
+
+
+

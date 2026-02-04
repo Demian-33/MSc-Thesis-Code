@@ -1,0 +1,87 @@
+
+\subsection{Modelos con único intercepto en todas las áreas pequeñas}
+
+\begin{table}[H]
+\centering
+\caption[]{Modelo probit ordenado sesgado latente con único intercepto para todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-i-5-tabla}
+%\begin{tabular}{lr| *{3}{r}| *{3}{r}}
+\begin{tabular}{lQ| *{3}{Q}| *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{Bayes Variacional}& \multicolumn{3}{c}{Hamiltonian MC} \\
+\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption[]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes Variacional y en el derecho Hamiltonian MC}
+\label{ch-vi-probitord-i-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption[]{Métricas del ajuste del modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-i-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {Bayes Variacional} & {Hamiltonian MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption[]{Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-i-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption[]{Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-tabla}
+%\begin{tabular}{lr| *{3}{r}| *{3}{r}}
+\begin{tabular}{lQ| *{3}{Q}| *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{Bayes Variacional}& \multicolumn{3}{c}{Hamiltonian MC} \\
+\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption[]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes Variacional y en el derecho Hamiltonian MC}
+\label{ch-vi-probitord-i-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption[]{Métricas del ajuste del modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {Bayes Variacional} & {Hamiltonian MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption[]{Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-ssvs}
+\end{figure}

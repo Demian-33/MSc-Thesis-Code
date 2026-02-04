@@ -1,0 +1,25 @@
+"0","library(cmdstanr)"
+"2","This is cmdstanr version 0.9.0
+"
+"2","- CmdStanR documentation and vignettes: mc-stan.org/cmdstanr
+"
+"2","- CmdStan path: C:/Users/Lesau/.cmdstan/cmdstan-2.37.0
+"
+"2","- CmdStan version: 2.37.0
+"
+"0","library(dplyr)"
+"2","
+Attaching package: ‘dplyr’
+
+"
+"2","The following objects are masked from ‘package:stats’:
+
+    filter, lag
+
+"
+"2","The following objects are masked from ‘package:base’:
+
+    intersect, setdiff, setequal, union
+
+"
+"0","source('./funciones-final.R')"

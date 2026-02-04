@@ -1,0 +1,1036 @@
+%\chapter{Inferencia Bayesiana Variacional}
+\section{Inferencia Bayesiana variacional}
+\label{sec:bayes-variacional}
+
+% Algunos métodos basados en optimización son Integrated Nested Laplace Approximation (INLA) e Inferencia Variacional.
+
+% Nos enfocaremos en presentar una aplicación a esta última técnica y se mostrará una aplicación al modelo de probit asimétrico en áreas pequeñas.
+
+En esta sección mostraremos los elementos conceptuales para desarrollar la teoría de inferencia Bayesiana variacional (BV). El nombre `aproximaciones variacionales' tiene su origen en el cálculo variacional, el cuál se encarga de optimizar un funcional sobre una clase de funciones de las que depende. Las soluciones aproximadas surgen cuando la clase de funciones se restringe de alguna manera, generalmente para mejorar la manejabilidad \parencite{explaining-VI}. Como se mencionó anteriormente, este enfoque aproxima la densidad \textit{a posteriori} $p(\boldsymbol{\theta}\, |\, \boldsymbol{y})$ -o en general alguna densidad objetivo $p(\boldsymbol{\theta})$- mediante una densidad de probabilidad $q(\boldsymbol{\theta})$ que pertenece a alguna familia `manejable', es decir, común o sencilla, de distribuciones $\mathcal{Q}$. La mejor aproximación BV, denotada por $q^{\star}\in\mathcal{Q}$, se encuentra minimizando la divergencia Kullback-Leibler (KL) de $q(\boldsymbol{\theta})$ a $p(\boldsymbol{\theta} \, | \, \boldsymbol{y})$. Simbólicamente podemos escribir esto como
+\begin{align}
+q^{\star}(\boldsymbol{\theta}) &= \argmin_{q\in \mathcal{Q}} \, \KL{q(\boldsymbol{\theta})}{p(\boldsymbol{y} \mid \boldsymbol{\theta})}
+\end{align}
+En la literatura podemos identificar dos clases principales de inferencia BV de acuerdo al tipo de restricción impuesta en $\mathcal{Q}$: los métodos basados en el supuesto de campo medio, \textit{mean field}, que emplean el algoritmo de ascenso de coordenadas, \textit{coordinate ascence algorithm} (CAVI), y los métodos de forma fija que emplean el algoritmo de ascenso del gradiente o alguna otra rutina de optimización.\footnote{Es posible complementar este último método con ascenso del gradiente estocástico, es decir, tomando muestras o \textit{batches} del conjunto de datos completo) para acelerar la convergencia.} De manera general, el primer método explota la conjugancia de la familia exponencial entre la verosimilitud y las distribuciones \textit{a priori}, de donde se obtienen aproximaciones de forma analítica o cerrada, mientras que el segundo método se extiende a casos fuera de la familia exponencial y no se obtienen aproximaciones analíticas.
+
+Algunas implementaciones populares del método forma fija, son el algoritmo inferencia variacional caja negra, \textit{black box variational inference} (BBVB), \textit{Pathfinder} o inferencia variacional cuasi-Newton paralela, \textit{parallel quasi-Newton variational inference} e inferencia variacional con diferenciación automática, \textit{automatic differentiation variational inference} (ADVI). Más adelante estudiaremos con detenimiento estas dos clases de inferencia BV y en especial a los algoritmos CAVI y ADVI.
+
+De acuerdo con \cite{explaining-VI}, los métodos basados en campo medio y forma fija también se consideran transformaciones de la densidad. Esto sugiere que existe otro tipo de aproximaciones variacionales que no están basadas en minimizar la divergencia KL, por ejemplo, las aproximaciones por transformación tangente, ya que trabajan con representaciones `tangentes' de funciones cóncavas y convexas. No obstante, en la discusión posterior no se trabaja con este tipo de aproximaciones. Así mismo, las aproximaciones variacionales pueden usarse en contextos frecuentistas, sin embargo, usar inferencia variacional en este escenario es mucho más raro \parencite{explaining-VI}.
+
+Ahora bien, a grandes rasgos, podemos señalar que los métodos basados en MCMC producen estimaciones más precisas, pero el precio a pagar es en términos del tiempo de cómputo, en cambio, los métodos basados en optimización son más rápidos pero quizás no tan precisos. En este sentido, las características del problema nos pueden ayudar a decidir cuando emplear cada enfoque, por ejemplo: si se tiene una gran cantidad de parámetros o variables latentes, preferimos perder un poco de precisión para mejorar el tiempo de desempeño.
+
+A continuación estudiaremos la función objetivo que el paradigma de inferencia BV busca minimizar.
+
+\subsection{Divergencia Kullback-Leibler}
+
+La divergencia Kullback-Leibler (KL) es una medida de teoría de la información sobre la proximidad entre dos densidades. La divergencia KL entre las densidades $p,\, q$ se define como
+\begin{align}
+\KL{q}{p} &\equiv \int q(\theta) \cdot \log \frac{q(\theta)}{p(\theta)}\, d\theta = \E_{q}[\log q(\theta)] - \E_{q}[\log p(\theta)],
+\end{align}
+donde el valor esperado se toma con respecto a $q(\theta)$. Esta medida es asimétrica, es decir\footnote{Si $\KL{q}{p}$ es la divergencia KL entre las densidades $q$ y $p$, la cantidad $\KL{p}{q}$ recibe el nombre de divergencia KL invertida. Note que aunque $\KL{q}{p}$ esté definida, no necesariamente existe la divergencia KL invertida.} $\KL{q}{p} \neq \KL{p}{q}$, además, es no negativa. La divergencia KL es minimizada cuando $q=p$. De forma adicional, puede mostrarse que la divergencia KL no constituye una métrica, ya que carece de las propiedades de simetría y desigualdad del triángulo.
+
+Otro punto a tomar en cuenta, es que la divergencia KL entre $p, q$, puede ser escrita en términos de sus entropías. Para ver esto, consideramos $X$, $Y$ variables aleatorias continuas con densidades $p(x)$ y $q(y)$, la entropía de $X$ y la entropía cruzada de $X$ con $Y$ están dadas por
+\begin{align}
+\begin{aligned}
+H(p) \equiv \E_{p}[- \log\, p(x)] &= \int_{\mathbb{R}} p(x) \log p(x) \, dx, \\
+H(p, q) \equiv \E_{p}[- \log\, q(y)] &= \int_{\mathbb{R}} p(x)\log q(y) \, dx, 
+\end{aligned}
+\end{align}
+por tanto, en la definición de divergencia KL están involucrados estas dos cantidades. Así mismo, es posible desarrollar la expresión que define la divergencia KL entre la aproximación $q(\boldsymbol{\theta})$ propuesta y la verdadera \textit{a posteriori}, en cuyo caso se obtiene
+\begin{equation}
+\label{eq:KL-verdadera}
+\begin{aligned}
+\KL{q(\boldsymbol{\theta})}{p(\boldsymbol{\theta} \mid \boldsymbol{y})} &= \E_{q}[\log\,q(\boldsymbol{\theta})] - \E_{q}[\log\, p(\boldsymbol{\theta \mid \boldsymbol{y}})] \\
+&= \E_{q}[\log\,q(\boldsymbol{\theta})] - \E_{q}[\log\, p(\boldsymbol{\boldsymbol{y} ,\, \boldsymbol{\theta}})] + \E_{q}[\log\, p(\boldsymbol{y})] \\
+&= \E_{q}[\log\,q(\boldsymbol{\theta})] - \E_{q}[\log\, p(\boldsymbol{\boldsymbol{y} ,\, \boldsymbol{\theta}})] + \log\, p(\boldsymbol{y}),
+\end{aligned}
+\end{equation}
+% Note que $\E_{q}[p(y)]=p(y)$, i.e. es constante.
+
+\subsection{Ejemplo: divergencia KL entre las densidades normal y normal asimétrica}
+
+En este apartado se aproxima la divergencia KL entre dos densidades continuas: la densidad normal y la densidad normal asimétrica, ambas en parametrización estándar, es decir, con localidad cero y varianza unitaria. Ya que la distribución normal es un caso particular de la distribución normal sesgada -con el parámetro de forma $\lambda=0$-, se busca contrastar la divergencia producida entre estas dos densidades, fijando $\lambda_{p}=0$ en el caso normal y variando $\lambda_{q}\neq 0$ para el caso asimétrico.
+
+Se emplean métodos Monte Carlo por su implementación sencilla, para ello se usó el lenguaje {Python 3.9.0} tanto para la tarea de simulación de números aleatorios y para la visualización gráfica. Los detalles acerca de la implementación se encuentran en el \hyperlink{anexo4}{Anexo 4}.
+
+% (Mover esto al anexo, quizas una tabla que diga que cosa se usa en cada figura...) Las librerías \code{numpy}, \code{scipy} -específicamente los módulos \code{numpy.random}, \code{scipiy.stats.skew}- y \code{matplotlib}, las dos primeras desarrollan la tarea de simulación de números aleatorios y la última se encarga de la visualización gráfica.
+
+La discusión en la \autoref{sec:normal-asimetrica}, proporciona una expresión invertible para el parámetro de forma $\lambda$ que lo transforma a un parámetro de correlación $\rho$, es decir, mapea $(-\infty,\, \infty)$ al intervalo $(-1,\, 1)$, así, parece más simple considerar el intervalo $(-1,\, 1)$ en lugar de todo $\mathbb{R}$. Esta observación permite obtener los dos tipos de gráficos que se muestran en la \autoref{fig:ch-ii-KL}. En ambos gráficos, es evidente que la divergencia KL no se comporta de manera lineal, así, en la \autoref{fig:ch-ii-KL-rho}, se hace más evidente observar que cuando la diferencia $\rho_{q}-\rho_{p}$ es pequeña -digamos entre $(-0.5,\, 0.5)$-, la divergencia KL produce valores pequeños y viceversa.
+
+No obstante, a partir de las propiedades de la distribución normal asimétrica descritas en la \autoref{subsec:normal-asimetrica}, cuando el parámetro de forma $\lambda \to \pm\infty$, entonces la ley normal sesgada converge a una ley normal truncada a la izquierda (derecha) en cero. De este modo, es posible calcular la divergencia KL entre dos casos extremos: $\lambda=0$, la densidad normal usual, y $\lambda\to\pm\infty$, la densidad normal truncada. Así mismo, es posible calcular la divergencia KL entre estas dos densidades, y para ello escribimos\footnote{En este caso, no podemos considerar la divergencia invertida, es decir $\KL{N(x\mid 0,\, 1)}{NT(x \mid 0,\, 1)}$, ya que para la densidad normal truncada, en el intervalo $(-\infty,\, 0)$ evalúa a cero.}
+\begin{align}
+\begin{aligned}
+\KL{NT(x \mid 0,\, 1)}{N(x \mid 0,\, 1)} &=
+\int_{0}^{\infty} NT(x \mid 0,\, 1) \, \log\frac{NT(x \mid 0,\, 1)}{N(x \mid 0,\, 1)} \, dx \\
+&= \int_{0}^{\infty} \frac{2}{\sqrt{2\pi}}\exp\{-\frac{x^{2}}{2}\} \, \log\,\frac{\cancel{\frac{2}{\sqrt{2\pi}}\exp\{-\frac{x^{2}}{2}\}}}{\cancel{\frac{1}{\sqrt{2\pi}}\exp\{-\frac{x^{2}}{2}\}}} \, dx \\
+&= \log(2) \cancelto{1}{\int_{0}^{\infty} \frac{2}{\sqrt{2\pi}}\exp\{-\frac{x^{2}}{2}\} \, dx} = \log(2),
+\end{aligned}
+\end{align}
+es decir, el valor máximo que podría alcanzar la divergencia KL entre las densidades normal asimétrica y normal, en el caso de localidad cero y escala unitaria, es $\log(2)\simeq 0.6931$. En la \autoref{fig:ch-ii-KL-rho} y la \autoref{fig:ch-ii-KL-lambda} se observa que los valores de la divergencia KL están acotados por este valor. Concluimos este ejemplo comentando que, en general, no es claro como determinar cuando un valor de la divergencia KL entre dos densidades es grande o pequeño.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/KL-div-rho.pdf}
+\caption[]{Cálculo de la divergencia KL con $\rho$.}
+\label{fig:ch-ii-KL-rho}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/KL-div-lambda.pdf}
+\caption[]{Cálculo de la divergencia KL con $\lambda$.}
+\label{fig:ch-ii-KL-lambda}
+\end{subfigure}
+\caption[Divergencia KL entre las densidades normal sesgada y normal conforme el valor absoluto del parámetro de correlación/forma crece.]{Divergencia KL entre las densidades normal sesgada y normal conforme el valor absoluto del parámetro de correlación/forma crece. Fuente: elaboración propia.}
+\label{fig:ch-ii-KL}
+\end{figure}
+
+
+
+\subsection{Límite inferior de la evidencia}
+
+% En inferencia variacional, especificamos una familia de densidades $\mathcal{Q}$ sobre las variables latentes (por ejemplo, parámetros). Cada $q(z)\in\mathcal{Q}$ es una aproximación candidata a la condicional exacta. El objetivo es encontrar el mejor candidato, aquel más cercano en términos de la divergencia Kullback-Leibler (KL) a la condicional exacta.
+
+% El término `evidencia' corresponde a la verosimilitud del modelo $p(\boldsymbol{x} \mid \boldsymbol{\theta}_{0})$ evaluada en el punto fijo $\boldsymbol{\theta} = \boldsymbol{\theta}_{0}$. Intuitivamente, 
+
+En la \autoref{eq:KL-verdadera}, se desarrolla la expresión que define la divergencia KL entre la aproximación variacional propuesta y la verdadera \textit{a posteriori}, no obstante, habitualmente no es posible calcular $p(\boldsymbol{y})$ -y con ello $\log p(\boldsymbol{y})$-, por lo que no es posible minimizar exactamente la divergencia KL. Debido a esto, en la práctica se optimiza una función objetivo que es equivalente salvo por una constante: la función límite inferior de la evidencia, \textit{evidence lower bound} (ELBO).\footnote{Si se conociera la forma de $p(\boldsymbol{y})$, entonces puede realizarse inferencia Bayesiana de forma cerrada.} Esta se define como
+\begin{align}
+\ELBO{q} &\equiv \int q(\theta) \log \frac{p(\theta, y)}{q(\theta)}\, d\theta = \E_{q}\left[ \log \frac{p(\theta, y)}{q(\theta)} \right],
+\end{align}
+y al desarrollar esta expresión se tiene que
+\begin{align}
+\begin{aligned}
+\ELBO{q} &= \E_{q}[\log p(y,\, \theta)] - \E_{q}[\log q(\theta)] \\
+&= \E_{q}[\log p(\theta)] + \E_{q}[\log p(y\mid\theta)] - \E_{q}[\log q(\theta)] \\ 
+&= \E_{q}[\log p(y\mid\theta)] - \KL{q(\theta)}{p(\theta)}. \label{eq:KL-elbo}
+\end{aligned}
+\end{align}
+
+De acuerdo con \textcite{VI-a_review}, el objetivo variacional en la \autoref{eq:KL-elbo} refleja el balance usual entre la función de verosimilitud y la \textit{a priori}, ya que el primer término es el valor esperado de una verosimilitud, el cuál favorece densidades que colocan su masa en configuraciones de los parámetros que explican a los datos observados, a la vez que el segundo término es la divergencia KL entre la densidad candidata y la \textit{a priori}, el cuál promueve densidades cercanas a la a priori.
+
+Una propiedad de la ELBO es que acota por abajo el logaritmo de la evidencia, es decir, para cualquier $q(\theta)$ se tiene que
+\begin{align}
+\log p(y) &= \KL{q(\theta)}{p(\theta | y)} + \ELBO{q} ,
+\end{align}
+y dado que $\KL{\cdot}{\cdot}\geq 0$, se tiene que $\log p(y) \geq \operatorname{ELBO}(q)$; de ahí su nombre. Note que podemos expresar la divergencia KL exacta en la \autoref{eq:KL-verdadera} como
+\begin{equation}
+\label{eq:KL-elbo2}
+\KL{q(\boldsymbol{\theta})}{p(\boldsymbol{\theta} \mid \boldsymbol{y})} = \log\,p(\boldsymbol{y}) - \ELBO{q},
+\end{equation}
+si bien $\log\,p(\boldsymbol{y})$ es desconocido, es constante respecto a $q$. Por lo tanto, el objetivo de minimizar la divergencia KL (un funcional) sobre la aproximación $q$ (una función), es equivalente a maximizar el $\ELBO{q}$, el signo de estas dos cantidades es clave. En consecuencia, esto significa que también podemos obtener las densidades $q^{\star}$ óptimas como
+\begin{align}
+q^{\star}(\boldsymbol{\theta}) &= \argmax_{q\in\mathcal{Q}}\,\ELBO{q}.
+\end{align}
+
+Finalmente, recordamos que si no imponemos restricciones en $\mathcal{Q}$, la mejor aproximación BV, la que minimiza la divergencia KL es $q^{\star} = p(\theta \mid y)$, pero es intratable. Como se mencionó al inicio de la sección, dependiendo de la restricción impuesta en la clase $\mathcal{Q}$, los algoritmos de inferencia variacional pueden ser clasificados, en este caso, consideramos exclusivamente a los métodos campo medio y forma fija. En \textcite{semipar-VI}, llaman a estos dos métodos campo medio no paramétrico y campo medio semiparamétrico o paramétrico. En turno, estudiaremos cada una de las dos alternativas.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{Figuras/c-iv/ELBO.pdf}
+\caption[Representación del límite inferior de la evidencia.]{Representación del límite inferior de la evidencia en la \autoref{eq:KL-elbo2}. La línea punteada representa la recta cero. Por lo general, las cantidades $\ELBO{q}$, y $\log\,p(\boldsymbol{y} \mid \boldsymbol{\theta})$ son negativas. Fuente: elaboración propia basado en \textcite[][Figura 9.11]{bishop}.}
+\label{c-iv-ELBO}
+\end{figure}
+
+\subsection{Restricción Campo Medio}
+\label{subsec:mean-field}
+
+Esta restricción asume que la familia variacional se factoriza como
+\begin{align*}
+q(\theta_{1}, \theta_{2}, \ldots, \theta_{k}) &= \prod_{i=1}^{k} q_{i}(\theta_{i}),
+\end{align*}
+esto es más general de lo que aparenta: los parámetros pueden ser agrupados y factorizar la distribución de cada grupo \parencite{VI-a_review}. De acuerdo con \textcite{explaining-VI, practical-VI, semipar-VI}, esta restricción es {no paramétrica}, ya que no se especifica la forma de los factores variacionales, así mismo, \textcite{VI-a_review} señala que en principio, cada factor óptimo puede adoptar cualquier forma paramétrica apropiada para la variable aleatoria que corresponde. \textcite{explaining-VI} señala que esta restricción tiene sus orígenes en la física estadística.
+
+
+% Por ejemplo, una variable continua puede tener un factor gaussiano; una variable categórica suele tener un factor categórico.
+
+% No obstante, emplear densidades conjugadas puede simplificar los cálculos
+
+
+\subsection{Algoritmo Inferencia Variacional por Ascenso de Coordenadas}
+
+Supongamos que $\boldsymbol{\theta}$ está dividido en $k$ bloques $\boldsymbol{\theta}=(\theta_{1}, \theta_{2}, \ldots, \theta_{k})^{T}$. Se desea aproximar la densidad posterior $p(\theta_{1}, \theta_{2}, \ldots, \theta_{k} \mid y)$ con $q(\theta)=q_{1}(\theta_{1})q_{2}(\theta_{2})\cdots q_{k}(\theta_{k})$. De acuerdo con \textcite{VI-a_review, explaining-VI}, la densidad $q_{j}(\theta_{j})$ que maximiza el límite inferior de la evidencia, es decir, el $\ELBO{q}$, cuando $q_{1}, \ldots, q_{j-1}, q_{j+1}, \ldots, q_{k}$ permanecen fijos está dada por
+\begin{align}
+q_{j}(\theta_{j}) &\propto \exp\left( \E_{-q_{j}}[\log p(y, \boldsymbol{\theta})] \right), \quad j=1, 2, \ldots, k,
+\intertext{y por el supuesto de Campo Medio, es equivalente a la expresión}
+q_{j}(\theta_{j}) &\propto \exp\left( \E_{-q_{j}}[\log p(\theta_{j} \mid \theta_{-j}, y)] \right), \quad j=1, 2, \ldots, k, \label{mean-field-optimal-q}
+\end{align}
+estas expresiones son la base del algoritmo inferencia variacional por ascenso de coordenadas (CAVI), el cuál presentamos en el \autoref{alg:cavi}. En el \hyperlink{anexo2}{Anexo 2} se da una prueba de esto. Las densidades óptima obtenidas mediante el supuesto de campo medio recuerdan al muestreador de Gibbs: la densidad óptima en la \autoref{mean-field-optimal-q} se obtiene a partir de la densidad condicional completa de $\theta_{j}$ dado el resto de parámetros, así mismo, algunos autores señalan que el primer término del ELBO en la \autoref{eq:KL-elbo} es la esperanza de la log-verosimiltud completa, la cuál es optimizada por el algoritmo de esperanza maximización (EM).
+
+\textcite{VI-a_review} señalan que el algoritmo EM fue diseñado para encontrar las estimaciones de máxima verosimilitud en modelos con variables latentes. Usa el hecho de que el ELBO es igual a $\log p(\boldsymbol{y})$ (i.e., el logaritmo de la evidencia) cuando $q(\boldsymbol{\theta})=p(\boldsymbol{\theta}\, |\, \boldsymbol{y})$. En contraste con la inferencia variacional, el algoritmo EM asume que la esperanza sobre $p(\boldsymbol{\theta}\, |\, \boldsymbol{y})$ se puede calcular y la utiliza en problemas de estimación de parámetros que de otro modo serían difíciles.
+
+\begin{algorithm}[h]
+\LinesNumbered
+\DontPrintSemicolon
+\SetKwInput{KwData}{Input}
+\SetKwInput{KwResult}{Output}
+\caption{Inferencia variacional por ascenso de coordenadas (CAVI)}\label{alg:cavi}
+\KwData{Un modelo $p(y, \boldsymbol{\theta})$}
+\KwResult{La densidad variacional óptima $q^{\star}(\boldsymbol{\theta})=q^{\star}_{1}(\theta_{1})\cdots q^{\star}_{k}(\theta_{k})$}
+\kwInit{Factores variacionales $q_{j}(\theta_{j})$}
+
+
+\While{la cota inferior de la evidencia (ELBO) no converga}{
+    \For{$j\in\{1, 2, \ldots, k\}$}{
+    Calcular de forma analítica
+    \[
+    q_{j}^{\star}(\theta_{j})\propto \exp\left( \E_{-q_{j}}[\log p(\theta_{j} | \theta_{-j}, y)] \right)
+    \]
+    }
+    Calcular o estimar
+\[
+\ELBO{q} = \E[\log p(y, \theta)] - \E[\log q(\boldsymbol{\theta})]
+\]
+    }
+\Return{$q^{\star}_{1}(\theta_{1}) \cdots q^{\star}_{k}(\theta_{k})$}
+\end{algorithm}
+
+De acuerdo con \textcite{practical-VI}, una regla de parada para el \autoref{alg:cavi} es terminar la actualización si el cambio en los parámetros de la \textit{a posteriori} aproximada, es decir $\boldsymbol{\theta}^{(k)}$, entre dos iteraciones consecutivas es menor que cierto umbral $\varepsilon$. De igual modo, si fuera posible calcular el $\ELBO{q}$, podemos parar el algoritmo si el incremento o un porcentaje de este es menor que cierto umbral. Aunado a esto, los autores también comentan que teóricamente, el $\ELBO{q}$ incrementa después de cada iteración del algoritmo CAVI, sin embargo, si en lugar de calcularlo de forma analítica este se aproxima de forma numérica, esta estrategia puede generar iteraciones donde el ELBO es decreciente, por lo que debe elegirse un criterio adecuado, por ejemplo, monitorear un promedio móvil.
+
+Quizás la limitante más importante de este método, es que solamente podemos determinar de forma cerrada o analítica las distribuciones óptimas $q^{\star}(\theta_{i})$ de cada parámetro cuando existe conjugancia entre la verosimilitud del modelo y la distribución \textit{a priori} de $\theta_{i}$. Por otra parte, trabajar con la familia exponencial hace que la tarea de obtener la densidad óptima $q^{\star}(\theta_{i})$ sea más sencilla; con respecto a este último punto, \textcite{VI-a_review} muestra la forma de estas actualizaciones.
+
+%En se explora este caso cuando las actualizaciones son gaussianas univariadas y multivariadas.
+
+\subsection{Ejemplo 1: aproximando una distribución normal bivariada (revisitado)}
+
+% Este es un caso general, de hecho es un ejemplo de juguete que servirá para ilustrar como funcionan la inferencia campo medio, aquí el interés es general, es decir, aproximar una densidad que en este caso NO ES una densidad posterior
+
+% usar a priori uniforme?, de Jeffreys (no informativa)?, conjugada?
+
+% además, ¿sobre qué deseamos hacer inferencia?, el vector \mu?, la matriz \Sigma?
+
+A continuación, se ilustra el algoritmo de inferencia variacional campo medio, aquí el interés bastante general, es decir, buscamos aproximar una densidad de probabilidad bivariada, que en este caso no corresponde a una densidad \textit{a posteriori}. Para ilustrar el método, nuevamente se empleada la densidad Gausiana en dos dimensiones de la \autoref{subsec:ch-iii-ejemplo-normal} dada por
+\begin{equation}
+\begin{aligned}
+p(x_{1},\, x_{2}\, \mid \boldsymbol{\mu},\, \Sigma) &=N_{2}(\boldsymbol{x}\, \mid \, \boldsymbol{\mu},\, \Sigma), \\
+\boldsymbol{\mu} &= (-1, 1)^{T} \\
+\Sigma &=
+\begin{bmatrix}
+1.0 & 0.7 \\ 0.7 & 2.0
+\end{bmatrix},
+\end{aligned}
+\end{equation}
+este escenario también se ilustra en \textcite{depth-VI, bishop}. Empleando el supuesto campo medio, podemos escribir la aproximación $q$ como
+\begin{align}
+q(x_{1},\, x_{2}) &= q(x_{1}) q(x_{2}),
+\end{align}
+después, es necesario determinar las densidades óptimas $q^{\star}(x_{i})$, por lo que empleamos el resultado en la \autoref{mean-field-optimal-q}, de ahí que
+\begin{align}
+q^{\star}(x_{1}) &\propto \exp \bigg\{ \mathbb{E}_{-x_{1}}\left[ \log p(x_{1} \mid x_{2}, \, \boldsymbol{\mu},\, \Sigma)\right] \bigg\},
+\end{align}
+aquí podemos notar que $p(x_{1} \mid x_{2},\, \boldsymbol{\mu},\, \Sigma)=N(x_{1}\mid \mu_{1\mid 2},\, \sigma^{2}_{1 \mid 2})$ por un resultado conocido, además $\mu_{1\mid 2}=\mu_{1}+\sigma_{12}\sigma_{22}^{-1}\left(z_{2}-\mu_{2}\right)$ y $\sigma^{2}_{1 \mid 2}=\sigma_{11}-\sigma_{12}\sigma_{22}^{-1}\sigma_{12}$, aquí $\sigma_{ii}=\sigma_{i}^{2}$. Por tanto, escribimos
+\begin{align*}
+ q^{\star}(x_{1}) &= \exp \bigg\{ \mathbb{E}_{q(x_{2})}\left[ \log \frac{1}{\sqrt{2\pi\sigma^{2}_{1\mid 2}}}\exp\left(-\frac{(x_{1}-\mu_{1\mid 2})^{2}}{2\sigma^{2}_{1\mid 2}}\right) \right] \bigg\},
+ \end{align*}
+desarrollando la expresión y removiendo constantes que no contengan $x_{1}$
+\begin{align*}
+q^{\star}(x_{1}) &\propto \exp \bigg\{ \mathbb{E}_{q(x_{2})}\left[-\frac{x_{1}^{2}-2x_{1}\mu_{1\mid 2}}{2\sigma^{2}_{1\mid 2}}\right] \bigg\},
+ \intertext{note que $\mu_{1\mid 2}$ depende de $z_{2}$, así que desarrollamos y tomamos la esperanza con respecto a $q(x_{2})$}
+ % , es decir, la esperanza respecto a otra variable es la misma variable, como es el caso de $x_{1},\, \sigma^{2\star}_{1},\, \mu_{1}$ y $\sigma_{ij}$, por tanto escribimos
+ q^{\star}(x_{1}) &= \exp \bigg\{ -\frac{1}{2\sigma_{1\mid 2}^{2}} 
+ \left[
+ x_{1}^{2}-2x_{1}\mathbb{E}_{q(x_{2})}(\mu_{1}+\sigma_{12}\sigma_{22}^{-1}[x_{2}-\mu_{2}])
+ \right]\bigg\} \\
+&= \exp \bigg\{ -\frac{1}{2\sigma_{1\mid 2}^{2}} 
+ \left[
+ x_{1}^{2}-2x_{1}\right(\mu_{1}+\sigma_{12}\sigma_{22}^{-1}\left[\mathbb{E}_{q(x_{2})}[x_{2}]-\mu_{2}\right]\left)\right]\bigg\},
+ \end{align*}
+de este modo, identificamos que esta densidad variacional óptima está dada por
+\begin{equation}
+\begin{aligned}
+q^{\star}(x_{1}) &= N(x_{1} \mid \mu_{1}^{\star}, \sigma^{2\star}_{1}), \\
+\mu_{1}^{\star} &= \mu_{1} + \sigma_{12}\sigma_{22}^{-1}(\mathbb{E}_{q(x_{2})}[x_{2}] - \mu_{2}), \\
+\sigma_{1}^{2\star} &= \sigma_{1\mid 2}
+\end{aligned},
+\end{equation}
+la densidad óptima $q^{\star}(x_{2}) $ se obtiene inmediatamente por simetría, de este modo hemos aproximado $p(x_{1}, x_{2}) \approx q^{\star}(x_{1}) q^{\star}(x_{2})$. En la \autoref{fig:ch-iv-normal-meanfield} se comparan los contornos de la densidad real contra la aproximación Campo Medio. Notamos que la aproximación variacional está centrada en la densidad real, no obstante, su capacidad para reensamblar la estructura de correlación es limitada.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{Figuras/c-iv/normal-meanfield.pdf}
+\caption[]{}
+\label{fig:ch-iv-normal-meanfield}
+\end{figure}
+
+
+\subsection{Ejemplo 2: inferencia para la distribución normal}
+
+Ahora, se muestra un ejemplo de inferencia Bayesiana variacional donde se aproxima la densidad \textit{a posteriori} de los parámetros en una distribución normal. Para tal propósito, se emplea el supuesto campo medio de la \autoref{subsec:mean-field}. En este escenario, la distribución \textit{a priori} conjugada de $(\mu,\, \sigma^{2})$ es la densidad normal gamma-inversa, lo que permite realizar inferencia de forma cerrada y sirve como referencia para comparar la aproximación que realiza el método BV.
+
+Sea $\boldsymbol{y}=(y_{1},\, y_{2},\, \ldots,\, y_{n})$ una muestra aleatoria de tamaño $n$ de $f_{Y}(y\mid \mu,\, \sigma^{2})$, se asume que $(\mu,\, \sigma^{2})$ son ambos desconocidos y por ello les asignamos una \textit{a priori}, como se mencionó previamente, la distribución normal gamma-inversa es conjugada para este modelo:
+\begin{align}
+\begin{aligned}
+p(\mu,\, \sigma^{2}) &\equiv p(\mu \mid \sigma^{2}) \times p(\sigma^{2}) \\
+&=N(\mu \mid \mu_{0},\, \lambda_{0}\sigma^{2}) \times IG(\sigma^{2}\mid a_{0},\, b_{0}) \\
+&\equiv NIG(\mu_{0},\, \lambda_{0},\, a_{0},\, b_{0}).
+\end{aligned}
+\end{align}
+No es difícil mostrar que la distribución \textit{a posteriori} $p(\mu,\, \sigma^{2} \mid \boldsymbol{x})$ también es $NIG(\mu,\, \sigma^{2} \mid \mu_{n},\, \lambda_{n},\, a_{n},\, b_{n})$, donde $\mu_{n}=\lambda_{n}(\lambda_{0}^{-1}\mu_{0}+n\bar{y})$, $\lambda_{n}=n+\lambda_{0}^{-1}$, $a_{n}=a_{0}+n/2$ y $b_{n}=b_{0}+\dfrac{1}{2}\left(\mu_{0}^{2}\lambda_{0}^{-1}+\sum\limits_{i=1}^{n}x_{i}^{2} - \mu_{n}^{2}\lambda_{n}^{-1}\right)$ \parencite{bayesgauss}. Ahora bien, para la aproximación BV empleamos el supuesto de campo medio, es decir $p(\mu,\, \sigma^{2} \mid \boldsymbol{x}) = q(\mu)\, q(\sigma^{2})$, luego, obtenemos las densidades óptimas $q^{\star}(\mu)$ y $q^{\star}(\sigma^{2})$ de forma analítica, por comodidad consideramos el logaritmo de cada densidad:
+\begin{align}
+\begin{aligned}
+\log q^{\star}(\mu) &\propto \mathbb{E}_{-\mu}\left[ \log p(\boldsymbol{y},\, \mu,\, \sigma^{2})  \right] \\
+&\propto \mathbb{E}_{q(\sigma^{2})}\left[ \log p(\boldsymbol{y}\mid \mu,\, \sigma^{2}) + \log p(\mu \mid \sigma^{2}) \right] \\
+&= \mathbb{E}_{q(\sigma^{2})}\left[ \log\, \left(\frac{1}{2\pi\sigma^{2}}\right)^{n/2}\exp(-\frac{\sum(y_{i}-\mu)^{2}}{2\sigma^{2}}) + \log \frac{\lambda_{0}}{\sqrt{2\pi\sigma^{2}}}\exp(-\frac{\lambda_{0}}{2\sigma^{2}}(\mu-\mu_{0})^{2}) \right] \\
+&\propto \mathbb{E}_{q(\sigma^{2})}\left[ -\frac{\sum(y_{i}-\mu)^{2}}{2\sigma^{2}} -\frac{\lambda_{0}}{2\sigma^{2}}(\mu-\mu_{0})^{2} \right] \\
+&\propto \mathbb{E}_{q(\sigma^{2})}\left[ -\frac{n\mu^{2}-2n\mu\bar{y}}{2\sigma^{2}} -\frac{\lambda_{0}}{2\sigma^{2}}(\mu^{2}-2\mu\mu_{0}) \right] \\
+&= \mathbb{E}_{q(\sigma^{2})}\left[ -\frac{\lambda_{0}}{2\sigma^{2}}\left((\frac{n}{\lambda_{0}}+1)\mu^{2} - 2(\frac{n\bar{y}}{\lambda_{0}}+\mu_{0})\mu \right)\right] \\
+&= \mathbb{E}_{q(\sigma^{2})}\left[ -\frac{\lambda_{0}}{2\sigma^{2}}\left(\frac{n+\lambda_{0}}{\lambda_{0}}\mu^{2} - 2(\frac{n\bar{y}+\lambda_{0}\mu_{0}}{\lambda_{0}})\mu \right)\right] \\
+&= \mathbb{E}_{q(\sigma^{2})}\left[ -\frac{\cancel{\lambda_{0}}(n+\lambda_{0})}{2\sigma^{2}\cancel{\lambda_{0}}}\left(\mu^{2} - 2(\frac{n\bar{y}+\lambda_{0}\mu_{0}}{\cancel{\lambda_{0}}} \times \frac{\cancel{\lambda_{0}}}{n+\lambda_{0}})\mu \right)\right] \\
+&= \mathbb{E}_{q(\sigma^{2})}\left[ -\frac{n+\lambda_{0}}{2\sigma^{2}}\left(\mu^{2} - 2(\frac{n\bar{y}+\lambda_{0}\mu_{0}}{n+\lambda_{0}})\mu \right)\right]
+\end{aligned}
+\end{align}
+ahora, tomando la esperanza con respecto a $q(\sigma^{2})$,
+\begin{align}
+&=-\frac{n+\lambda_{0}}{2}\mathbb{E}_{q(\sigma^{2})}\left[\frac{1}{\sigma^{2}}\right]\left(\mu^{2} - 2(\frac{n\bar{y}+\lambda_{0}\mu_{0}}{n+\lambda_{0}})\mu \right),
+\end{align}
+completando el término cuadrado en $\mu$ y elevando a $e$ ambos lados, podemos identificamos el kernel gaussiano, es decir que
+\begin{align}
+\begin{aligned}
+q^{\star}(\mu)&=N(\mu \mid \mu^{\star},\, \sigma^{2\star}), \\
+\mu^{\star}&= (n\bar{y}+\lambda_{0}\mu_{0})/(n+\lambda_{0}), \\
+\sigma^{2\star} &= \left[\mathbb{E}_{q(\sigma^{2})}[1/\sigma^{2}] (n+\lambda_{0})\right]^{-1},
+\end{aligned}
+\end{align}
+procedemos análogamente para obtener $q^{\star}(\sigma^{2})$
+\begin{align}
+\begin{aligned}
+\log q^{\star}(\sigma^{2}) & \propto \mathbb{E}_{-\sigma^{2}} \left[ \log\, p(\boldsymbol{y},\, \mu,\, \sigma^{2})  \right] \\
+\log q^{\star}(\sigma^{2}) & \propto \mathbb{E}_{q(\mu)} \left[ \log\, p(\boldsymbol{y}\mid \mu,\, \sigma^{2}) + \log\, p(\mu \mid \sigma^{2}) + \log\, p(\sigma^{2}) \right] \\
+&= \mathbb{E}_{q(\mu)}\bigg[ \log\, \left(\frac{1}{2\pi\sigma^{2}}\right)^{n/2}\exp(-\frac{\sum(y_{i}-\mu)^{2}}{2\sigma^{2}}) + \log \frac{\lambda_{0}}{\sqrt{2\pi\sigma^{2}}}\exp(-\frac{\lambda_{0}}{2\sigma^{2}}(\mu-\mu_{0})^{2}) \\
+& \qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad + \frac{{b}^{{a}_{0}}_{0}}{\Gamma(a_{0})} (\sigma^{2})^{-(a_{0}-1)}\exp(-b_{0}/\sigma^{2}) \bigg] \\
+&\propto \mathbb{E}_{q(\mu)}\bigg[ -\frac{n}{2}\log(\sigma^{2}) -\frac{\sum(y_{i}-\mu)^{2}}{2\sigma^{2}} - \frac{1}{2}\log(\sigma^{2})-\frac{\lambda_{0}}{2\sigma^{2}}(\mu-\mu_{0})^{2}
+-(a_{0}-1)\log(\sigma^{2}) - \frac{b_{0}}{\sigma^{2}} \bigg] \\
+&= \mathbb{E}_{q(\mu)}\bigg[
+-\left(a_{0}+\frac{n+1}{2}\right)\log(\sigma^{2}) + \left(b_{0} + \frac{1}{2}\sum(y_{i}-\mu)^{2} +\frac{\lambda_{0}}{2}(\mu-\mu_{0})^{2} \right)/\sigma^{2} \bigg],
+\end{aligned}
+\end{align}
+ahora, tomando la esperanza con respecto a $q(\mu)$
+\begin{align}
+&=
+-\left(a_{0}+\frac{n+1}{2}\right)\log(\sigma^{2}) + \left(b_{0} + \frac{1}{2}\mathbb{E}_{q(\mu)}\left[\sum(y_{i}-\mu)^{2} +\lambda_{0}(\mu-\mu_{0})^{2} \right]\right)/\sigma^{2},
+\end{align}
+elevando a $e$ ambos lados, podemos identificar el kernel Gamma-Inversa, es decir que
+\begin{align}
+\begin{aligned}
+q^{\star}(\sigma^{2}) &= IG(\sigma^{2} \mid a^{\star},\, b^{\star} ), \\
+a^{\star} &= a_{0} + (n+1)/2, \\
+b^{\star} &= b_{0} + \frac{1}{2}\mathbb{E}_{q(\mu)}\left[\sum(y_{i}-\mu)^{2} +\lambda_{0}(\mu-\mu_{0})^{2} \right],
+\end{aligned}
+\end{align}
+notamos que ambas densidades optimas dependen de los momentos de la otra densidad, esto sugiere emplear un esquema iterativo como en el \autoref{alg:cavi}, para ello, desarrollamos las expresiones de los parámetros óptimos. Para $\sigma^{2\star}$ de $q^{\star}(\mu)$ se tiene que
+\begin{align}
+\mathbb{E}_{q(\sigma^{2})}[1/\sigma^{2}] &= \frac{a^{\star}}{b^{\star}},
+\end{align}
+como $q^{\star}(\sigma^{2})= IG(\sigma^{2} \mid a^{\star},\,b^{\star})$, entonces $(\sigma^{2})^{-1} \sim \text{Gamma}(a^{\star},\, b^{\star})$, de ahí que podamos evaluar inmediatamente ese momento. Ahora, para $b^{\star}$ de $q^{\star}(\sigma^{2})$ se calcula
+\begin{align}
+\frac{1}{2}\mathbb{E}_{q(\mu)}\left[\sum (y_{i}-\mu^{2}) + \lambda_{0}(\mu-\mu_{0})^{2}\right] &= \frac{1}{2}\sum\mathbb{E}_{q(\mu)}\left[y_{i}^{2}+\mu^{2}-2{y}_{i}\mu\right] + \frac{\lambda_{0}}{2}\mathbb{E}_{q(\mu)}[\mu^{2}+\mu_{0}^{2}-2\mu\mu_{0}],
+\end{align}
+agrupando términos y tomando esperanza con respecto a $q(\mu)$
+\begin{align}
+&=\frac{n+\lambda_{0}}{2}\mathbb{E}_{q(\mu)}[\mu^{2}] - (n\bar{y}+\lambda_{0}\mu_{0})\mathbb{E}_{q(\mu)}[\mu] + \frac{\sum y_{i}^{2} + \lambda_{0}\mu_{0}^{2}}{2},
+\end{align}
+como $q^{\star}(\mu)$ es una densidad Gaussiana, nuevamente podemos evaluar los momentos de forma inmediata:
+\begin{align}
+\mathbb{E}_{q(\mu)}[\mu] &= (n\bar{y}+\lambda_{0}\mu_{0}) / (n+\lambda_{0}),
+\end{align}
+ahora, usando la relación $\mathbb{V}\text{ar}[\mu]=\mathbb{E}[\mu^{2}]-(\mathbb{E}[\mu])^{2}$ despejamos el segundo momento poblacional y escribimos
+\begin{align}
+\mathbb{E}_{q(\mu)}[\mu^{2}] &= \left[\mathbb{E}_{q(\sigma^{2})}[1/\sigma^{2}] (n+\lambda_{0})\right]^{-1} + \left(\mathbb{E}_{q(\mu)}[\mu]\right)^2,
+\end{align}
+equipados con estas expresiones, sólo necesitamos especificar (1) los valores para los hiperparámetros $\mu_{0},\, \lambda_{0},\, a_{0},\, b_{0}$ y (2) valores iniciales para los momentos poblacionales $\mathbb{E}_{q(\sigma^{2})}[\sigma^{2}]$, $\mathbb{E}_{q(\mu)}[\mu]$ y $\mathbb{E}_{q(\mu)}[\mu^{2}]$. En la \autoref{ch-ii-normal-VB-contour} se muestra una implementación de este algoritmo. Notamos que con un par de iteraciones, el algoritmo parece reproducir de forma exitosa la forma de la densidad posterior exacta, la cuál es normal gamma-inversa. La programación de este método se realizó en {Python 3.9.0}, y los códigos empleados pueden consultarse en el \hyperlink{anexo4}{Anexo 4}.
+
+\begin{figure}[!htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/normal-VB-contour.pdf}
+\caption[Inferencia Bayesiana variacional para los parámetros de la distribución normal.]{De izq. a der. y de arriba hacia abajo: inicialización, iteraciones 1, 20 y 200. Fuente: elaboración propia basada en \textcite{bishop}.}
+\label{ch-ii-normal-VB-contour}
+\end{figure}
+
+
+% Estaría interesante comparar el ajuste VB con la KL y la KL invertida, digamos para aproximar una densidad bimodal
+
+% En esta seccion poner el caso del modelo que estamos estimando, y decir que el caso iid es analogo pero se plantea de forma diferente.
+
+% Entonces, (1) vamos a comentar el inicio, (2) se arranca diciendo que se busca estimar los modelos propuestos (los de mas adelante), (3) no me gusta como se ve el dag (muy simple), entonces se va a comentar, (4) vamos a decir las analogias/diferencias clave con la estimacion en el caso iid. (5) Si tuviera tiempo, me gustaria explorar esa alternativa :c
+
+
+\subsection{Ejemplo 3: inferencia para la distribución normal asimétrica}
+
+\begin{comment}
+
+Consideremos el caso donde se desea hacer inferencia variacional sobre los parámetros de distribución normal asimétrica $\boldsymbol{\theta}=(\mu,\, \sigma^2,\, \lambda)^{T}$:
+\begin{align*}
+f_{Y}(y\, |\, \mu, \, \sigma^2, \, \lambda) &= \dfrac{2}{\sigma}\,\phi\left(\dfrac{y-\mu}{\sigma}\right) \, \Phi\left(\lambda\, \dfrac{y-\mu}{\sigma}\right),
+\end{align*}
+como distribución \textit{a priori} consideramos $p(\boldsymbol{\theta})\propto 1$. Se propone usar la familia campo-medio dada por
+\begin{align*}
+q(\boldsymbol{\theta})=q(\mu,\, \sigma,\, \lambda) = q(\mu)\, q(\sigma^2) \, q(\lambda).
+\end{align*}
+Consideremos una muestra de tamaño $n$ de la distribución normal-asimétrica. Entonces, calculemos las densidades óptimas
+\begin{align*}
+\text{Para $\mu=\theta_{1}$:}& \\\\
+q^{\star}(\theta_{1}) &\propto \exp\left\{ \mathbb{E}_{-\theta_{1}} [\log p(y, \, \boldsymbol{\theta})] \right\} \\
+&\propto \exp\left\{\mathbb{E}_{-\theta_{1}} [\log p(y \, | \, \boldsymbol{\theta})] \right\} \\
+&\propto \exp\,\mathbb{E}_{-\theta_{1}} \left[\log\frac{2}{\sigma} \frac{1}{\sqrt{2\pi}}\exp\left\{-\frac{1}{2}\left(\frac{y-\mu}{\sigma}\right)^2\right\} + \log  \Phi\left(\frac{\lambda(y-\mu)}{\sigma}\right) \right]  \\
+&\propto \exp\,\mathbb{E}_{-\theta_{1}} \left[-\frac{1}{2}\left(\frac{y^{2}+\mu^{2}-2y \mu}{\sigma^2}\right) + \log  \Phi\left(\frac{\lambda(y-\mu)}{\sigma}\right) \right]  \\
+&\propto \exp\,\mathbb{E}_{-\theta_{1}} \left[-\frac{1}{2}\left(\frac{\mu^{2}-2y \mu}{\sigma^2}\right) + \log  \Phi\left(\frac{\lambda(y-\mu)}{\sigma}\right) \right]  \\
+&\propto \exp\,\mathbb{E}_{-\theta_{1}} \left[-\frac{1}{2}\frac{(\mu - y)^{2}}{\sigma^2} + \log  \Phi\left(\frac{\lambda(y-\mu)}{\sigma}\right) \right]  \\
+&\propto \exp\, \left[-\frac{1}{2}(\mu - y)^{2}\,\mathbb{E}_{q(\sigma^2)}\left[ \frac{1}{\sigma^2} \right] + \mathbb{E}_{q(\sigma^{2}, \lambda)}\left[ \log \Phi\left(\frac{\lambda(y-\mu)}{\sigma}\right) \right]\right],
+\end{align*}
+parece prohibitivo calcular de forma analítica $\mathbb{E}_{q(\sigma^{2}, \lambda)}[\log \Phi (\cdot)]$ además de la posibilidad de no poder identificar la densidad óptima $q^{\star}(\mu)$  como una densidad `común'. Dado que los tres parámetros de interés $(\mu,\, \sigma^{2},\, \lambda)^{T}$ están involucrados en este término, al intentar calcular el resto de las densidades óptimas nos encontramos con este mismo problema, se debe buscar una solución alternativa. Para tal propósito, usemos el proceso de truncamiento oculto de la Sección 2.3, sea
+
+\end{comment}
+
+Este ejemplo ilustra el método de inferencia BV para el modelo de regresión con respuesta continua que se plantea más adelante en la \autoref{sec:modelo-log-normal}, sin embargo, aquí se sigue un enfoque analítico. Iniciamos con el proceso de truncamiento oculto descrito en la \autoref{subsec:truncamiento-oculto}, sea
+\begin{align}
+\begin{bmatrix}
+\boldsymbol{V}_{n} \\ W
+\end{bmatrix} &\sim 
+N_{n+1}\left(
+\begin{bmatrix}
+X\boldsymbol{\beta} \\ 0
+\end{bmatrix},\,
+\sigma^{2}
+\begin{bmatrix}
+\left[(1-\rho^{2})I_{n} + \rho^{2}J_{n}\right] & \rho\boldsymbol{1}_{n} \\ \rho\boldsymbol{1}_{n}^{T} & 1
+\end{bmatrix},
+\right),
+\end{align}
+y si definimos $\boldsymbol{Y}_{n}=\boldsymbol{V}_{n}$ siempre que $W>0$, entonces por los resultados de la \autoref{subsec:normal-asimetrica} y \autoref{subsec:normal-asimetrica-multivariada}, tanto $Y_{j}$ como $\boldsymbol{Y}_{n}$ tienen ley normal asimétrica univariada y multivariada, además, ya se mostró que
+\begin{align}
+p(\boldsymbol{y}_{n} \mid w)&=\prod\limits_{i=1}^{n} N(y_{i}\mid \boldsymbol{x}_{i}^{T}\boldsymbol{\beta} + w\rho ,\, \sigma^{2}(1-\rho^{2})) \, 2N(w \mid 0,\, \sigma^{2})I_{(0,\, \infty)}(w). 
+\end{align}
+Para hacer un tratamiento Bayesiano completo, debemos asignar una distribución \textit{a priori} a los parámetros $\boldsymbol{\theta}=(\rho, \sigma^{2}, \boldsymbol{\beta})^{T}$, la cuál establecemos como
+\begin{align}
+p(\boldsymbol{\theta}) \equiv p(\rho,\, \sigma^{2},\, \boldsymbol{\beta}) = p(\sigma^{2})\,p(\rho)&\propto \frac{1}{\sigma^{2}}\frac{\sqrt{1+\rho^{2}}}{1-\rho^{2}},
+\end{align}
+como se verá en la \autoref{sec:prior-rho}, esta distribución \textit{a priori} corresponde a la distribución de {referencia}.
+%El grafo dirigido acíclico para este modelo Bayesiano se muestra en la \autoref{ch-iv-dag}.
+%\begin{figure}
+%\centering
+%\includegraphics[width=0.5\linewidth]{Figuras/c-iv/DAG.pdf}
+%\caption[]{Grafo dirigido acíclico para el modelo Bayesiano propuesto.}
+%\label{fig:ch-iv-dag}
+%\end{figure}
+Ahora, para determinar las densidades variacionales óptimas, empleamos la restricción campo medio, esto es, aproximamos la densidad \textit{a posteriori} como
+\begin{align}
+p(\boldsymbol{\theta},\, w \mid \boldsymbol{y}) \equiv p(\boldsymbol{\beta},\, \sigma^{2},\, \rho,\, w \mid \boldsymbol{y}) &= q(\boldsymbol{\beta})\, q(w)\, q(\sigma^{2}) \, q(\rho). %\\
+% &= q(w)\, q(\sigma^{2})\, q(\rho)\prod\limits_{i=0}^{p} q(\beta_{i}),
+\end{align}
+% no se si valga la pena mantener la densidad optima de beta_j (escalar)..., de momento la voy a comentar
+\begin{comment}
+la última línea motiva obtener la densidad óptima de cada coeficiente $\beta_{i}$. Ahora bien, iniciamos determinando la densidad óptima de $\beta_{i}$, por tanto escribimos
+\begin{align*}
+\log q(\beta_{i}) &\propto \mathbb{E}_{-\beta_{i}} \left[ \log p(\boldsymbol{y},\, w,\, \boldsymbol{\beta},\, \sigma^{2},\, \rho) \right] \\
+&= \mathbb{E}_{q(w,\, \sigma^{2},\, \rho)} \left[
+\log\, p(\boldsymbol{y} \mid w,\, \boldsymbol{\beta},\, \sigma^{2},\, \rho) +
+\log\, p(w \mid \sigma^{2})
+\right] \\
+&= \E_{q(w,\,\sigma^{2},\, \rho)}
+\bigg[
+\log\,\left(\frac{1}{2\pi\sigma^{2}(1-\rho^{2})}\right)^{n/2}\exp\left(
+-\frac{\sum(y_{i}-[\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}+w\rho])^{2}}{2\sigma^{2}(1-\rho^{2})}
+\right) \\
+&\phantom{\E_{q(w,\, \sigma^{2},\, \rho)}\bigg[l}+ \log\,\frac{2}{\sqrt{2\pi\sigma^{2}}}\exp\left(
+-\frac{w^{2}}{\sigma^{2}}
+\right)\,I_{(0,\, \infty)}(w)
+\bigg] \\
+&\propto\mathbb{E}_{q(w,\, \sigma^{2},\, \rho)}\bigg[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}
+\sum\left(
+y_{i}^{\star} - \beta_{k}x_{ki}
+\right)^{2}
+\bigg],
+\intertext{donde $y_{i}^{\star}\triangleq y_{i}-wp-\sum_{\ell\neq k} \beta_{\ell}x_{\ell i}$, desarrollando e ignorando constantes escribimos}
+&\propto\mathbb{E}_{q(w,\, \sigma^{2},\, \rho)}\bigg[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}
+\sum\left(
+\beta_{k}^{2}x_{ki}^{2} - 2y_{i}^{\star}\beta_{k}x_{ki}
+\right)
+\bigg],
+\intertext{ahora, tomando la esperanza con respecto a $q(w,\, \sigma^{2},\, \rho,\, \boldsymbol{\beta}_{-k})$}
+&\propto
+-\frac{1}{2}\mathbb{E}_{q(w,\, \sigma^{2},\, \rho)}\left[\frac{1}{\sigma^{2}(1-\rho^{2})}
+\sum\left(
+\beta_{k}^{2}x_{ki}^{2} - 2y_{i}^{\star}\beta_{k}x_{ki}
+\right)\right]\\
+&=
+-\frac{1}{2}
+\mathbb{E}_{q(\sigma^{2},\,\rho)}\left[\frac{1}{\sigma^{2}(1-\rho^{2})}\right]
+\sum\left(
+\beta_{k}^{2}x_{ki}^{2} - 2\mathbb{E}_{q(w,\, \rho)}[y_{i}^{\star}]\beta_{k}x_{ki}
+\right),
+\intertext{tomando la suma, sumando cero e ignorando constantes escribimos}
+&\propto
+-\frac{\sum(x_{ki}^{2})}{2}\E_{q(\sigma^{2},\, \rho)}\left[\frac{1}{\sigma^{2}(1-\rho^{2})}\right]
+\left(
+\beta_{k} - \frac{\sum(\E_{q(w,\, \rho,\, \boldsymbol{\beta}_{-k})}[y_{i}^{\star}]x_{ki})}{\sum(x_{ki}^{2})}
+\right)^{2}
+,
+\intertext{elevando a $e$ ambos lados, podemos identificar el kernel Gaussiano, es decir que}
+q^{\star}(\beta_{k}) &= N(\beta_{k} \mid \mu_{k},\, \sigma^{2}_{k}), \\
+\mu_{k} &= \sum\limits_{i=1}^{n}(\mathbb{E}_{q(w,\, \rho,\, \boldsymbol{\beta}_{-k})}[y_{i}^{\star}]x_{ki}) / \sum\limits_{i=1}^{n}{x}_{ki}^{2},\\
+\sigma^{2}_{k} &= \left( \mathbb{E}_{q(\sigma^{2},\, \rho)}\left[\frac{1}{\sigma^{2}(1-\rho^{2})}\right] \sum\limits_{i=1}^{n} x_{ki}^{2}\right)^{-1},
+\end{align*}
+aquí la esperanza del producto de variables aleatorias, como $1/\sigma^{2}(1-\rho^{2})$, no tiene mayor dificultad ya que la densidad variacional se factoriza, especificamente $q(\sigma^{2},\, \rho)=q(\sigma^{2})\, q(\rho)$, y podemos evaluar de manera más fácil los momentos de cada variable aleatoria involucrada. En las derivaciones siguientes, se omitirá escribir explícitamente las variables aleatorias en la densidad condicional sobre la cuál tomamos la esperanza, es decir, únicamente denotamos $\E_{q}$ sin riesgo de confusión. Así mismo, podemos encontrar la densidad óptima para todo el vector $\boldsymbol{\beta}$:
+\end{comment}
+Iniciamos determinando la densidad óptima $q^{\star}(\boldsymbol{\beta})$, para ello escribimos
+\begin{align*}
+\log\,q^{\star}(\boldsymbol{\beta})& \propto\E_{-\boldsymbol{\beta}}
+\left[
+\log\,p(\boldsymbol{y},\, w,\, \rho,\, \sigma^{2},\, \boldsymbol{\beta})
+\right] \\
+&=\E_{q(\rho,\, \sigma^{2},\, w)}
+\left[
+\log\,p(\boldsymbol{y}\mid \boldsymbol{\beta},\, w,\, \sigma^{2},\, \rho)
+\right] \\
+&= \E_{q}
+\left[
+\log\,\left(\frac{1}{2\pi\sigma^{2}(1-\rho^{2})}\right)^{n/2}\exp\Big(-\frac{1}{2}\frac{\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-{w}\rho)^{2}}{\sigma^{2}(1-\rho^{2})}\Big)
+\right],
+\intertext{note que $\sum\limits_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-\boldsymbol{1}_{n}{w}\rho)^{2}$ $=$ $(\boldsymbol{y}-X\boldsymbol{\beta}-{w}\rho\boldsymbol{1}_{n})^{T}(\boldsymbol{y}-X\boldsymbol{\beta}-{w}\rho\boldsymbol{1}_{n})$, ahora, aplicando logaritmo en ambos lados e ignorando constantes}
+&\propto \E_{q}
+\left[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}\left(\boldsymbol{y}-X\boldsymbol{\beta}-{w}\rho\boldsymbol{1}_{n})^{T}(\boldsymbol{y}-X\boldsymbol{\beta}-{w}\rho\boldsymbol{1}_{n}\right)
+\right],
+\intertext{desarrollando la forma cuadrática en $\boldsymbol{\beta}$ e ignorando constantes}
+&\propto \E_{q}
+\left[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}\left(\boldsymbol{\beta}^{T}X^{T}X\boldsymbol{\beta} - 2\boldsymbol{\beta}\left[X^{T}\boldsymbol{y} - {X}^{T}{w}\rho \boldsymbol{1}_{n}\right]\right)
+\right],
+\intertext{luego, evaluamos y separamos con cuidado las esperanzas\footnotemark}
+&= -\frac{1}{2}\E_{q}
+\left[\frac{1}{\sigma^{2}}\right]\E_{q}\left[\frac{1}{1-\rho^{2}}\right]
+\left(\boldsymbol{\beta}^{T}X^{T}X\boldsymbol{\beta} - 2\boldsymbol{\beta}\Big(X^{T}\boldsymbol{y} - {X}^{T}\boldsymbol{1}_{n}\E_{q}[{w}]\frac{\E_{q}\left[\rho/(1-\rho^{2})\right]}{\E_{q}\left[1/(1-\rho^{2})\right]}\Big)\right),
+\intertext{completando la forma cuadrática en $\boldsymbol{\beta}$,}
+&= -\frac{1}{2}\E_{q}\left[\frac{1}{\sigma^{2}}\right]\,\E_{q}\left[\frac{1}{1-\rho^{2}}\right]\, \left(\boldsymbol{\beta} - \boldsymbol{\mu}_{\beta^{\star}}\right)^{T}(X^{T}X)\left(\boldsymbol{\beta} - \boldsymbol{\mu}_{\beta^{\star}}\right),
+\end{align*}
+es decir que $q^{\star}(\boldsymbol{\beta}) = N(\boldsymbol{\beta} \,\mid\, \boldsymbol{\mu}_{\beta^{\star}},\, \Sigma_{\beta}^{\star})$, donde
+\begin{align*}
+\boldsymbol{\mu}_{\beta^{\star}} &= (X^{T}X)^{-1}X^{T}\Big(\boldsymbol{y} - \boldsymbol{1}_{n}\E_{q}[{w}]\frac{\E_{q}\left[\rho/(1-\rho^{2})\right]}{\E_{q}\left[1/(1-\rho^{2})\right]}\Big) \\[0.5cm]
+\Sigma_{\beta^{\star}} &= \E_{q}\left[\frac{1}{\sigma^{2}}\right]\, \E_{q}\left[\frac{1}{1-\rho^{2}}\right](X^{T}X)^{-1}.
+\end{align*}
+\footnotetext{Ya que, por ejemplo, en general no es posible separar las expresiones de la forma $\E_{q}[a(\rho) \, b(\rho)]$ como $\E_{q}[a(\rho)]\, \E_{q}(b(\rho))$. Así mismo, momentos como $\E_{q}[w \, a(\rho)]$ se factorizan como $\E_{q}[w] \, \E_{q}[a(\rho)]$ debido a la restricción Campo Medio que se propuso previamente.}
+Continuamos determinando la densidad óptima de $\sigma^{2}$, por tanto escribimos
+\begin{align*}
+\log \, q^{\star}(\sigma^{2}) &\propto \mathbb{E}_{-\sigma^{2}} \left[
+\log\, p(\boldsymbol{y},\, w,\, \boldsymbol{\beta},\, \sigma^{2},\, \rho)
+\right] \\
+&\propto \mathbb{E}_{q(w,\, \boldsymbol{\beta},\, \rho)} \left[
+\log\, p(\boldsymbol{y}\,\mid\, w,\, \boldsymbol{\beta},\, \sigma^{2},\, \rho) + \log\,p(\sigma^{2})
+\right],
+\intertext{ignorando constantes escribimos}
+&\propto \E_{q} \left[
+-\frac{n}{2}\log(\sigma^{2})-\frac{1}{2\sigma^{2}}\left(
+\frac{\sum\limits_{i=1}^{n}(y_{i} - \boldsymbol{x}_{i}^{T}\boldsymbol{\beta}+\rho w)^{2}}{1-\rho^{2}}
+\right) - \frac{1}{2}\log(\sigma^{2})-\frac{w^{2}}{2\sigma^{2}}
+-\log\sigma^{2}
+\right] \\
+&= \E_{q} \left[
+-\left(\frac{n+1}{2}-1\right)\log(\sigma^{2})-\frac{1}{2\sigma^{2}}\left(
+\frac{\sum\limits_{i=1}^{n}(y_{i} - \boldsymbol{x}_{i}^{T}\boldsymbol{\beta}+\rho w)^{2}}{1-\rho^{2}} + w^{2}
+\right)
+\right],
+\intertext{tomando la esperanza con respecto a la densidad variacional $q$}
+&=  
+-\left(\frac{n+1}{2}-1\right)\log(\sigma^{2})-\frac{1}{\sigma^{2}}\mathbb{E}_{q}\left[
+\frac{\sum\limits_{i=1}^{n} (y_{i} - \boldsymbol{x}_{i}^{T}\boldsymbol{\beta}+\rho w)^{2}}{1-\rho^{2}} + w^{2}
+\right]\bigg/ 2,
+\intertext{elevando a $e$ ambos lados, podemos identificar el kernel Gamma-Inversa, es decir que}
+q^{\star}(\sigma^{2}) &= IG(\sigma^{2} \mid a_{\sigma^{2}},\, b_{\sigma^{2}}), \\
+a_{\sigma^{2}} &= (n+1)/2, \\
+b_{\sigma^{2}} &= \frac{1}{2}\mathbb{E}_{q}\left[\frac{\sum\limits_{i=1}^{n} (y_{i} - \boldsymbol{x}_{i}^{T}\boldsymbol{\beta}+\rho w)^{2}}{1-\rho^{2}} + w^{2}\right].
+\intertext{Luego, obtenemos la densidad óptima de $w$, por tanto escribimos}
+\log\,q^{\star}(w) &\propto \E_{-w}\left[ \log\,p(\boldsymbol{y},\, w,\, \rho,\, \sigma^{2},\, \boldsymbol{\beta}) \right] \\
+&=\E_{q}\left[\log\,p(\boldsymbol{y}\mid \rho,\, \sigma^{2},\, w,\, \boldsymbol{\beta}) + \log\,p(w\mid\sigma^{2})\right]
+\intertext{aplicando logaritmo e ignorando constantes}
+&\propto\E_{q}
+\left[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}
+\sum\limits_{i=1}^{n}(y_{i} - \boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-
+{w}\rho)^{2} - \frac{1}{2\sigma^{2}}{w}^{2}
+\right],
+\intertext{desarrollando el cuadrado en $w$, tomando la suma e ignorando constantes}
+&\propto\E_{q}
+\left[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}
+\left(n{w}^{2}\rho^{2}-2w\rho\sum\limits_{i=1}^{n}({y}_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta})\right) - \frac{w^{2}}{2\sigma^{2}}
+\right],
+\intertext{juntando ambas fracciones y colectando términos con $w^{2}$}
+&=\E_{q}
+\left[
+-\frac{1}{2\sigma^{2}(1-\rho^{2})}
+\left(\big((n-1)\rho^{2}+1\big){w}^{2}-2w\rho\sum\limits_{i=1}^{n}({y}_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta})
+\right)
+\right],
+\intertext{ahora tomamos esperanzas, note que es necesario expandir esta expresión a fin de evaluarlas de forma correcta}
+&=-\frac{1}{2}\E_{q}
+\Bigg[
+-\frac{1}{\sigma^{2}}
+\Big(\frac{(n-1)\rho^{2}-1}{1-\rho^{2}}{w}^{2}-2w\frac{\rho\sum\limits_{i=1}^{n}({y}_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta})}{1-\rho^{2}}
+\Big)
+\Bigg],
+\intertext{luego, re-escribimos el kernel en $w$}
+&=
+-\frac{1}{2}\E_{q}\left[\frac{1}{\sigma^{2}}\right]\E_{q}\left[\frac{(n-1)\rho^{2}+1}{1-\rho^{2}}\right]
+\Big({w}^{2}-2w\frac{\E_{q}\left[\frac{\rho}{1-\rho^{2}}\right]\sum\limits_{i=1}^{n}({y}_{i}-\boldsymbol{x}_{i}^{T}\E_{q}[\boldsymbol{\beta}])}{\E_{q}[\big((n-1)\rho^{2}+1\big) / (1-\rho^{2})]}
+\Big),
+\end{align*}
+es decir que $q^{\star}(w) = N(w\mid \mu_{w},\, \sigma^{2}_{w})$, truncada a la izquierda en cero, donde
+\begin{align*}
+% \mu_{w} &= \frac{\mathbb{E}_{q}\left[\frac{\rho}{1-\rho^{2}}\right]\sum\limits_{i=1}^{n}\big({y}_{i}-\boldsymbol{x}_{i}^{T}\E_{q}[\boldsymbol{\beta}]\big)}{\E_{q}[\big((n-1)\rho^{2}+1) \big/ (1-\rho^{2})]} \\[0.5cm]
+\mu_{w} &= \frac{\mathbb{E}_{q}\left[\dfrac{\rho}{1-\rho^{2}}\right]\sum\limits_{i=1}^{n}\big({y}_{i}-\boldsymbol{x}_{i}^{T}\E_{q}[\boldsymbol{\beta}]\big)}{\E_{q}\left[\dfrac{(n-1)\rho^{2}+1}{1-\rho^{2}}\right]} \\[0.5cm]
+\sigma^{2}_{w} &= \left(\E_{q}\left[\frac{1}{\sigma^{2}}\right]\left[\frac{(n-1)\rho^{2}+1}{1-\rho^{2}}\right]\right)^{-1}.
+\end{align*}
+Para finalizar, es necesario determinar la densidad óptima $q^{\star}(\rho)$, por tanto escribimos
+\begin{align*}
+\log\,q^{\star}(\rho) &\propto\E_{-\rho}\left[\log\,p(\boldsymbol{y},\, w,\, \sigma^{2},\, \boldsymbol{\beta})\right] \\
+&\propto\E_{q}\left[\log\,p(\boldsymbol{y} \mid \rho,\, \sigma^{2},\, \boldsymbol{\beta}) + \log\,p(\rho)\right] \\
+&=\E_{q}\bigg[\log\,\left(\frac{1}{2\pi\sigma^{2}(1-\rho^{2})}\right)^{n/2}\exp\left(-\frac{1}{2}\frac{\sum\limits_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-{w}\rho)^{2}}{\sigma^{2}(1-\rho^{2})}\right) + \log\,\frac{\sqrt{1+\rho^{2}}}{1-\rho^{2}} \bigg] \\
+&\propto \mathbb{E}_{q}\left[-\frac{n-2}{2}\log(1-\rho^{2}) - \frac{\sum\limits_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-w\rho)^{2}}{2\sigma^{2}(1-\rho^{2})} +\frac{1}{2}\log\,(1+\rho^{2}) \right],
+% \intertext{desarrollando la suma, nos quedamos con los términos con $\rho$}
+% &\propto \mathbb{E}_{q}\left[-\frac{n-2}{2}\log(1-\rho^{2}) - \frac{nw^{2}\rho^{2}-2{w}\rho\sum({y}_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta})}{2\sigma^{2}(1-\rho^{2})} + \frac{1}{2}\log(1+\rho^{2})\right], % de hecho no podemos omitir ningún término, ya que todos están involucrados con \rho...
+\intertext{juntando términos semejantes y tomando esperanzas:}
+&=-\frac{n-2}{2}\log(1-\rho^{2}) - \frac{1}{2}\mathbb{E}_{q}\left[\frac{1}{\sigma^{2}}\right]\mathbb{E}_{q}\bigg[\frac{\sum\limits_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-w\rho)^{2}}{1-\rho^{2}}\bigg] + \frac{1}{2}\log\,(1+\rho^{2}), 
+\end{align*}
+note que aquí no es posible ignorar más constantes o simplificar la expresión, por tanto, no es sencillo identificar el kernel de la densidad óptima $q^{\star}(\rho)$ como una densidad `común', en otras palabras, no es viable emplear únicamente el método campo medio para realizar inferencia BV sobre los parámetros $(\rho,\, \sigma^{2},\, \boldsymbol{\beta})^{T}$. En la siguiente sección mostraremos como emplear un método híbrido, basado en los resultados que se acaban de obtener, para dar solución al problema de inferencia.
+
+Vale la pena notar que, este caso de estimación no es el mismo que partir de una muestra independiente e idénticamente distribuida $y_{1:n}=(y_{1}, y_{2}, \ldots, y_{n})$ proveniente de $SN(y_{i} \mid \boldsymbol{x}_{i}^{T}\boldsymbol{\beta}, \sigma^2, \lambda)$: para usar el truncamiento oculto, en este escenario se plantea
+\begin{equation}
+\begin{bmatrix}
+V_{1} \\ W_{1}
+\end{bmatrix},\,
+\begin{bmatrix}
+V_{2} \\ W_{2}
+\end{bmatrix},\,
+\cdots ,\, 
+\begin{bmatrix}
+V_{n} \\ W_{n}
+\end{bmatrix} \sim N_{2}
+\left(
+\begin{bmatrix} V_{i} \\ W_{i} \end{bmatrix} \mid \begin{bmatrix}\boldsymbol{x}_{i}^{T}\boldsymbol{\beta} \\ 0 \end{bmatrix}, \, 
+\sigma^2\begin{bmatrix}
+1 & \rho \\ \rho & 1
+\end{bmatrix}
+\right),
+\end{equation}
+y se define $y_{i}=V_{i} \mid (W_{i}>0)$. La diferencia es sutil pero relevante: el caso descrito previamente asume que $y_{i} \not\perp y_{j}$ de forma marginal, mientras que este plantea $y_{i} \perp y_{j}$. Para nuestra exposición, resulta más realista no asumir independencia marginal entre observaciones de un mismo dominio. Por otra parte, en algunos casos se prefiere trabajar con esta otra versión. Note que la densidad de $p(y_{1:n}, w_{1:n})$ está dada por
+\begin{equation}
+p(y_{1:n}, w_{1:n}) \equiv p(y_{1:n} \mid w_{1:n}) p(w_{1:n}) = \prod_{i=1}^{n} N(y_{i} \mid \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + {w}_{i}\rho, \sigma^{2}(1-\rho_{i}^{2})) \, N(w_{i} \mid 0, \sigma^{2}) 1(w_{i}>0),
+\end{equation}
+en este caso, en las densidades óptimas $q^{\star}(\boldsymbol{\beta})$ y $q^{\star}(\sigma)$, se debe tomar en cuenta que $p(w_{1:n})\propto - \sum_{i=1}^{n}w_{i}^{2}/2\sigma^2$. Si se considera una densidad óptima para cada entrada del vector $w_{1:n}$, entonces $q^{\star}(w_{i}) \equiv q^{\star}(w)$ por independencia entre $W_{i}$ y $W_{j}$, por otro lado, la densidad óptima para $w_{1:n}$ de forma conjunta debe reensamblar una densidad normal multivariada donde cada entrada ha sido truncada a $\mathbb{R}^{+}$.
+
+
+\begin{comment}
+\subsection{Ejemplo 4: regressión LASSO}
+
+Basados en el ejemplo de [1]. Se considera el problema de regresión lineal
+\begin{align*}
+\boldsymbol{y} &= \mu\boldsymbol{1}_{n} + X\boldsymbol{\beta} + \boldsymbol{\varepsilon},
+\end{align*}
+donde $\boldsymbol{\varepsilon}\sim N_{n}(\boldsymbol{0},\, \sigma^{2}I_{n})$ y $X$ es una matriz de dimensión $(n\times p)$. Si centramos tanto $\boldsymbol{y}$ como $X$, podemos omitir el uso de $\mu$. Con frecuencia el interés principal del análisis de regresión es en estimar $\boldsymbol{\beta}$, así como identificar las covariables `relevantes' en el modelo. El operador de \enfasis{encogimiento mínimo absoluto y selección} (\textit{Least absolute shrinkage and selection}, Lasso) propone una solución a este problema al minimizar la suma de cuadrados del error más un término de penalización o regularización
+\begin{align*}
+\boldsymbol{\beta}_{LASSO} \triangleq \min_{\boldsymbol{\beta}} \left\{ (\boldsymbol{y}-X\boldsymbol{\beta})^{t}(\boldsymbol{y}-X\boldsymbol{\beta}) + \tilde{\lambda}\sum_{j=1}^{p} |\beta_{j}|
+\right\},
+\end{align*}
+con $\tilde{\lambda}>0$. El estimador Lasso $\boldsymbol{\beta}_{LASSO}$ puede ser interpretado en un contexto Bayesiano como la moda posterior cuando usamos una distribución \textit{a priori} Laplace condicional para $\boldsymbol{\beta}$ [2], [3], es decir
+\begin{align*}
+p(\boldsymbol{\beta} | \sigma^{2}) = \prod_{j=1}^{p} \frac{\lambda}{2\sqrt{\sigma^{2}}} e^{-\lambda|\beta_{j}|/\sqrt{\sigma^{2}}},
+\end{align*}
+así, la moda posterior de $\boldsymbol{\beta}$ es el estimador \enfasis{Lasso} con $\tilde{\lambda}=2\lambda\sqrt{\sigma^{2}}$. \marginnote{Al condicionar $\boldsymbol{\beta} | \sigma^{2}$ en $\sigma^{2}$ garantizamos que la distribución posterior sea unimodal.}
+
+Usando el hecho de que la distribución Laplace puede ser representada como una mezcla de distribuciones normal y exponencial como
+\begin{align*}
+\frac{\lambda}{2\sqrt{\sigma^{2}}}e^{-\lambda|\beta_{j}|} &= \int_{0}^{\infty} \frac{1}{\sqrt{2\pi\sigma^{2}\tau}}e^{-\beta_{j}^{2}/(2\sigma^{2}\tau)} \cdot \frac{\lambda^{2}}{2} e^{-\lambda^{2}\tau/2}\, d\tau,
+\end{align*}
+y tras algunas operaciones adicionales podemos escribir que
+\begin{align*}
+\frac{\lambda}{2}e^{-\lambda|z|} &= \int_{0}^{\infty} \frac{1}{\sqrt{2\pi s}}e^{-z^{2}/(2s)} \cdot \frac{\lambda^{2}}{2} e^{-\lambda^{2}s/2}\, ds,
+\end{align*}
+lo cuál motiva la siguiente representación jerárquica del modelo Lasso Bayesiano
+
+\begin{tcolorbox}[title={Mezcla normal-exponencial de escala}]
+
+Se dice que la variable aleatoria $X$ tiene distribución Laplace con media $\mu\in\mathbb{R}$ y escala $b>0$ si su función de densidad está dada por
+\[
+f_{X}(x; \mu,\, b) = \frac{1}{2b}\exp\left(-\frac{|x-\mu|}{b}\right), \, x\in\mathbb{R},
+\]
+y escribimos $X\sim\text{Laplace}(\mu, \, b)$. Ahora, sea $W\sim \text{Exp}(1/2b^{2})$, y además $X|W=w\sim N(0,\, w)$. En este escenario podemos mostrar que la distribución marginal de $X$ es $\text{Laplace}(\mu,\, b)$.
+
+Note que la 
+
+
+\end{tcolorbox}
+
+
+
+\begin{align*}
+\boldsymbol{y} | X,\, \boldsymbol{\beta},\, \sigma^{2} &\sim N(X\mathbf{\beta},\, \sigma^{2}{I}_{n}) \\
+\beta_{j} | \sigma^{2},\, \tau_{j} &\sim N(0,\, \sigma^{2}\tau_{j}) \\
+\tau_{j} &\sim \text{Exp}\left(\frac{\lambda^{2}}{2}\right) = \frac{\lambda^{2}}{2}\exp\{-\lambda^{2}\tau_{j}/2\} I_{(0,\, \infty)}(\tau_{j}).
+\end{align*}
+
+La distribución \textit{a priori} conjugada para $\sigma^{2}$ es Gamma-inversa, pero por simplicidad se considera $p(\sigma^{2})\propto 1/\sigma^{2}$. Para realizar un tratamiento completamente Bayesiano se coloca la siguiente distribución \textit{a priori} en $\lambda^{2}$
+\begin{align*}
+p(\lambda^{2}) = \frac{\delta^{r}}{\Gamma(r)}(\lambda^{2})^{r-1}e^{-\delta\lambda^{2}},
+\end{align*}
+donde $r, \delta$ son híper-parámetros. Como se verá adelante, se usa una distribución \textit{a priori} en $\lambda^{2}$ en lugar de $\lambda$, ya que esto conduce a una \enfasis{forma tratable} de la distribución variacional condicional óptima para $\lambda^{2}$.
+
+Ahora, el único supuesto que hacemos es que la familia variacional se puede expresar como
+\begin{align*}
+q(\boldsymbol{\beta},\, \boldsymbol{\tau},\, \sigma^{2},\, \lambda^{2}) = q(\boldsymbol{\beta})q(\boldsymbol{\tau})q(\sigma^{2})q(\lambda^{2}),
+\end{align*}
+es decir, se emplea la factorización de campo medio. Ahora, nuestro trabajo consisite en encontrar las densidades variacionales condicionales óptimas, del resultado previo (Eq. 5) podemos escribir
+\begin{align*}
+q_{1}(\boldsymbol{\beta}) &\propto \exp\left(\mathbb{E}_{-\boldsymbol{\beta}}[\log p(\boldsymbol{y}, \boldsymbol{\theta})]  \right) \\
+&\propto \exp\left(\mathbb{E}_{-\boldsymbol{\beta}}[\log ] \right)
+\end{align*}
+\end{comment}
+
+\subsection{Restricción Forma Fija}
+
+En este método de inferencia Bayesiana variaciona, se asume una forma paramétrica fija de la densidad aproximada, es decir, aquí el usuario es quien asigna una densidad de probabilidad para cada parámetro o grupo de parámetros de interés, de tal manera que los soportes coincidan, y a partir de esta elección se busca la configuración de parámetros que, nuevamente, como en el caso de la restricción campo medio, maximice el límite inferior de la evidencia. Por ejemplo, para un parámetro cuyo dominio sean los reales positivos, se podría aproximar la densidad óptima con una distribución gamma, o bien, mapear a los reales y aproximar con una distribución normal. Ahora, la familia de densidades $\mathcal{Q}$ está dada por
+\begin{align}
+\mathcal{Q} &= \left\{
+q(\boldsymbol{\theta};\, \boldsymbol{\xi}) \, :\, \boldsymbol{\xi}\in\Xi
+\right\},
+\end{align}
+esto es, se fija la familia de densidades y únicamente varía $\boldsymbol{\xi}$ sobre el espacio paramétrico $\Xi$, de este modo, las densidades óptimas $q^{\star}$ están dadas por
+\begin{align}
+q^{\star}(\boldsymbol{\theta}) &= \argmax_{\xi\in{\Xi}}\ELBO{q;\, \boldsymbol{\xi}}.
+\end{align}
+Este enfoque se aborda por \textcite{practical-VI, semipar-VI, explaining-VI}. \textcite{semipar-VI} proponen emplear dos nomeclaturas para cada tipo de método de inferencia variacional: {no paramétrica}, que coindice con la restrición campo medio y {paramétrica}, que coincide con el método forma fija.
+
+No obstante, dado que el objetivo del paradigma variacional es realizar aproximaciones, también es posible construir un método híbrido: debido a que la utilidad de la restricción campo medio depende de la propiedad de conjugación, para aquellas densidades que no tienen este atributo, es posible aproximar su aportación a la distribución \textit{a posteriori} mediante una distribución tratable. En este caso, la familia variacional $\mathcal{Q}$ se define como
+\begin{align}
+\mathcal{Q} =
+\left\{
+q(\boldsymbol{\theta},\, \boldsymbol{\phi}) \, : \, q(\boldsymbol{\theta},\, \boldsymbol{\phi}) = q(\boldsymbol{\theta}_{1}) \, \ldots,\, q(\boldsymbol{\theta}_{p}) \, q(\boldsymbol{\phi},\, \xi),\, \xi\in\Xi
+\right\},
+\end{align}
+de acuerdo con \textcite{semipar-VI}, $q(\boldsymbol{\phi},\, \xi)$ es alguna familia paramétrica preespecificada de densidades en las variables $\boldsymbol{\psi}$  (la parte fija o paramétrica), mientras que no se insiste en alguna forma paramétrica de $q(\boldsymbol{\theta}_{i})$ (la parte campo medio o no paramétrica). En este caso, el objetivo variacional del método híbrido de inferencia BV está dado por
+\begin{equation}
+q^{\star}(\boldsymbol{\theta}) = \argmax_{q\in\mathcal{Q},\, \xi\in{\Xi}}\ELBO{q;\, \boldsymbol{\xi}}.
+\end{equation}
+
+
+% quizás sí es más conveniente ejemplificar la normal asimétrica como un algoritmo híbrido, es decir, no emplear truncamiento oculto y proponer como densidad optima de lambda alguna densiad con soporte en (-1, 1) o (0, 1)
+
+% también, si el tiempo lo permite me gustaría ejemplificar el caso de la normal multivariada, o univariada, o por que no ambos...
+
+% \subsection{Ejemplo: distribución normal asimétrica (revisitado)}
+
+% Proponemos un algoritmo híbrido para realizar inferencia en esta distribución:
+
+% agregar más fuentes aquí, es decir complementar las referencias
+
+% por ejemplo:
+% la técnica de transformación de variables aleatorias mediante el uso de Jacobianos
+% estandarización eliptica, a que se refiere a una distribución eliptica
+% integracion MC!!, esto debe estar en la revisión
+% también la parte de optimización estocástica
+% agregar un ejemplo propio de Advi?, bueno quizás basado en el artículo... o no
+% complementar el Anexo de distribuciones de probabilidad comunes: normal multivariada, gamma, gamma-inversa (parametrización rate y scale)
+
+\subsection{Ejemplo 3: inferencia para la distribución normal asimétrica (revisitado)}
+\label{subsec:ch-iv-ejemplo-regresion-revisitado}
+
+Siguiendo el supuesto de campo medio de la inferencia BV, no fue posible identificar la densidad óptima $q^{\star}(\rho)$, por lo tanto, se propone emplear el supuesto de forma fija para aproximar la densidad \textit{a posteriori} de esta cantidad. Aunque es posible usar este método para todos los parámetros del modelo, probablemente no es la estrategia adecuada, ya que se puede explotar el hecho de que las densidades óptimas $q^{\star}(\boldsymbol{\beta})$, $q^{\star}(w)$ y $q^{\star}(\sigma^{2})$ son tratables. Vale la pena resaltar que la asignación de una densidad fija para $\rho$, no significa asignar una \textit{a priori} para este parámetro, sin embargo, el soporte de la densidad asignada debe estar contenido en el soporte de la \textit{a priori}.
+
+Ahora bien, una elección natural para la densidad óptima $q(\rho)$ es emplear una densidad con soporte en el intervalo $(-1,\, 1)$, no obstante, parece que no hay muchas densidades comúnes que satisfagan esta condición, por ejemplo, \textcite{paulino-art:2017} emplearon una versión análoga al kernel de la siguiente transformación para generar muestras con el algoritmo Metropolis-Hastings, reemplazando $\rho$ por el parámetro de asimetría $\gamma_{1}$,
+\begin{align}
+q(\rho) &= 2\text{Be}(\rho \mid a, b) - 1
+% q(\rho) &= NT(\rho \mid \mu_{\rho},\, \sigma^{2}_{\rho}; -1,\, 1).
+% q(\rho) &= \pi_{1}\text{Beta}(-\rho \mid a_{1},\, b_{1})I_{(-1,\, 0)}(\rho) + \pi_{2}\text{Beta}(\rho \mid a_{2},\, b_{2})I_{(0,\, 1)}(\rho).
+\end{align}
+%es decir, una normal truncada en $(-1,\, 1)$, o bien una mezcla de betas.
+No obstante, dado que trabajamos con un problema de optimización, otra alternativa es mapear $\rho$ a la recta real, siendo como candidato la transformación que define la relación entre los parámetros de forma/correlación, es decir $\rho = \frac{\lambda}{\sqrt{1 - \lambda^{2}}}$, además, dado que también transformamos la distribución \textit{a priori}, la densidad resultante, ya ajustada por el Jacobiano de la transformación, está dada por \parencite{Araceli}
+\begin{align}
+p(\lambda,\,\sigma) = p(\sigma^{2})p(\lambda) &= \frac{1}{\sigma^{2}} \frac{\sqrt{1+2\lambda^{2}}}{(1+\lambda^{2})^{2}},
+\end{align}
+así, podemos escribir el modelo en términos de $\lambda$ como sigue
+\begin{align}
+p(\boldsymbol{\beta},\, \sigma^{2},\,\lambda,\,w \mid \boldsymbol{y}) &\propto p(\boldsymbol{y} \mid w,\, \boldsymbol{\beta},\, \sigma^{2},\, \lambda) \pi(\boldsymbol{\theta}) \\
+\notag &= \left(\frac{1+\lambda^{2}}{2\pi\sigma^{2}}\right)^{n/2}
+\exp\left(
+-\frac{1+\lambda^{2}}{2\sigma^{2}}
+\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta} - \frac{\lambda}{\sqrt{1+\lambda^{2}}} w)^{2}
+\right) \\
+&\times\frac{2}{\sqrt{2\pi\sigma^{2}}}\exp\left(-\frac{w^{2}}{2\sigma^{2}}\right) I_{(0,\, \infty)}(w)\tag{verosimilitud}\\
+&\times\frac{1}{\sigma^{2}} \frac{\sqrt{1+2\lambda^{2}}}{(1+\lambda^{2})^{2}} \tag{distribución \textit{a priori}}.
+\end{align}
+Dado que la densidad $q(\lambda)$ es fija, los parámetros variacionales ahora consisten de $(\mu_{\lambda},\, \sigma^{2}_{\lambda})^{T}$, además de los parámetros de las densidades óptimas $q^{\star}$. Ahora bien, el procedimiento para determinar los valores óptimos desde el punto de vista variacional es análogo al método campo medio: es necesario optimizar el límite inferior de la evidencia con respecto a estos parámetros. Una forma simple de hacer esto es empleando el método de ascenso del gradiente, aunque se podría emplear algún otro metodo de optimización. Ahora bien, el objetivo es maximizar el ELBO con respecto a $(\mu_{\lambda},\, \sigma^{2}_{\lambda})^{T}$, simbólicamente escribimos
+\begin{align}
+\begin{aligned}
+(\mu_{\lambda},\, \sigma^{2}_{\lambda})^{\star}&\equiv \argmax_{\mu_{\lambda},\, \sigma^{2}_{\lambda}}\,\ELBO{q} \\
+&\equiv \argmax_{\mu_{\lambda},\, \sigma^{2}_{\lambda}} \,\E_{q}\left[ \log\, p(\boldsymbol{y},\, w,\, \boldsymbol{\beta},\, \sigma^{2},\, \lambda) + \log\, J_{T^{-1}}(\lambda) \right] \\
+&+ \mathbb{H}[q(\lambda \mid \mu_{\lambda},\, \sigma^{2}_{\lambda})] + \mathbb{H}[q^{\star}(\sigma^{2} \mid a_{\sigma^{2}},\, b_{\sigma^{2}})] + \mathbb{H}[q^{\star}(w \mid \mu_{w},\, \sigma^{2}_{w})] + \mathbb{H}[q^{\star}(\boldsymbol{\beta} \mid \boldsymbol{\mu}_{\beta},\, \Sigma_{\beta})] \label{c-iv-ff-ejemplo-elbo},
+\end{aligned}
+\end{align}
+en general, el planteamiento es simple pero la implementación requiere calcular varias cantidades: específicamente, esperanzas condicionales y a partir de estas, (productos de) derivadas. El método de ascenso del gradiente requiere calcular $\frac{\partial}{\partial\mu_{\lambda}}\, \ELBO{q}$ y $\frac{\partial}{\partial\sigma^{2}_{\lambda}}\, \ELBO{q}$, sin embargo, es posible facilitar esta tarea usando el \textit{truco de reparametrización} \parencite[][]{tutorial-VI:2023, advi:2017, practical-VI}, es decir, representar a $\lambda$ como una parte estocástica y otra determinista, específicamente empleamos $\lambda = \mu_{\lambda} + \sigma_{\lambda}\tilde{\lambda}$, de este modo, podemos derivar a $\mu_{\lambda}$ y $\sigma_{\lambda}$ y posteriormente, dada una realización de $\tilde{\lambda}\sim N(0,\, 1)$, podemos estimar con integración Monte Carlo el vector gradiente. A pesar de ser simple, este principio permite simplificar cálculos. Ahora bien, expandiendo la expresión en la \autoref{c-iv-ff-ejemplo-elbo} escribimos\footnote{En general, podemos omitir términos que no dependen de $\rho$.}
+\begin{align*}
+\ELBO{q} &= \E_{q}\bigg[\frac{n}{2}\left(\log\frac{1}{2\pi}+\log\frac{1}{\sigma^{2}}+\log(1+\lambda^{2})\right) - \frac{1+\lambda^{2}}{2\sigma^{2}}\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-{w}\frac{\lambda}{\sqrt{1+\lambda^{2}}})^{2} \\
+% \sum_{i=1}^{n}(y_{i}-(\boldsymbol{x}_{i}^{T}\boldsymbol{\beta})^{2}-2y_{i}x_{i}^{T}\boldsymbol{\beta} \\
+% &\phantom{=}+\frac{\lambda^{2}}{1+\lambda^{2}}w^{2}-2\frac{\lambda}{\sqrt{1+\lambda^{2}}}{w}[y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}]) +\frac{3}{2}\log(1+\lambda^{2}) \bigg] \\ % aqui desarrollamos
+&\phantom{..\E_{q}}+\log2+\frac{1}{2}\left(\log\frac{1}{2\pi}+\log\frac{1}{\sigma^{2}}\right) - \frac{w^{2}}{2\sigma^{2}} \tag{log-verosimilitud}\\
+&\phantom{..\E_{q}} +\log\frac{1}{\sigma^{2}} + \frac{1}{2}\log(1 + 2\lambda^{2}) - 2\log(1 + \lambda^{2}) \bigg] \tag{dist. \textit{a priori}} \\
+&\phantom{..\E_{q}} + \frac{1}{2}\left(1 + \log{2\pi\sigma^{2}_{\lambda}}\right) \tag{entropía Gaussiana}\\
+&\phantom{..\E_{q}}+ \frac{1}{2}\big(a_{\sigma^{2}}+\ln(b_{\sigma^{2}} \Gamma (a_{\sigma^{2}}))-(1+a_{\sigma^{2}})\psi(a_{\sigma^{2}})\big) \tag{entropía Gamma-Inv.}\\
+&\phantom{..\E_{q}}+ \tag{entropía Gauss. mult.} \frac{p}{2}(1+ \log(2\pi)) + \frac{1}{2}\log\det(\Sigma_{\beta}) \\
+&\phantom{..\E_{q}}+ \frac{1}{2}(1 + \log(2\pi\sigma^{2}_{w})) + \log\Phi\left(\frac{\mu_{w}}{\sigma_{w}}\right) - \frac{\phi(\mu_{w}/\sigma_{w})}{2\Phi(\mu_{w}/\sigma_{w})}  \tag{entropía Gauss. trunc.}
+\end{align*}
+Cuando se derivaron las densidades condicionales óptimas $q^{\star}(\boldsymbol{\beta} \mid \boldsymbol{\mu}_{\beta},\, \Sigma_{\beta})$, $q^{\star}(\sigma^{2} \mid a_{\sigma^{2}},\, b_{\sigma^{2}})$ y $q^{\star}(w \mid \mu_{w},\, \sigma^{2}_{w})$, se observa que, a pesar de que la restricción Campo Medio asume que cada factor variacional se factoriza, los parámetros de estos factores están acoplados entre sí, y esta naturaleza da lugar al método CAVI de \autoref{alg:cavi}.
+% No es necesario decir esto, ya que puede obviarse despues de usar el truco de reparametrizacion...
+%En este escenario, podemos tomar esperanza sobre cada parámetro $\sigma^{2}$, $w$, $\boldsymbol{\beta}$ un nivel\footnote{Esto es, por ejemplo: $\boldsymbol{\mu}_{\beta}$ depende de $\E[w \cdot \lambda/\sqrt{1+\lambda^{2}}]$, pero también $\E[w]$ depende de $\boldsymbol{\mu}_{\beta}$, así, con el objetivo de calcular $\partial/\partial\mu_{\lambda}\E[\boldsymbol{\beta}]$ -por ejemplo-, calculamos $\E[w]$ con el valor de $\E[\boldsymbol{\beta}]$ más reciente o inicial y se sustituye para calcular $\boldsymbol{\mu}_{\beta}$.}
+%y derivar con respecto a $\mu_{\lambda}$ y $\sigma^{2}_{\lambda}$, no obstante, dadas las dependencias circulares entre los parámetros variacionales, esta opción se vuelve complicada de manipular. Por tanto, podemos usar un esquema más simple:
+A continuación se calculan las derivadasdel $\ELBO{q}$ con respecto a $\mu_{\lambda}$ y $\sigma^{2}_{\lambda}$, tratando el resto de las esperanzas -aunque dependientes de estos parámetros- como fijas: esto se justifica debido al truco de reparametrización.
+%Sin embargo, es nato pensar que esta aproximación no puede ser mejor que calcular derivadas a partir de las esperanzas sobre todos los factores variacionales.
+Ahora bien, escribimos
+\begin{align}
+\begin{aligned}
+\frac{\partial}{\partial\mu_{\lambda}}\,\ELBO{q} &=\frac{n-4}{2}\frac{\partial}{\partial\mu_{\lambda}}\, \log(1 + [\mu_{\lambda} + \sigma_{\lambda}\tilde{\lambda}]^{2}) \\
+&-\frac{1}{2\sigma^{2}}\frac{\partial}{\partial\mu_{\lambda}}\, (1+[\mu_{\lambda} + \sigma_{\lambda}\tilde{\lambda}]^{2})\, \sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-{w}\frac{\lambda}{\sqrt{1+\lambda^{2}}})^{2} \\
+&+\frac{1}{2}\frac{\partial}{\partial\mu_{\lambda}}\log(1+2[\mu_{\lambda}+\sigma_{\lambda}\tilde{\lambda}]^{2})
+\\
+&= \frac{n-4}{2}\left(\frac{2\lambda}{1+\lambda^{2}}\right) \\
+&- \frac{1}{\sigma^{2}}\big(\lambda\sum_{i=1}^{n}\mu_{i}^{2} - w\left[(1+\lambda^{2})^{1/2}-\lambda^{2}(1+\lambda^{2})^{-1/2}\right]\sum_{i=1}^{n}\mu_{i} \big) \\
+&+\frac{1}{2}\left(\frac{4\lambda}{1+2\lambda^{2}}\right),
+\end{aligned}
+\end{align}
+donde $\mu_{i} \triangleq y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-w\lambda/\sqrt{1+\lambda^{2}}$ es el término dentro de estas sumas. Así mismo, podemos calcular las derivadas con respecto a $\sigma^{2}_{\lambda}$, sin embargo, dado que trabajamos con un problema de optimización, resulta más adecuado mapear este parámetro a los reales, una transformación útil es el tomar el logaritmo y por tal motivo, trabajamos con $\log\sigma^{2}_{\lambda}$. Ahora, note que podemos calcular el gradiente del $\ELBO{q}$ respecto a $\log\sigma^{2}_{\lambda}$ sin mayor dificultad aplicando la regla de la cadena al gradiente del $\ELBO{q}$ con respecto a $\mu_{\lambda}$: es decir, podemos ver\footnote{Esto es, $\frac{\partial}{\partial\mu_{\lambda}}\mu_{\lambda}\equiv\frac{\partial}{\partial\sigma^{2}_{\lambda}}\sigma^{2}_{\lambda}$} el parámetro $\sigma_{\lambda}\tilde{\lambda}$ como el parámetro $\mu_{\lambda}$ multiplicado por una realización de la variable aleatoria $\tilde{\lambda}$, luego, notamos que $\sigma_{\lambda}$ puede ser escrito como función de $\log\sigma^{2}_{\lambda}$ mediante $\sqrt{\exp(\log\sigma^{2}_{\lambda})}$, procediendo de esta forma, se tiene que
+\begin{align}
+\begin{aligned}
+\frac{\partial}{\partial\log\sigma^{2}_{\lambda}}\,\ELBO{q} &= \frac{\partial}{\partial\mu_{\lambda}}\,\ELBO{q} \, \frac{\partial}{\partial\log\sigma^{2}_{\lambda}} \, \sqrt{\exp\log(\sigma^{2}_{\lambda})} \\
+&= \frac{\tilde{\lambda}}{2}\sigma_{\lambda}\,\frac{\partial}{\partial\mu_{\lambda}}\,\ELBO{q}.
+\end{aligned}
+\end{align}
+Una vez calculadas todas las derivadas parciales, sólo resta tomar esperanza sobre los parámetros $(\lambda,\, \sigma^{2},\, w,\, \boldsymbol{\beta})$. En general, las expresiones que involucran a $\lambda$ son intratables, así que como se mencionó previamente, podemos aproximar el gradiente con integración Monte Carlo. El vector gradiente del $\ELBO{q}$, es decir, con respecto a ambos parámetros variacionales, está dado por
+\begin{align}
+\begin{aligned}
+&\nabla_{(\mu_{\lambda},\, \log\sigma^{2}_{\lambda})} \, \ELBO{q} = \\
+&\left[\begin{array}{l}
+\frac{n-4}{2}\E_{q}\left[\frac{2\lambda}{1+\lambda^{2}}\right] \phantom{--} - \E_{q}\left[\frac{1}{\sigma^{2}}\big(\lambda\sum\limits_{i=1}^{n}\mu_{i}^{2} - {w}h(\lambda)\sum\limits_{i=1}^{n}\mu_{i}\big)\right] \phantom{--} + \frac{1}{2}\E_{q}\left[\frac{4\lambda}{1+2\lambda^{2}}\right] \\
+\frac{n-4}{2}\E_{q}\left[\frac{2\lambda}{1+\lambda^{2}}\frac{\tilde{\lambda}}{2}\sigma_{\lambda}\right] - \E_{q}\left[\frac{1}{\sigma^{2}}\frac{\tilde{\lambda}}{2}\sigma_{\lambda}\big(\lambda\sum\limits_{i=1}^{n}\mu_{i}^{2} - {w}h(\lambda)\sum\limits_{i=1}^{n}\mu_{i}\big)\right] + \frac{1}{2}\E_{q}\left[\frac{4\lambda}{1+2\lambda^{2}}\frac{\tilde{\lambda}}{2}\sigma_{\lambda}\right]
+\end{array}
+\right],
+\end{aligned}
+\end{align}
+con $h(\lambda)\triangleq(1+\lambda^{2})^{1/2} - \lambda^{2}(1+\lambda^{2})^{-1/2}$. Note que, por ejemplo, desarrollar la esperanza del segundo término en ambas entradas del vector, requiere un poco de trabajo adicional:\footnote{Esto se debe a que si $X$ es una variable aleatoria, en general no es posible separar $\E[f(X) \, g(X)]$ como $\E[f(X)]\, \E[g(X)]$.}
+\begin{align*}
+&\E_{q}\left[\frac{1}{\sigma^{2}}\big(\lambda\sum\limits_{i=1}^{n}\mu_{i}^{2} - {w}h(\lambda)\sum\limits_{i=1}^{n}\mu_{i}\big)\right] = \E_{q}\left[\frac{1}{\sigma^{2}}\right]\E_{q}\left[ \lambda\sum_{i=1}^{n}\mu_{i}^{2} -{w}h(\lambda)\sum_{i=1}^{n}\mu_{i}\right],
+\intertext{la esperanza de $1/\sigma^{2}$ admite una expresión cerrada, por tanto}
+&= \frac{b_{\sigma^{2}}}{a_{\sigma^{2}}-1}\left(\E_{q}\left[\lambda\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-{w}\frac{\lambda}{\sqrt{1+\lambda^{2}}})^{2}\right] - \E_{q}\left[{w}h(\lambda)\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\boldsymbol{\beta}-{w}\frac{\lambda}{\sqrt{1+\lambda^{2}}})\right]\right),
+\intertext{luego, desarrollando la expresión y tomando esperanzas se tiene que}
+&= \frac{b_{\sigma^{2}}}{a_{\sigma^{2}}-1}\bigg(\E_{q}[\lambda] (\boldsymbol{y}^{T}\boldsymbol{y} - 2\boldsymbol{y}^{T}X\E_{q}[\boldsymbol{\beta}] + \tr\left(X^{T}X\E_{q}[\boldsymbol{\beta}\boldsymbol{\beta}^{T}]\right) + n\E_{q}[w^{2}]\E_{q}\left[\frac{\lambda^{3}}{1+\lambda^{2}}\right] \\
+&-2\E_{q}[w]\E_{q}\left[\frac{\lambda^{2}}{\sqrt{1+\lambda^{2}}}\right]\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\E_{q}[\boldsymbol{\beta}]) \\
+&-\E_{q}[w]\E_{q}(h(\lambda))\sum_{i=1}^{n}(y_{i}-\boldsymbol{x}_{i}^{T}\E_{q}[\boldsymbol{\beta}]) + n\E_{q}[w^{2}]\E_{q}\left[h(\lambda)\frac{\lambda}{\sqrt{1+\lambda^{2}}}\right]\bigg),
+\end{align*}
+luego, para el gradiente del $\ELBO{q}$ con respecto a $\log\sigma^{2}$ se procede de forma análoga. De este modo, dados valores iniciales para $a_{\sigma^{2}}$, $b_{\sigma^{2}}$, $\mu_{w}$, $\sigma^{2}_{w}$, $\boldsymbol{\mu}_{\beta}$, $\Sigma_{\beta}$ y una muestra aleatoria de tamaño $M$ de $\tilde{\lambda}\sim N(0,\, 1)$, es posible estimar el vector gradiente del $\ELBO{q}$ con integración Monte Carlo. Luego, falta establecer el parámetro de tamaño de paso y el criterio de convergencia, para el primer propósito, se puede utilizar la misma estrategia descrita por \textcite[][Algoritmo 1]{advi:2017}, luego, con respecto a la regla de parada, \textcite{practical-VI}, comenta que teóricamente el $\ELBO{q}$ es una función no decreciente, sin embargo, la estimación Monte Carlo podría no serlo, por tanto, una alternativa viable es considerar un tipo de promedio móvil para monitorear los cambios en el $\ELBO{q}$, el cuál también es el tipo de criterio usado por el algoritmo \code{variational} de Stan \parencite{stan-ref:2025}.
+
+
+\subsection{ADVI: \textit{Automatic Differentiation Variational Inference}}
+
+
+El algoritmo de inferencia variacional con diferenciación automática, \textit{automatic differentiation variational inference}, (ADVI) fue presentado por \textcite{advi:2017} y propone realizar inferencia variacional de manera simple para el usuario: en palabras de los autores, únicamente es necesario especificar un modelo y los datos.
+
+De acuerdo a la discución previa, el algoritmo ADVI se clasifica dentro de la inferencia BV de forma fija, pero simplifica la implementación en varios aspectos
+\begin{itemize}
+\item Transforma cada parámetro en $\boldsymbol{\theta}$ al espacio sin restricciones $\mathbb{R}^{p}$ mediante $T:\boldsymbol{\theta}\to\boldsymbol{z}$.\footnote{$p$ denota el número de parámetros o variables latentes.} Luego, asigna una distribución Gaussiana a cada parámetro o variable latente en $\boldsymbol{z}$.
+
+\item Utiliza el truco de reparametrización para mover el gradiente dentro de la esperanza que define al ELBO, y enseguida calcula estas derivadas con diferenciacion automática.
+
+\item Posterior a esto, evalúa las derivadas obtenidas en el punto anterior mediante integración Monte Carlo.
+
+\item Aplica un esquema de ascenso del gradiente en los parámetros transformados $\boldsymbol{z}$ y estima al ELBO. Repite este paso hasta convergencia.
+
+\item Finalmente, aplica la transformación inversa $T^{-1}(\boldsymbol{z})$ para obtener los parámetros variacionales óptimos $\boldsymbol{\theta}^{\star}$, es decir, los que minimizan la divergencia KL, en la escala original.
+\end{itemize}
+
+Profundizando en el primer aspecto del algoritmo ADVI, este considera dos tipos de aproximaciones Gaussianas: una con densidades independientes -y por tanto, univariadas- y otra empleando una densidad multivariada con covarianza densa. Los autores nombran a estas dos aproximaciones como \textit{Mean Field} y \textit{Full Rank}. Vale la pena detenernos un segundo a analizar esto, ya que existe una mezcla entre la terminología empleada por los autores en \textcite{practical-VI, advi:2017, VI-a_review, explaining-VI}, entre otros. Una resumen sobre estas metodologías se resume en el \autoref{c-ii-comparacion}.
+
+% \linebreak will try to fill the current line
+% \newline leaves the line as it is
+
+
+\begin{xltabular}{\textwidth}{l *{2}{X}}
+%% begin first head
+\caption[Resumen de los métodos de inferencia Bayesiana variacional.]{Comparación de los métodos de inferencia Bayesiana variacional. Fuente: elaboración propia basada en \textcite{practical-VI, advi:2017, VI-a_review, explaining-VI, semipar-VI}.}
+\label{c-ii-comparacion} \\
+\hline
+\multirow{2}{*}{Método \textbackslash\, Fuente} & \textcite{practical-VI, semipar-VI, VI-a_review, explaining-VI} & \textcite{advi:2017} \\
+\cline{2-3}
+&  Descripción & Descripción \\
+\hline
+\endfirsthead
+%% end first head
+%% begin head
+\caption[]{Comparación de los métodos de inferencia Bayesiana variacional. Fuente: elaboración propia basada en \textcite{practical-VI, advi:2017, VI-a_review, explaining-VI, semipar-VI}. (Continuación)} \\
+\hline
+\multirow{2}{*}{Método \textbackslash\, Fuente} & \textcite{practical-VI, semipar-VI, VI-a_review, explaining-VI} & \textcite{advi:2017} \\
+\cline{2-3}
+&  Descripción & Descripción \\
+\hline
+\endhead
+%% end head
+%% begin foot
+\hline
+\endfoot
+%% end foot
+\makecell[l]{\textit{Mean Field}, \\ \textit{Non parametric} \\ \textit{Mean Field}} & \vspace{-1.24cm}\textbf{Distribución óptima}: para encontrarla se requiere calcular esperanzas de forma analítica y posteriormente identificar la distribución. Hace uso del supuesto \[q(\boldsymbol{\theta})=\prod\limits_{i=1}^{p}q(\theta_{i}).\] \textbf{Uso}: con distribuciones \textit{a priori} conjugadas. & \vspace{-1.24cm}\textbf{Distribución óptima}: se propone como el producto de distribuciones Gaussianas independientes, para ello se transforma cada parámetro/variable latente a $\mathbb{R}$; la tarea es identificar los parámetros óptimos. Su nombre es una reminiscencia del supuesto de campo medio. \newline \textbf{Uso}: para modelos diferenciables con \textit{a priori} conjugada o no. \\ \\
+\textit{Full Rank}  & Equivalente al método \textit{Fixed Form}/\textit{parametrical Mean Field}. \newline \textbf{Distribución óptima}: restringe la familia variacional a \[q(\boldsymbol{\theta}) = N(\boldsymbol{\theta} \mid \boldsymbol{\mu},\, \Sigma),\] la elección $\Sigma=I$ corresponde al método \textit{Mean Field}, $\Sigma$ densa corresponde al método \textit{Full Rank}, ambos definidos por \textcite{advi:2017}.  &  \textbf{Distribución óptima}: se propone una distribución Gaussiana multivariada con matriz de covarianza densa, nuevamente, se transforma cada parámetro/variable latente a $\mathbb{R}$; la tarea es obtener los parámetros óptimos con rutinas de optimización. \newline \textbf{Uso}: para modelos diferenciables con \textit{a priori} conjugada o no. \\
+\makecell[l]{\textit{Fixed Form} \\ \textit{Par. Mean Field}} & \textbf{Distribución óptima}: el usuario propone o fija las densidades óptimas de tal modo que el soporte de los parámetros/variables latentes coincida: la tarea es identificar los parámetros óptimos. \newline \textbf{Uso}: general, modelos con \textit{a priori} conjugada o no. \\
+\makecell[l]{\textit{Semi parametric} \\ \textit{Mean Field}} & \textbf{Familia variacional}: se emplea la restricción Campo Medio para los parámetros/variables latentes que sean conjugados y se asigna una distribución apropiada -cuyo soporte coincida- para aquellos que no. Así, la familia está dada por\[\mathcal{Q}=\{q(\boldsymbol{\theta}_{1})\,\ldots\,q(\boldsymbol{\theta}_{p}) \, q(\boldsymbol{\phi};\, \boldsymbol{\xi}) \}\] \textbf{Distribución óptima:} Para $\boldsymbol{\theta}_{1},\,\ldots,\,\boldsymbol{\theta}_{p}$, es posible obtener de forma analítica las densidades óptimas $q^{\star}$. Para el resto de densidades $q(\boldsymbol{\phi}; \; \boldsymbol{\xi})$, el trabajo es encontrar los parámetros $\boldsymbol{\xi}$ que minimicen la divergencia KL mediante optimización. \newline \textbf{Uso:} modelos con parámetros/variables latentes tanto conjugadas y no conjugadas. & \\
+\hline
+\end{xltabular}
+
+% \begin{table}[H]
+% \centering
+% \begin{tabularx}{\linewidth}{l*{6}{X}}
+% \hline
+% Método \textbackslash\, Fuente & \multicolumn{3}{c}{\cite{practical-VI}} & \multicolumn{3}{c}{\cite{ADVI:2017}} \\
+% \hline
+% & Tipo & Uso & Descripción & Tipo & Uso & Descripción \\
+% \hline
+% \textit{Mean Field} & Analítica & Con \textit{a priori} conjugada & Requiere calcular esperanzas de forma analítica y posteriormente identificar la distribución \\
+% \textit{Full Rank}  & \\
+% \textit{Fixed Form} & \\
+% \hline
+% \end{tabularx}
+% \caption[]{Fuente: elaboración propia basada en \cite{practical-VI} y \cite{ADVI:2017}.}
+% \label{c-ii-comparacion}
+% \end{table}
+
+Actualmente, el lenguaje Stan implementa el método ADVI para realizar inferencia Bayesiana variacional \parencite{stan-ref:2025}. Además, es posible trazar una analogía entre los algoritmos NUTS y ADVI, a pesar de que resuelven dos problemas distintos, muestreo y aproximación de la distribución \textit{a posteriori}, ambos eliminan la necesidad de que el usuario intervenga o realice afinamientos al mismo. En otras palabras, NUTS es para HMC lo que ADVI es para VB. En los siguientes apartados, se describen de forma breve los elementos clave que dan lugar al algoritmo ADVI.
+
+%\subsubsection{Diferenciación automática}
+
+%\subsubsection{Diferenciación automática, modelos diferenciables, transformación de variables latentes y estandarización elíptica.}
+
+\subsubsection{Aspectos del algoritmo ADVI}
+
+\paragraph*{Diferenciación automática.} De acuerdo con \textcite{autodiff:2018, autodiff-2:2019}, los métodos para el cálculo de derivadas en programas computacionales se pueden clasificar en cuatro categorías: (1) calculo y programación manual, (2) diferenciación numérica  usando aproximaciones por diferencias finitas, (3) diferenciación simbólica usando manipulación de expresiones en sistemas de álgebra computacional y (4) diferenciación automática, \textit{automatic differentiation} (AD), también llamada diferenciación algoritmica.
+
+%\begin{enumerate}
+%\item Calculo manual y programación de las derivadas.
+%\item Diferenciación numérica  usando aproximaciones por diferencias finitas.
+%\item Diferenciación simbólica usando manipulación de expresiones en sistemas de álgebra computacional.
+%\item Diferenciación automática, \textit{automatic differentiation} (AD), también llamada diferenciación algoritmica.
+%\end{enumerate}
+%
+%\begin{table}[H]
+%\centering
+%\begin{tabularx}{0.9\linewidth}{XXXX}
+%\hline
+%\textbf{Técnica} & \textbf{Ventaja(s)} & \textbf{Desventaja(s)} \\ \hline
+%Derivada analítica codificada a mano & Exacta y a menudo el método más rápido. & Toma mucho tiempo codificar, es propensa a errores y no aplicable a problemas con soluciones implícitas. No está automatizada. \\ \hline
+%Diferenciación por diferencias finitas & Fácil de programar. & Sujeta a errores de precisión en punto flotante y lenta, especialmente en alta dimensión, ya que el método requiere al menos \(D\) evaluaciones, donde \(D\) es el número de derivadas parciales requeridas. \\ \hline
+%Diferenciación simbólica & Exacta; genera expresiones simbólicas. & Intensiva en memoria y lenta. No puede manejar construcciones como bucles no acotados. \\ \hline
+%Diferenciación automática & Exacta; la velocidad es comparable a la de derivadas codificadas a mano, muy aplicable. & Requiere una implementación cuidadosa, aunque esto ya está disponible en varios paquetes. \\ \hline
+%\end{tabularx}
+%\end{table}
+
+%\textcite{autodiff:2018} señala que AD no es un tipo de diferenciación numérica o simbólica, y que esta confusión surge ya que AD proporciona valores numéricos de derivadas y lo hace utilizando reglas simbólicas de diferenciación, lo que le confiere una naturaleza dual, en parte simbólica y en parte numérica \parencite{autodiff-3:2003}.
+
+\textcite{autodiff:2018} señala que habitualmente se confunde la AD con diferenciación numérica o incluso simbólica, ya que esta técnica proporciona valores numéricos de derivadas, y lo hace utilizando reglas simbólicas de diferenciación, lo que le confiere una naturaleza dual \parencite{autodiff-3:2003}. Sin embargo, la AD es un método bien definido y distinto de estos.
+
+La AD 
+%como un término técnico, se refiere a una familia específica
+se refiere a una colección de técnicas que calculan derivadas a través de la acumulación de valores durante la ejecución del código, lo que genera evaluaciones numéricas en lugar de expresiones derivadas. Esto permite una evaluación precisa de las derivadas con \textit{precisión de máquina}, con solo un pequeño factor constante de sobrecarga con eficiencia asintótica ideal. Así mismo, existen dos modos principales de AD, \textit{Forward} o lineal tangente y \textit{Reverse}, lineal cotangente o adjunto. Este último, constituye la generalización del algoritmo \textit{backpropagation}, un método especializado que ha sido pilar para el entrenamiento de redes neuronales \parencite{autodiff:2018}.
+
+
+%\subsubsection{Modelos diferenciables}
+
+\paragraph*{Modelos diferenciables.} \textcite{advi:2017} mencionan que el algoritmo ADVI solo permite aproximar la distribución \textit{a posteriori} de modelos probabilísticos diferenciables. Los miembros que pertenecen a esta clase de modelos tienen variables latentes $\boldsymbol{\theta}$ continuas -esto incluye a los parámetros- y además, el gradiente de la log-densidad conjunta $\nabla_{\boldsymbol{\theta}}\, \log\, p(\boldsymbol{x,\, \boldsymbol{\theta}})$ existe. Como una observación adicional, el gradiente debe ser válido dentro del soporte de la distribución \textit{a priori}, el cuál se denota como
+\begin{align}
+\supp(p(\boldsymbol{\theta})) &= \left\{ \boldsymbol{\theta}\in\mathbb{R}^{p} \, :\, p(\boldsymbol{\theta}) > 0 \right\} \subseteq \mathbb{R}^{p},
+\end{align}
+aquí $p$ denota el número de variables latentes y parámetros. Los autores también señalan que es posible superar la restricción de tener densidades diferenciables al marginalizar fuera del modelo a las variables aleatorias discretas involucradas, por ejemplo, como sucede con los modelos de mezclas Gaussianas, o propiamente en los modelos que consideramos en secciones posteriores, especificamente, en la distribución \textit{a priori} para selección estocástica de variables descrita en la \autoref{sec:prior-ssvs}.
+
+
+%\subsubsection{Transformación de las variables latentes}
+
+\paragraph*{Transformación de variables latentes.} El algoritmo {ADVI} propone una transformación $T$ uno a uno definida como
+\begin{align}
+T: \supp(p(\boldsymbol{\theta})) \to \mathbb{R}^{p},
+\end{align}
+es decir, esta función transforma $\boldsymbol{\theta}$ a $T(\boldsymbol{\theta}) \equiv \boldsymbol{z}$. Así, la densidad conjunta $p(\boldsymbol{x},\, \boldsymbol{z})$ puede ser escrita empleando el Jacobiano de la transformación $T$, es decir
+\begin{align}
+p(\boldsymbol{y},\, \boldsymbol{z}) = p\left(\boldsymbol{y},\, T^{-1}(\boldsymbol{z} )\right) \, |\det\, J_{T^{-1}}(\boldsymbol{z})|.
+\end{align}
+La idea detrás de esta transformación es sencilla: eliminar las restricciones en el soporte de cada variable latente. Ahora que los parámetros viven en el espacio $\mathbb{R}^{p}$ sin restricciones, {ADVI} propone dos densidades Gasussinas fijas, una con covarianza diagonal y otra densa. Así, los autores comentan que se induce una factorización no-Gaussiana en el espacio de coordenadas original, esto significa que, por ejemplo, si $\theta\in(0,\, 1)$, no se asigna de forma arbitraría $q(\theta)=N(\theta\mid \mu_{\theta},\, \sigma^{2}_{\theta})$, truncada en $(0,\, 1)$ por el soporte.
+
+
+% Esto ya esta repetitivo
+%(1) un producto de distribuciones Gaussianas independientes en cada elemento $z_{i}$, la cuál denominan \textit{Mean Field} a manera de reminiscencia o (2) una distribución Gaussiana multivariada para $\boldsymbol{z}$, denominada \textit{Full Rank}. 
+%\subsubsection{Estandarización Elíptica}
+
+\paragraph*{Estandarización elíptica.} De acuerdo con \textcite{advi:2017}, esta transformación consiste en remover la dependencia de las variables latentes transformadas $\boldsymbol{z}$ con respecto a los parámetros variacionales $\boldsymbol{\xi}$, es decir, la media y covarianzas de la aproximación gaussiana inducida en el espacio $\mathbb{R}^{p}$ sin restricciones. Para lograr este objetivo, se recurre a una instancia del truco de reparametrización empleado la \autoref{subsec:ch-iv-ejemplo-regresion-revisitado}: se busca expresar $\boldsymbol{z}$ como una parte determinista y una parte estocástica, lo cuál es resultado de una propiedad de la clase de densidades elípticas. Los siguientes resultados se presentan en \textcite{simar:2015}
+
+%=(\boldsymbol{\mu}, \boldsymbol{\omega})
+
+Se dice que un vector aleatorio $\boldsymbol{Y}_{p}$ tiene distribución esférica si su función caracteristica $\psi_{Y}(t)$ satisface $\psi_{Y}(t)=\phi(\boldsymbol{t}^{T}\boldsymbol{t})$ para alguna función escalar $\psi$, la cuál recibe el nombre de generador característico de la distribución esférica $S_{p}(\phi)$. Se denota como $\boldsymbol{Y}_{p}\sim S_{p}(\phi)$. Además, es posible ver las distribuciones esféricas como una extensión de la distribución normal multivariada estándar $N_{p}(\boldsymbol{0}, I_{p})$.
+
+Por otro lado, se dice que un vector aleatorio $X_{n}$ tiene distribución elíptica con parámetros $\boldsymbol{\mu}_{n}$ y $\Sigma_{p\times p}$ si $X$ tiene la misma distribución que $\boldsymbol{\mu}_{p} + A^{T}\boldsymbol{Y}_{p}$, donde $\boldsymbol{Y}_{k}\sim S_{k}(\varphi)$ y $A$ es una matriz de dimensión $(k\times n)$ tal que $A^{T} A = \Sigma$ con $\text{rango}(\Sigma) = k$. Se denota como $X\sim EC_{n}(\boldsymbol{\mu}_{n}, \Sigma, \phi)$. Así mismo, las distribuciones elípticas pueden ser vistas como una extensión de la densidad normal multivariada $N_{p}(\boldsymbol{\mu}_{p}, \Sigma)$.
+
+De este modo, no es difícil ver que la clase de densidades esféricas es un subconjunto de las densidades elípticas, por lo tanto, el objetivo es mapear $\boldsymbol{z}$, cuya densidad es elíptica, a $\Sigma^{-1/2}(\boldsymbol{z} - \boldsymbol{\mu}) \equiv \boldsymbol{\eta}$, cuya densidad es esférica, consiguiendo de este modo obtener una expresión con términos deterministas y estocásticos.
+
+%\subsection{Optimización Estocástica}
+
+\subsubsection{Algoritmo ADVI}
+
+En el \autoref{alg:advi} se presenta el algoritmo ADVI con la variante \textit{Mean Field}, que es el método base para el ajuste de los modelos de regresión en áreas pequeñas que se plantean en el \autoref{ch:v-metodologia}. Para implementar este método, se requiere calcular el vector gradiente del ELBO con respecto a los parámetros variacionales $(\boldsymbol{\mu}, \boldsymbol{\omega})$, el cual está dado por
+\begin{equation}
+\label{eq:advi-grad-mean-field}
+\begin{aligned}
+\nabla_{\boldsymbol{\mu}}\mathcal{L} &= \E_{N(\boldsymbol{\eta})} \Big[
+\nabla_{\boldsymbol{\theta}}\, \log\,p(\boldsymbol{y,\, \boldsymbol{\theta}}) \, \nabla_{\boldsymbol{z}}\,T^{-1}(\boldsymbol{z}) + \nabla_{\boldsymbol{z}} \, \log\,\mid\det J_{T^{-1}}(\boldsymbol{z}) \mid 
+\Big] \\
+\nabla_{\boldsymbol{\omega}}\mathcal{L} &= \E_{N(\boldsymbol{\eta})} \Big[
+\nabla_{\boldsymbol{\theta}}\, \log\,p(\boldsymbol{y,\, \boldsymbol{\theta}}) \, \nabla_{\boldsymbol{z}}\,T^{-1}(\boldsymbol{z}) + \nabla_{\boldsymbol{z}} \, \log\,\mid\det J_{T^{-1}}(\boldsymbol{z})\,\boldsymbol{\eta}^{T}\text{diag}(\exp(\boldsymbol{\omega})) \mid 
+\Big] + \boldsymbol{1} ,
+\end{aligned}
+\end{equation}
+aquí $T:\boldsymbol{\theta}\to\boldsymbol{z}$ es el mapeo del vector de parámetros y variables latentes $\boldsymbol{\theta}$ a $\mathbb{R}^{p}$, $J_{T^{-1}}$ es el Jacobiano o matriz de derivadas de la transformación inversa que corresponde a este cambio de variables. $\nabla_{\theta}$ y $\nabla_{z}$ representan el vector gradiente o vector de derivadas parciales con respecto a cada entrada de estos parámetros.
+
+De acuerdo con \textcite{advi:2017}, para establecer la taza de aprendizaje en el esquema de ascenso del gradiente, se utiliza la siguiente estrategia: sea $\boldsymbol{g}^{(i)}$ el vector gradiente en la iteración $i$, el tamaño de paso $\boldsymbol{\rho}^{(i)}$ (no debe confundirse con los parámetros $\rho_{1:M}$ del modelo propuesto) está dado por la siguiente relación recurrente
+\begin{align}
+\label{eq:advi-learning-rate}
+\begin{aligned}
+\rho_k^{(i)} &= \eta\, i^{-1/2+\varepsilon}\,(\tau + \sqrt{s_k^{(i)}})^{-1}, \\
+s_k^{(i)} &= \alpha(g_k^{(i)})^2 + (1-\alpha)\,s_k^{(i-1)}, \\
+s_{k}^{(1)} &= g_{k}^{2 \, {(1)}}.
+\end{aligned}
+\end{align}
+
+\begin{algorithm}
+\LinesNumbered
+\DontPrintSemicolon
+\SetKwInput{KwData}{Input}
+\SetKwInput{KwResult}{Output}
+\caption{Inferencia variacional con diferenciación automática, \textit{automatic differentiation variational inference} (ADVI)}\label{alg:advi}
+\KwData{Un conjunto de datos $\boldsymbol{y}=y_{1:n}$, un modelo $p(\boldsymbol{y}, \boldsymbol{\theta})$.}
+\KwResult{parámetros variacionales óptimos $\boldsymbol{\mu}^{\star}$, $\boldsymbol{\omega}$ en el espacio sin restricciones $\mathbb{R}^{p}$.}
+\kwInit{$i = 1$. $\boldsymbol{\mu}^{(1)}=\boldsymbol{0}$. $\boldsymbol{\omega}^{(1)}=\boldsymbol{0}$ (para la aproximación \textit{Mean-Field})}.
+
+
+\While{el cambio en el límite inferior de la evidencia (ELBO) sea menor a cierto umbral:}{
+Tomar $M$ muestras $\boldsymbol{\eta}_{n} \sim N(\boldsymbol{0},\, \boldsymbol{I})$ de la distribución normal multivariada estándar.
+
+Aproximar $\nabla_{\boldsymbol{\mu}}\mathcal{L}$ en la \autoref{eq:advi-grad-mean-field} usando integración Monte Carlo.
+
+Aproximar $\nabla_{\boldsymbol{\omega}}\mathcal{L}$ en la \autoref{eq:advi-grad-mean-field} usando integración Monte Carlo (\textit{Mean Field}).
+
+Calcular el tamaño de paso $\boldsymbol{\rho}^{(i)}$ en la \autoref{eq:advi-learning-rate}.
+
+Actualizar $\boldsymbol{\mu}^{(i+1)}\gets \boldsymbol{\mu}^{(i)} + \text{diag}(\boldsymbol{\rho}^{(i)})\nabla_{\boldsymbol{\mu}}\mathcal{L}$.
+
+Actualizar $\boldsymbol{\omega}^{(i+1)}\gets \boldsymbol{\omega}^{(i)} + \text{diag}(\boldsymbol{\rho}^{(i)})\nabla_{\boldsymbol{\omega}}\mathcal{L}$.
+
+Actualizar $i \gets i+1$.
+
+}
+    
+\Return{$\boldsymbol{\mu}^{\star}\gets\boldsymbol{\mu}^{(i)}$, $\boldsymbol{\omega}^{\star}\gets\boldsymbol{\omega}^{(i)}$}
+\end{algorithm}
+
+
+% \section{Restriciones híbridas}
+
+

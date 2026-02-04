@@ -1,0 +1,108 @@
+data {
+  int<lower=1> K;                         // Number of groups
+  int<lower=0> N_obs;                     // Number of observed data
+  int<lower=0> N_mis;                     // Number of missing data
+  int<lower=1> p;                         // Number of explanatory variables
+  matrix[N_obs, p] X_obs;                     // Matrix of observed explanatory variables for all groups
+  matrix[N_mis, p] X_mis;                 // Matrix of observed explanatory variables for all groups with missing y
+  matrix[N_obs+N_mis, p] X_all;                 // Matrix of observed explanatory variables for all groups with missing y
+  array[N_obs] int<lower=1, upper=K> group;     // Group assignment for each observation
+  array[N_mis] int<lower=1, upper=K> group_mis;  // Group assignment for each missing observation
+  array[N_obs+N_mis] int<lower=1, upper=K> group_all;  // Group assignment for each missing observation
+  // Restrictions
+  int<lower=1, upper=N_obs> N0;                        // Number of 0 observations
+  int<lower=1, upper=N_obs> N1;                        // Number of 1 observations
+  array[N0] int<lower=1, upper=N_obs> n0; // Position of 0 observations
+  array[N1] int<lower=1, upper=N_obs> n1; // Position of 1 observations
+  // SSVS
+  real<lower=0> tau;                     // Estimation of zero
+  real<lower=1> c;                       // Estimation of a wide range of values
+  real epsilon;                           // Threshold for significant coefficient
+}
+
+transformed data {
+  real<lower=0> sigma=1.0;                  // standard error parameter for latent variable z
+  real delta0=0.0;                          // baseline threshold
+}
+
+parameters {
+  vector<lower=-1, upper=1>[K] rho;       // Correlation coefficient for each group
+  real mu;
+  vector[p] b;                           // Regression coefficients for explanatory variables
+  vector<lower=0>[K] w_tilde;                  // hidden truncated variable w_{i}
+  // Restrictions for probit
+  vector<upper=delta0>[N0] z0;                //          z_{ij} < delta0, N0 < N_obs
+  vector<lower=delta0>[N1] z1;                //          delta0 < z_{ij} , N1 < N_obs
+  vector<lower=0, upper=1>[p] pr;        // Inclusion probability of each beta_i
+}
+
+transformed parameters {
+
+  vector[N_obs] z_obs;
+  
+  for (n in 1:N0) {
+    z_obs[n0[n]] = z0[n];
+  }
+  for (n in 1:N1) {
+    z_obs[n1[n]] = z1[n];
+  }
+
+  vector<lower=0>[K] w = w_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+
+model {
+ 
+  // Reference prior for rho
+  target += sum(0.5 * log1p(square(rho)) - log1m(square(rho)));
+
+  // Prior for SSVS: seleccion of b and his inclusion probability pr.
+  pr ~ beta(0.5, 0.5);
+  for(i in 1:p){
+    target += log_mix(pr[i],
+    normal_lpdf(b[i] | 0, tau*c),
+    normal_lpdf(b[i] | 0, tau));
+  }
+
+  // Prior fot mu:
+  mu ~ normal(0, 100);
+  
+  // Dist of w (hidden truncated variable) for each group
+  w_tilde ~ normal(0, 1);
+  
+  // Likelihood for observed y given theta, z for all groups
+
+  vector[N_obs] cent_obs = sqrt(1 - 2/pi() * square(rho[group]));
+  //vector[N_mis] cent_mis = sqrt(1 - 2/pi() * square(rho[group_mis]));
+
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group]))./ cent_obs;
+  vector[N_obs] intercept = mu + (rho[group] .* w[group]) - sigma * rho[group] .* sqrt(2/pi()) ./ cent_obs;
+  
+  //vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[group_mis]))./ cent_mis;
+  //vector[N_mis] interceptmis = mu + (rho[group_mis] .* w[group_mis]) - sigma * rho[group_mis] .* sqrt(2/pi()) ./ cent_mis;
+  
+  target +=normal_id_glm_lupdf(z_obs | X_obs, intercept, b, sig);
+  //target +=normal_id_glm_lupdf(z_mis | X_mis, interceptmis, b, sigmis);
+}
+ 
+generated quantities {
+  // SSVS
+  vector<lower=0, upper=1>[p] m_ind;
+  for (j in 1:p) {
+      if (abs(b[j]) > epsilon) {
+          m_ind[j] = 1;
+      } else {
+          m_ind[j] = 0;
+      }
+  }
+  // Ajustados
+  int<lower=1, upper=N_obs+N_mis> j;
+  vector[N_obs+N_mis] z_all;
+  real eta_ij;
+  real<lower=0> sigma_i;
+  for(i in 1:(N_obs+N_mis)){
+    j = group_all[i];
+    eta_ij = mu + X_all[i]*b + (rho[j] .* w[j]) - sigma .* rho[j] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[j]));
+    sigma_i = sigma * sqrt(1 - square(rho[j]))./ sqrt(1 - 2/pi() * square(rho[j]));
+    z_all[i] = normal_rng(eta_ij, sigma_i);
+  }
+}

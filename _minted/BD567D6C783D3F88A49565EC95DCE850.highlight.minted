@@ -1,0 +1,74 @@
+\begin{MintedVerbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{data} \PYG{p}{\PYGZob{}}
+  \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{o}{\PYGZgt{}} \PYG{n}{K}\PYG{p}{;}
+  \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}} \PYG{n}{N\PYGZus{}obs}\PYG{p}{;}
+  \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}} \PYG{n}{N\PYGZus{}mis}\PYG{p}{;}
+  \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{o}{\PYGZgt{}} \PYG{n}{p}\PYG{p}{;}
+  \PYG{k+kt}{vector}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{p}{]} \PYG{n}{y\PYGZus{}obs}\PYG{p}{;}
+  \PYG{k+kt}{matrix}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{p}{,} \PYG{n}{p}\PYG{p}{]} \PYG{n}{X\PYGZus{}obs}\PYG{p}{;}
+  \PYG{k+kt}{matrix}\PYG{p}{[}\PYG{n}{N\PYGZus{}mis}\PYG{p}{,} \PYG{n}{p}\PYG{p}{]} \PYG{n}{X\PYGZus{}mis}\PYG{p}{;}
+  \PYG{k+kt}{matrix}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs} \PYG{o}{+} \PYG{n}{N\PYGZus{}mis}\PYG{p}{,} \PYG{n}{p}\PYG{p}{]} \PYG{n}{X\PYGZus{}all}\PYG{p}{;}
+  \PYG{k+kt}{array}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{p}{]} \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{n}{K}\PYG{o}{\PYGZgt{}} \PYG{n}{group}\PYG{p}{;}
+  \PYG{k+kt}{array}\PYG{p}{[}\PYG{n}{N\PYGZus{}mis}\PYG{p}{]} \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{n}{K}\PYG{o}{\PYGZgt{}} \PYG{n}{group\PYGZus{}mis}\PYG{p}{;}
+  \PYG{k+kt}{array}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{o}{+}\PYG{n}{N\PYGZus{}mis}\PYG{p}{]} \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{n}{K}\PYG{o}{\PYGZgt{}} \PYG{n}{group\PYGZus{}all}\PYG{p}{;}
+  \PYG{k+kt}{real}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}} \PYG{n}{c}\PYG{p}{;}
+  \PYG{k+kt}{real}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}} \PYG{n}{tau}\PYG{p}{;}
+  \PYG{k+kt}{real} \PYG{n}{epsilon}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kn}{parameters} \PYG{p}{\PYGZob{}}
+  \PYG{k+kt}{real}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}} \PYG{n}{sigma}\PYG{p}{;} 
+  \PYG{k+kt}{vector}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{o}{\PYGZgt{}}\PYG{p}{[}\PYG{n}{K}\PYG{p}{]} \PYG{n}{rho}\PYG{p}{;}
+  \PYG{k+kt}{vector}\PYG{p}{[}\PYG{n}{K}\PYG{p}{]} \PYG{n}{mu}\PYG{p}{;}
+  \PYG{k+kt}{vector}\PYG{p}{[}\PYG{n}{p}\PYG{p}{]} \PYG{n}{b}\PYG{p}{;}
+  \PYG{k+kt}{vector}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}}\PYG{p}{[}\PYG{n}{K}\PYG{p}{]} \PYG{n}{z\PYGZus{}tilde}\PYG{p}{;}
+  \PYG{k+kt}{vector}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{o}{\PYGZgt{}}\PYG{p}{[}\PYG{n}{p}\PYG{p}{]} \PYG{n}{pr}\PYG{p}{;}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{k+kn}{transformed parameters}\PYG{p}{\PYGZob{}}
+\PYG{k+kt}{vector}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}}\PYG{p}{[}\PYG{n}{K}\PYG{p}{]} \PYG{n}{z} \PYG{o}{=} \PYG{n}{z\PYGZus{}tilde} \PYG{o}{.*} \PYG{n}{sigma} \PYG{o}{./} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{2}\PYG{o}{*}\PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{)}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{());}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kn}{model} \PYG{p}{\PYGZob{}}
+  \PYG{c+c1}{// a priori de rho}
+  \PYG{k}{target +=} \PYG{n+nb}{sum}\PYG{p}{(}\PYG{l+m+mf}{0.5} \PYG{o}{*} \PYG{n+nb}{log1p}\PYG{p}{(}\PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{))} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{log1m}\PYG{p}{(}\PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{)));}
+  \PYG{c+c1}{// a priori de sigma}
+  \PYG{c+c1}{// target += \PYGZhy{}sigma;}
+  \PYG{n}{sigma} \PYG{o}{\PYGZti{}}\PYG{+w}{ }\PYG{n+nb}{inv\PYGZus{}gamma}\PYG{p}{(}\PYG{l+m+mf}{0.001}\PYG{p}{,} \PYG{l+m+mf}{0.001}\PYG{p}{);}
+  \PYG{c+c1}{// distribución de z\PYGZus{}tilde}
+  \PYG{n}{z\PYGZus{}tilde} \PYG{o}{\PYGZti{}}\PYG{+w}{ }\PYG{n+nb}{normal}\PYG{p}{(}\PYG{l+m+mf}{0}\PYG{p}{,} \PYG{l+m+mf}{1}\PYG{p}{);}
+  \PYG{c+c1}{// a priori de mu}
+  \PYG{n}{mu} \PYG{o}{\PYGZti{}}\PYG{+w}{ }\PYG{n+nb}{normal}\PYG{p}{(}\PYG{l+m+mf}{0}\PYG{p}{,} \PYG{l+m+mf}{100}\PYG{p}{);}
+  \PYG{c+c1}{// a priori de beta (SSVS)}
+  \PYG{n}{pr} \PYG{o}{\PYGZti{}}\PYG{+w}{ }\PYG{n+nb}{beta}\PYG{p}{(}\PYG{l+m+mf}{0.5}\PYG{p}{,} \PYG{l+m+mf}{0.5}\PYG{p}{);}
+  \PYG{k}{for} \PYG{p}{(}\PYG{n}{i} \PYG{k}{in} \PYG{l+m+mf}{1}\PYG{o}{:}\PYG{n}{p}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+    \PYG{k}{target +=} \PYG{n+nb}{log\PYGZus{}mix}\PYG{p}{(}\PYG{n}{pr}\PYG{p}{[}\PYG{n}{i}\PYG{p}{],}
+                      \PYG{n+nb}{normal\PYGZus{}lpdf}\PYG{p}{(}\PYG{n}{b}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{p}{|} \PYG{l+m+mf}{0}\PYG{p}{,} \PYG{n}{tau} \PYG{o}{*} \PYG{n}{c}\PYG{p}{),}
+                      \PYG{n+nb}{normal\PYGZus{}lpdf}\PYG{p}{(}\PYG{n}{b}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{p}{|} \PYG{l+m+mf}{0}\PYG{p}{,} \PYG{n}{tau}\PYG{p}{));}
+  \PYG{p}{\PYGZcb{}}
+  \PYG{c+c1}{// Verosimilitud p(y\PYGZca{}s | \PYGZbs{}theta, z\PYGZus{}\PYGZob{}1:K\PYGZcb{})}
+  \PYG{k+kt}{vector}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{p}{]} \PYG{n}{sig} \PYG{o}{=} \PYG{n}{sigma} \PYG{o}{*} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]))} \PYG{o}{./} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{2}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{()} \PYG{o}{*} \PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]));}
+  \PYG{k+kt}{vector}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{p}{]} \PYG{n}{intercept} \PYG{o}{=} \PYG{n}{rho}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]}\PYG{o}{.*} \PYG{n}{z}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]} \PYG{o}{\PYGZhy{}} \PYG{n}{sigma}\PYG{o}{*}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]} \PYG{o}{.*} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{2}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{())} \PYG{o}{./} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{2}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{()} \PYG{o}{*} \PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]));}
+  \PYG{k}{target +=}\PYG{n+nb}{normal\PYGZus{}id\PYGZus{}glm\PYGZus{}lupdf}\PYG{p}{(}\PYG{n}{y\PYGZus{}obs} \PYG{p}{|} \PYG{n}{X\PYGZus{}obs}\PYG{p}{,} \PYG{n}{mu}\PYG{p}{[}\PYG{n}{group}\PYG{p}{]} \PYG{o}{+} \PYG{n}{intercept}\PYG{p}{,} \PYG{n}{b}\PYG{p}{,} \PYG{n}{sig}\PYG{p}{);}
+\PYG{p}{\PYGZcb{}}
+\PYG{k+kn}{generated quantities} \PYG{p}{\PYGZob{}}
+  \PYG{c+c1}{// SSVS}
+  \PYG{k+kt}{vector}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{o}{\PYGZgt{}}\PYG{p}{[}\PYG{n}{p}\PYG{p}{]} \PYG{n}{m\PYGZus{}ind}\PYG{p}{;}
+  \PYG{k}{for} \PYG{p}{(}\PYG{n}{j} \PYG{k}{in} \PYG{l+m+mf}{1}\PYG{o}{:}\PYG{n}{p}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+    \PYG{k}{if} \PYG{p}{(}\PYG{n+nb}{abs}\PYG{p}{(}\PYG{n}{b}\PYG{p}{[}\PYG{n}{j}\PYG{p}{])} \PYG{o}{\PYGZgt{}} \PYG{n}{epsilon}\PYG{p}{)} \PYG{p}{\PYGZob{}}
+      \PYG{n}{m\PYGZus{}ind}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mf}{1}\PYG{p}{;}
+        \PYG{p}{\PYGZcb{}} \PYG{k}{else} \PYG{p}{\PYGZob{}}
+      \PYG{n}{m\PYGZus{}ind}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mf}{0}\PYG{p}{;}
+    \PYG{p}{\PYGZcb{}}
+  \PYG{p}{\PYGZcb{}}
+  \PYG{c+c1}{// Valores ajustados}
+  \PYG{k+kt}{int}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{1}\PYG{p}{,}\PYG{+w}{ }\PYG{k}{upper}\PYG{p}{=}\PYG{n}{N\PYGZus{}obs}\PYG{o}{+}\PYG{n}{N\PYGZus{}mis}\PYG{o}{\PYGZgt{}} \PYG{n}{j}\PYG{p}{;}
+  \PYG{k+kt}{vector}\PYG{p}{[}\PYG{n}{N\PYGZus{}obs}\PYG{o}{+}\PYG{n}{N\PYGZus{}mis}\PYG{p}{]} \PYG{n}{y\PYGZus{}all}\PYG{p}{;}
+  \PYG{k+kt}{real} \PYG{n}{eta\PYGZus{}ij}\PYG{p}{;}
+  \PYG{k+kt}{real}\PYG{o}{\PYGZlt{}}\PYG{k}{lower}\PYG{p}{=}\PYG{l+m+mf}{0}\PYG{o}{\PYGZgt{}} \PYG{n}{sigma\PYGZus{}i}\PYG{p}{;}
+  \PYG{k}{for}\PYG{p}{(}\PYG{n}{i} \PYG{k}{in} \PYG{l+m+mf}{1}\PYG{o}{:}\PYG{p}{(}\PYG{n}{N\PYGZus{}obs}\PYG{o}{+}\PYG{n}{N\PYGZus{}mis}\PYG{p}{))\PYGZob{}}
+    \PYG{n}{j} \PYG{o}{=} \PYG{n}{group\PYGZus{}all}\PYG{p}{[}\PYG{n}{i}\PYG{p}{];}
+    \PYG{n}{eta\PYGZus{}ij} \PYG{o}{=} \PYG{n}{mu}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]} \PYG{o}{+} \PYG{n}{X\PYGZus{}all}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{o}{*}\PYG{n}{b} \PYG{o}{+} \PYG{n}{rho}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]} \PYG{o}{.*} \PYG{n}{z}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]}\PYG{o}{\PYGZhy{}} \PYG{n}{sigma} \PYG{o}{.*} \PYG{n}{rho}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]} \PYG{o}{.*} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{2}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{())} \PYG{o}{./} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{2}\PYG{o}{*}\PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{j}\PYG{p}{])}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{());}
+    \PYG{n}{sigma\PYGZus{}i} \PYG{o}{=} \PYG{n}{sigma} \PYG{o}{*} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]))}\PYG{o}{./} \PYG{n+nb}{sqrt}\PYG{p}{(}\PYG{l+m+mf}{1} \PYG{o}{\PYGZhy{}} \PYG{l+m+mf}{2}\PYG{o}{/}\PYG{n+nb}{pi}\PYG{p}{()} \PYG{o}{*} \PYG{n+nb}{square}\PYG{p}{(}\PYG{n}{rho}\PYG{p}{[}\PYG{n}{j}\PYG{p}{]));}
+    \PYG{n}{y\PYGZus{}all}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{o}{=} \PYG{n+nb}{normal\PYGZus{}rng}\PYG{p}{(}\PYG{n}{eta\PYGZus{}ij}\PYG{p}{,} \PYG{n}{sigma\PYGZus{}i}\PYG{p}{);}
+  \PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+\end{MintedVerbatim}

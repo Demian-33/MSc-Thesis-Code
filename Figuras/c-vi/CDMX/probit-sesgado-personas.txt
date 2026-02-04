@@ -1,0 +1,31 @@
+Azcapotzalco & 25.328434 & 19.301765\\
+\hline
+Coyoacán & 19.589278 & 16.329528\\
+\hline
+Cuajimalpa de Morelos & 33.090623 & 26.448515\\
+\hline
+Gustavo A. Madero & 35.011277 & 32.162283\\
+\hline
+Iztacalco & 29.416662 & 29.520345\\
+\hline
+Iztapalapa & 47.657969 & 44.381822\\
+\hline
+La Magdalena Contreras & 36.487200 & 33.764548\\
+\hline
+Milpa Alta & 36.340751 & 25.081109\\
+\hline
+Álvaro Obregón & 31.527604 & 24.488418\\
+\hline
+Tláhuac & 36.635403 & 29.545580\\
+\hline
+Tlalpan & 21.023771 & 12.817999\\
+\hline
+Xochimilco & 35.431406 & 27.577171\\
+\hline
+Benito Juárez & 5.403805 & 4.909893\\
+\hline
+Cuauhtémoc & 21.592715 & 19.170677\\
+\hline
+Miguel Hidalgo & 17.447831 & 12.961170\\
+\hline
+Venustiano Carranza & 33.021258 & 27.662207

@@ -1,0 +1,958 @@
+---
+title: "Modelo Continuo"
+author: "Saul Arturo Ortiz Muñoz"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(cmdstanr)
+source('./funciones.R')
+```
+
+* Se describen algunas alternativas para modelar cuando $n_{i}=0$, es decir, no se tienen observaciones en el dominio $i$.
+
+# Alternativa (0): el modelo de Diallo - Rao
+
+* Generaliza el modelo de regresión **usual** en áreas pequeñas al permitir errores normales sesgados en, valga la redundancia, los errores $e_{ij}$ y el error anidado $e_{u}$ (proveniente del efecto aleatorio).
+* Se asume que
+
+$$
+y_{ij} = \boldsymbol{x_{ij}}^{T}\boldsymbol{\beta} + u_{i} + e_{ij}
+$$
+
+donde:
+* $e_{ij}\sim SN(-\sigma_{e}\sqrt{2\rho_{e}^{2}/\pi}, \sigma^{2}_{e},\, \lambda_{e})$.
+* $u_{i}\sim SN(-\sigma_{u}\sqrt{2\rho_{u}^{2}/\pi}, \sigma^{2}_{u},\, \lambda_{u})$.
+* Además, $u_{i}$ es independiente de $e_{ij}$. Para hacer inferencia, usan máxima verosimilitud y recurren a la familia Closed Skew-Normal, una generalización de la distribución normal sesgada con cerradura bajo sumas de variables aleatorias CSN.
+* Se asume que sólo existen dos parámetros de forma/correlación para toda la población: $\lambda_{e}$ y $\lambda_{u}$.
+* $u_{i}$ se considera como un efecto aleatorio para cada región de estudio.
+* ¿Será valido asignar este modelo para las observaciones faltantes?.
+* ¿Qué pasa si hacemos que este sea nuestro modelo ahora?, ¿que sucede con el truncamiento oculto?: debemos conocer la distribución de la suma de dos normales sesgadas, la cuál se puede generalizar con la familia CSN
+* Por el punto anterior, quizás no es tan sencillo usar este modelo
+
+
+* No obstante, parece es posible añadir sentencias en el bloque `model {...}` usando los condicionales `if {...} else {...}`.
+
+```{r, eval=F}
+model{
+  for(i in 1:N_all){
+    j = filter[i]
+    if(j == 1){
+      // observed y_{ij}
+    } else{
+      // missing y_{ij}
+    }
+  }
+}
+```
+
+# Alternativa (1) pooling  en mu
+
+* Se propone usar
+
+$$
+\begin{align}
+\mu &\sim N_{M}(\mu_{0}1_{M}, \sigma^2_{\mu}I_{M}) \\
+\mu_{0} &\sim N(0, 10^2) \\
+\sigma^2_{\mu} &\sim InvGamma(0.001, 0.001),
+\end{align}
+$$
+
+```{r}
+stan_code1 <- '
+data {
+  int<lower=1> K;  // regions
+  int<lower=0> N_obs; // no. of observed y_{ij}
+  int<lower=0> N_mis; // no. of missing  y_{ij}
+  array[N_obs] int<lower=1, upper=K> group; // region of observed
+  array[N_mis] int<lower=1, upper=K> groupmis; // region of missing
+  int<lower=1> p;  // predictors
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+}
+parameters {
+  vector<lower=0, upper=1>[K] rho;
+  real<lower=0> sigma;           // sd for all region
+  vector[K] mu;                // intercept for each region
+  //vector[K] mu_tilde;            // intercept for each region
+  real mu0;                    // global mean for mu
+  real<lower=0> sigma_mu;        // sd for mu
+  vector[p] beta;                // Regression coefficients
+  vector<lower=0>[K] z_tilde;    // Latent variable for each group
+  vector[N_mis] y_mis;           // missing y_{ij}
+}
+transformed parameters{
+  //vector[K] mu = mu0 + sigma_mu .* mu_tilde;
+  vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  target += sum( 0.5 * log1p(square(rho)) - log1m(square(rho)) );
+  sigma ~ inv_gamma(0.001, 0.001);
+  //mu_tilde ~ normal(0, 1);
+  mu ~ normal(mu0, sigma_mu);
+  mu0 ~ normal(0, 10);
+  sigma_mu ~ inv_gamma(0.001, 0.001);
+  z_tilde ~ normal(0, 1); 
+  beta ~ normal(0, 10);
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  vector[N_obs] intercept = rho[group].* z[group] - sigma*rho[group] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu[group] + intercept, beta, sig);
+  vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[groupmis]))./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  vector[N_mis] interceptmis = rho[groupmis] .* z[groupmis]- sigma*rho[groupmis] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  target +=normal_id_glm_lupdf(y_mis | X_mis, mu[groupmis] + interceptmis, beta, sigmis);
+}'
+```
+
+```{r message=FALSE, warning=TRUE}
+stan_model1 <- write_stan_file(stan_code1) # write .stan file
+mod_pool1 <- cmdstan_model(stan_model1, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos y tres
+
+```{r}
+# datos <- get_sim0(N=c(200, 100, 150, 200, 100, 100, 150, 200, 250, 200, 150, 100), out=c(1, 2, 3), prop=0.2)
+set.seed(1)
+datos <- get_sim(out=c(2, 3), prop=0.15)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  rho=rep(0.5, times=datos$K),
+  mu=rep(5, times=datos$K),
+  mu_0=rep(0, times=datos$K),
+  sigma_mu=1,
+  z_tilde=rep(0.3, times=datos$K),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, nclude=T}
+fit_vb1 <- mod_pool1$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 75000,
+  draws= 1000,
+  grad_samples = 1,
+  elbo_samples = 2500,
+  eval_elbo = 2500,
+  adapt_iter = 5000,
+  adapt_engaged = T,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+
+## Estimaciones
+
+```{r}
+Real=c(datos$rho, datos$sigma, datos$mu, NA, NA, datos$b)
+tmp <- tibble(fit_vb1$summary()[3:18, c(1, 2, 6, 7)])
+tmp <- cbind(Real, tmp) %>% relocate(Real, .after=variable)
+tmp %>% mutate(across(where(is.numeric), ~ round(., 3))) %>% print(n=Inf)
+```
+
+# Alternativa (2) pooling: único mu
+
+*Se observa que la estimación o efecto de cada $\mu_{i}$ es casi idéntico, por lo que quizás convenga hacer un único efecto
+
+* Se propone usar
+
+$$
+\begin{align}
+\mu &\sim N(\mu_{0}, \sigma^2_{\mu}) \\
+\mu_{0} &\sim N(0, 10^2) \\
+\sigma^2_{\mu} &\sim InvGamma(0.001, 0.001),
+\end{align}
+$$
+
+
+```{r}
+stan_code2 <- '
+data {
+  int<lower=1> K;  // regions
+  int<lower=0> N_obs; // no. of observed y_{ij}
+  int<lower=0> N_mis; // no. of missing  y_{ij}
+  array[N_obs] int<lower=1, upper=K> group; // region of observed
+  array[N_mis] int<lower=1, upper=K> groupmis; // region of missing
+  int<lower=1> p;  // predictors
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+}
+parameters {
+  vector<lower=0, upper=1>[K] rho;
+  real<lower=0> sigma;           // sd for all region
+  real mu;                    
+  real mu0;                    // global mean for mu
+  real<lower=0> sigma_mu;        // sd for mu
+  vector[p] beta;                // Regression coefficients
+  vector<lower=0>[K] z_tilde;    // Latent variable for each group
+  vector[N_mis] y_mis;           // missing y_{ij}
+}
+transformed parameters{
+  vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  target += sum(0.5 * log1p(square(rho)) - log1m(square(rho)));
+  sigma ~ inv_gamma(0.001, 0.001);
+  mu ~ normal(mu0, sigma_mu);
+  mu0 ~ normal(0, 10);
+  sigma_mu ~ inv_gamma(0.001, 0.001);
+  z_tilde ~ normal(0, 1); 
+  beta ~ normal(0, 10);
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  vector[N_obs] intercept = rho[group].* z[group] - sigma*rho[group] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu + intercept, beta, sig);
+  vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[groupmis]))./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  vector[N_mis] interceptmis = rho[groupmis] .* z[groupmis]- sigma*rho[groupmis] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  target +=normal_id_glm_lupdf(y_mis | X_mis, mu + interceptmis, beta, sigmis);
+}'
+```
+
+```{r message=FALSE, warning=TRUE}
+stan_model2 <- write_stan_file(stan_code2) # write .stan file
+mod_pool2 <- cmdstan_model(stan_model2, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos
+
+```{r}
+set.seed(1)
+datos <- get_sim(out=c(2, 3), prop=0.1)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  rho = rep(0.5, times=datos$K),
+  mu=5,
+  mu0=0,
+  sigma_mu = 1,
+  z_tilde=rep(0.3, times=datos$K),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_vb2 <- mod_pool2$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 25000,
+  draws= 1000,
+  grad_samples = 1,
+  elbo_samples = 100,
+  eval_elbo = 2500,
+  adapt_iter = 5000,
+  adapt_engaged = T,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+## Estimaciones
+
+```{r}
+mu <-''; for(k in 1:datos$K){mu <- paste(mu, datos$mu[k], sep=',')}
+Real=c(datos$rho, datos$sigma, NA, NA, NA, datos$b)
+tmp <- tibble(fit_vb2$summary()[3:15, c(1, 2, 6, 7)])
+tmp <- cbind(Real, tmp) %>% relocate(Real, .after=variable)
+tmp <- tmp %>% mutate(across(where(is.numeric), ~ round(., 3)))
+tmp[6, 2] <- mu
+tmp
+```
+
+# Alternativa (3) pooling: varios lambda, mu flat
+
+* Se propone usar
+
+$$
+\begin{align}
+\mu &\sim N_{M}(0_{M}, 10^2I_{M}) \\
+\lambda &\sim N_{M}(0_{M}, \sigma^{2}_{\lambda}) \\
+\sigma^{2}_{\lambda} &\sim InvGa(0.001, 0.001)
+\end{align}
+$$
+
+
+```{r}
+stan_code3 <- '
+data {
+  int<lower=1> K;  // regions
+  int<lower=0> N_obs; // no. of observed y_{ij}
+  int<lower=0> N_mis; // no. of missing  y_{ij}
+  array[N_obs] int<lower=1, upper=K> group; // region of observed
+  array[N_mis] int<lower=1, upper=K> groupmis; // region of missing
+  int<lower=1> p;  // predictors
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+}
+parameters {
+  vector<lower=0>[K] lambda;
+  real<lower=0> sigma_lambda;           // sd for all region
+  real<lower=0> sigma;           // sd for all region
+  vector[K] mu;            // intercept for each region
+  vector[p] beta;                // Regression coefficients
+  vector<lower=0>[K] z_tilde;    // Latent variable for each group
+  vector[N_mis] y_mis;           // missing y_{ij}
+}
+transformed parameters{
+  vector<lower=0, upper=1>[K] rho = lambda ./ sqrt(1 + square(lambda));
+  //real mu = mu0 + sigma_mu * mu_tilde;
+  vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  lambda ~ normal(0, sigma_lambda);
+  sigma_lambda ~ inv_gamma(0.001, 0.001);
+  sigma ~ inv_gamma(0.001, 0.001);
+  mu ~ normal(0, 10);
+  z_tilde ~ normal(0, 1); 
+  beta ~ normal(0, 10);
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  vector[N_obs] intercept = rho[group].* z[group] - sigma*rho[group] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu[group] + intercept, beta, sig);
+  vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[groupmis]))./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  vector[N_mis] interceptmis = rho[groupmis] .* z[groupmis]- sigma*rho[groupmis] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  target +=normal_id_glm_lupdf(y_mis | X_mis, mu[groupmis] + interceptmis, beta, sigmis);
+}'
+```
+
+
+```{r message=FALSE, warning=TRUE}
+stan_model3 <- write_stan_file(stan_code3) # write .stan file
+mod_pool3 <- cmdstan_model(stan_model3, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos
+
+```{r}
+set.seed(1)
+datos <- get_sim(out=c(2, 3), prop=0.1)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  lambda=rep(1, times=datos$K),
+  sigma_lambda=1,
+  mu=rep(5, times=datos$K),
+  z_tilde=rep(0.3, times=datos$K),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_vb3 <- mod_pool3$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 75000,
+  draws= 1000,
+  grad_samples = 1,
+  elbo_samples = 100,
+  eval_elbo = 2500,
+  adapt_iter = 5000,
+  adapt_engaged = T,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+## Estimaciones
+
+```{r}
+Real=c(rho2lambda(datos$rho), NA, datos$sigma, datos$mu, datos$b)
+tmp <- tibble(fit_vb3$summary()[3:17, c(1, 2, 6, 7)])
+tmp <- cbind(Real, tmp) %>% relocate(Real, .after=variable)
+tmp %>% mutate(across(where(is.numeric), ~ round(., 3)))
+```
+
+# Alternativa (4) pooling: unico lambda
+
+* Se propone usar
+$$
+\begin{align}
+\mu &\sim N_{M}(\mu_{0}1_{M}, \sigma^2_{\mu}I_{M}) \\
+\mu_{0} &\sim N(0, 10^2) \\
+\sigma^2_{\mu} &\sim InvGamma(0.001, 0.001),
+\end{align}
+$$
+
+*Se observa que la estimación o efecto de cada $\mu_{i}$ es casi idéntico, por lo que quizás convenga hacer $M=1$, es decir, un único efecto.
+
+
+```{r}
+stan_code_pool_oneInt3 <- '
+data {
+  int<lower=1> K;  // regions
+  int<lower=0> N_obs; // no. of observed y_{ij}
+  int<lower=0> N_mis; // no. of missing  y_{ij}
+  array[N_obs] int<lower=1, upper=K> group; // region of observed
+  array[N_mis] int<lower=1, upper=K> groupmis; // region of missing
+  int<lower=1> p;  // predictors
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+}
+parameters {
+  vector<lower=0>[K] lambda;
+  real mu_lambda;
+  real<lower=0> sigma_lambda;
+  real<lower=0> sigma;           // sd for all region
+  real mu;            // intercept for each region
+  vector[p] beta;                // Regression coefficients
+  vector<lower=0>[K] z_tilde;    // Latent variable for each group
+  vector[N_mis] y_mis;           // missing y_{ij}
+}
+transformed parameters{
+  vector<lower=0, upper=1>[K] rho = lambda ./ sqrt(1 + square(lambda));
+  //real mu = mu0 + sigma_mu * mu_tilde;
+  vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  //target += sum( 0.5 * log1p(square(rho)) - log1m(square(rho)) );
+  //lambda ~ normal(0, 10);
+  lambda ~ normal(mu_lambda, sigma_lambda);
+  //lambda_tilde ~ normal(0, 1);
+  mu_lambda ~ normal(0, 10);
+  sigma_lambda ~ inv_gamma(0.001, 0.001);
+  sigma ~ inv_gamma(0.001, 0.001);
+  mu ~ normal(0, 10);
+  //mu_tilde ~ normal(0, 1);
+  //mu0 ~ normal(0, 10);
+  //sigma_mu ~ inv_gamma(0.001, 0.001);
+  z_tilde ~ normal(0, 1); 
+  beta ~ normal(0, 10);
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  vector[N_obs] intercept = rho[group].* z[group] - sigma*rho[group] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu + intercept, beta, sig);
+  vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[groupmis]))./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  vector[N_mis] interceptmis = rho[groupmis] .* z[groupmis]- sigma*rho[groupmis] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  target +=normal_id_glm_lupdf(y_mis | X_mis, mu + interceptmis, beta, sigmis);
+}'
+```
+
+```{r message=FALSE, warning=TRUE}
+stan_model_pool_oneInt3 <- write_stan_file(stan_code_pool_oneInt3) # write .stan file
+mod_pool_oneInt3 <- cmdstan_model(stan_model_pool_oneInt3, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos
+
+```{r}
+datos <- get_sim(out=c(2, 3), prop=0.5)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  lambda=c(1, 1, 1, 1),
+  mu_lambda=1,
+  sigma_lambda=0.5,
+  mu=6,
+  z_tilde=c(0.3, 0.3, 0.3, 0.3),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_vb4 <- mod_pool_oneInt3$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 25000,
+  draws= 1000,
+  grad_samples = 1,
+  elbo_samples = 100,
+  eval_elbo = 2500,
+  adapt_iter = 5000,
+  adapt_engaged = T,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+
+```{r}
+apply(fit_vb4$draws('rho'), 2, mean)
+datos$rho
+
+apply(fit_vb4$draws('mu_lambda'), 2, mean)
+apply(fit_vb4$draws('sigma_lambda'), 2, mean)
+
+apply(fit_vb4$draws('mu'), 2, mean)
+datos$mu
+
+apply(fit_vb4$draws('sigma'), 2, mean)
+datos$sigma
+
+apply(fit_vb4$draws('beta'), 2, mean)
+datos$b
+```
+
+
+```{r}
+fitted_vb4 <- apply(fit_vb4$draws('y_mis'), 2, mean)
+plot(fitted_vb4, datos$y_mis)
+```
+
+
+# Alternativa (5) pooling lambda jerarquico + pooling unico mu
+
+* Se propone usar
+
+$$
+\begin{align}
+\mu &\sim N_{M}(\mu_{0}1_{M}, \sigma^2_{\mu}I_{M}) \\
+\mu_{0} &\sim N(0, 10^2) \\
+\sigma^2_{\mu} &\sim InvGamma(0.001, 0.001),
+\end{align}
+$$
+
+*Se observa que la estimación o efecto de cada $\mu_{i}$ es casi idéntico, por lo que quizás convenga hacer $M=1$, es decir, un único efecto.
+
+
+```{r}
+stan_code_pool_oneInt4 <- '
+data {
+  int<lower=1> K;  // regions
+  int<lower=0> N_obs; // no. of observed y_{ij}
+  int<lower=0> N_mis; // no. of missing  y_{ij}
+  array[N_obs] int<lower=1, upper=K> group; // region of observed
+  array[N_mis] int<lower=1, upper=K> groupmis; // region of missing
+  int<lower=1> p;  // predictors
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+}
+parameters {
+  vector<lower=0>[K] lambda;
+  real mu_lambda;
+  real<lower=0> sigma_lambda;
+  real<lower=0> sigma;           // sd for all region
+  real mu;            // intercept for each region
+  real mu0;
+  real<lower=0> sigma_mu;
+  vector[p] beta;                // Regression coefficients
+  vector<lower=0>[K] z_tilde;    // Latent variable for each group
+  vector[N_mis] y_mis;           // missing y_{ij}
+}
+transformed parameters{
+  vector<lower=0, upper=1>[K] rho = lambda ./ sqrt(1 + square(lambda));
+  //real mu = mu0 + sigma_mu * mu_tilde;
+  vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  //target += sum( 0.5 * log1p(square(rho)) - log1m(square(rho)) );
+  //lambda ~ normal(0, 10);
+  lambda ~ normal(mu_lambda, sigma_lambda);
+  //lambda_tilde ~ normal(0, 1);
+  mu_lambda ~ normal(0, 1); // 10^2
+  sigma_lambda ~ inv_gamma(0.01, 0.01);
+  sigma ~ inv_gamma(0.001, 0.001);
+  mu ~ normal(mu0, sigma_mu);
+  //mu_tilde ~ normal(0, 1);
+  mu0 ~ normal(0, 10);
+  sigma_mu ~ inv_gamma(0.001, 0.001);
+  z_tilde ~ normal(0, 1); 
+  beta ~ normal(0, 10);
+  vector[N_obs] sig = sigma * sqrt(1 - square(rho[group])) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  vector[N_obs] intercept = rho[group].* z[group] - sigma*rho[group] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[group]));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu + intercept, beta, sig);
+  vector[N_mis] sigmis = sigma * sqrt(1 - square(rho[groupmis]))./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  vector[N_mis] interceptmis = rho[groupmis] .* z[groupmis]- sigma*rho[groupmis] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[groupmis]));
+  target +=normal_id_glm_lupdf(y_mis | X_mis, mu + interceptmis, beta, sigmis);
+}'
+```
+
+```{r message=FALSE, warning=TRUE}
+stan_model_pool_oneInt4 <- write_stan_file(stan_code_pool_oneInt4) # write .stan file
+mod_pool_oneInt4 <- cmdstan_model(stan_model_pool_oneInt4, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos
+
+```{r}
+datos <- get_sim(out=c(2, 3), prop=0.5)
+datos <- get_sim(prop=0.25)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  lambda=3*c(1, 1, 1, 1),
+  mu_lambda=1,
+  sigma_lambda=0.5,
+  mu=6,
+  mu0=6,
+  sigma_mu=0.5,
+  z_tilde=c(0.3, 0.3, 0.3, 0.3),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+datos 2
+
+```{r}
+datos <- get_sim0(N=c(200, 100, 150, 200, 100, 100, 150, 200, 250, 200, 150, 100), out=c(1, 2, 3), prop=0.2)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  rho = rep(0.85, times=datos$K),
+  mu_tilde=rep(5, times=datos$K),
+  mu0 = 5,
+  sigma_mu = 2,
+  z_tilde=rep(0.3, times=datos$K),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_vb5 <- mod_pool_oneInt4$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 75000,
+  draws= 1000,
+  grad_samples = 4,
+  elbo_samples = 100,
+  eval_elbo = 2500,
+  adapt_iter = 5000,
+  adapt_engaged = T,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+
+```{r}
+apply(fit_vb5$draws('rho'), 2, mean)
+datos$rho
+
+apply(fit_vb5$draws('mu_lambda'), 2, mean)
+apply(fit_vb5$draws('sigma_lambda'), 2, mean)
+
+apply(fit_vb5$draws('mu'), 2, mean)
+datos$mu
+
+apply(fit_vb5$draws('mu0'), 2, mean)
+apply(fit_vb5$draws('sigma_mu'), 2, mean)
+
+apply(fit_vb5$draws('sigma'), 2, mean)
+datos$sigma
+
+apply(fit_vb5$draws('beta'), 2, mean)
+datos$b
+```
+
+
+```{r}
+fitted_vb5 <- apply(fit_vb5$draws('y_mis'), 2, mean)
+plot(fitted_vb5, datos$y_mis)
+```
+
+# Alternativa (6) pooling: unico lambda + mu
+
+* Se propone usar
+
+$$
+\begin{align}
+\mu &\sim N(\mu_{0}, \sigma^2_{\mu}) \\
+\mu_{0} &\sim N(0, 10^2) \\
+\sigma^2_{\mu} &\sim InvGamma(0.001, 0.001) \\
+\lambda &\sim N(0, \sigma^{2}_{\lambda}) \\
+\sigma^{2}_{\lambda} &\sim InvGamma(0.001, 0.001)
+\end{align}
+$$
+
+
+```{r}
+stan_code6<- '
+data {
+  int<lower=1> K;  // regions
+  int<lower=0> N_obs; // no. of observed y_{ij}
+  int<lower=0> N_mis; // no. of missing  y_{ij}
+  array[N_obs] int<lower=1, upper=K> group; // region of observed
+  array[N_mis] int<lower=1, upper=K> groupmis; // region of missing
+  int<lower=1> p;  // predictors
+  vector[N_obs] y_obs;
+  matrix[N_obs, p] X_obs;
+  matrix[N_mis, p] X_mis;
+}
+parameters {
+  real<lower=0> lambda;
+  //real mu_lambda;
+  real<lower=0> sigma_lambda;
+  real<lower=0> sigma;           // sd for all region
+  real mu;            // intercept for each region
+  real mu0;
+  real<lower=0> sigma_mu;
+  vector[p] beta;                // Regression coefficients
+  vector<lower=0>[K] z_tilde;    // Latent variable for each group
+  vector[N_mis] y_mis;           // missing y_{ij}
+}
+transformed parameters{
+  real<lower=0, upper=1> rho = lambda ./ sqrt(1 + square(lambda));
+  //real mu = mu0 + sigma_mu * mu_tilde;
+  vector<lower=0>[K] z = z_tilde .* sigma ./ sqrt(1 - 2*square(rho)/pi());
+}
+model {
+  lambda ~ normal(0, sigma_lambda);
+  //mu_lambda ~ normal(0, 1);
+  sigma_lambda ~ inv_gamma(0.001, 0.001);
+  sigma ~ inv_gamma(0.001, 0.001);
+  mu ~ normal(mu0, sigma_mu);
+  mu0 ~ normal(0, 10);
+  sigma_mu ~ inv_gamma(0.001, 0.001);
+  z_tilde ~ normal(0, 1); 
+  beta ~ normal(0, 10);
+  real sig = sigma * sqrt(1 - square(rho))./ sqrt(1 - 2/pi() * square(rho));
+  vector[N_obs] intercept = rho.* z[group] - sigma*rho .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho));
+  target +=normal_id_glm_lupdf(y_obs | X_obs, mu + intercept, beta, sig);
+  real sigmis = sigma * sqrt(1 - square(rho))./ sqrt(1 - 2/pi() * square(rho));
+  vector[N_mis] interceptmis = rho .* z[groupmis]- sigma*rho .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho));
+  target +=normal_id_glm_lupdf(y_mis | X_mis, mu + interceptmis, beta, sigmis);
+}'
+```
+
+```{r message=FALSE, warning=TRUE}
+stan_model6 <- write_stan_file(stan_code6) # write .stan file
+mod_pool6 <- cmdstan_model(stan_model6, compile=T)
+```
+
+## Preparar datos
+
+* Se considera perder todas las observaciones de la región dos
+
+```{r}
+set.seed(1)
+datos <- get_sim(out=c(2, 3), prop=0.1)
+dat <- list(
+  K = datos$K,
+  N_obs = datos$N_obs, # observed
+  N_mis = datos$N_mis, # missing
+  p = datos$p,
+  y_obs = datos$y_obs,
+  X_obs =  datos$X_obs,
+  X_mis =  datos$X_mis,
+  group = datos$group,
+  groupmis = datos$groupmis
+)
+
+tmp <- data.frame(y=datos$y_obs, datos$X_obs)
+r1 <- lm(y~ . , data=tmp)
+
+set.seed(2)
+init_list <- list(
+  beta = coef(r1)[-1],
+  sigma=1,
+  lambda=5,
+  sigma_lambda=1,
+  mu=6,
+  mu0=0,
+  sigma_mu=1,
+  z_tilde=rep(0.3, times=datos$K),
+  y_mis = predict(r1, newdata = data.frame(datos$X_mis))
+)
+```
+
+
+## Ajuste con VB
+
+* Dejando que `eta`, un parámetro involucrado en el tamaño de paso en el ascenso del gradiente, sea buscado por `Stan`
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+fit_vb6 <- mod_pool6$variational(
+  data = dat,
+  seed = 123,
+  init = list(init_list),
+  iter = 75000,
+  draws= 1000,
+  grad_samples = 1,
+  elbo_samples = 100,
+  eval_elbo = 2500,
+  adapt_iter = 5000,
+  adapt_engaged = T,
+  eta = 0.1, # 
+  tol_rel_obj = 1e-5,
+  algorithm = 'meanfield'
+)
+```
+
+
+```{r}
+Real=c(rho2lambda(datos$rho), NA, datos$sigma, datos$mu, datos$b)
+tmp <- tibble(fit_vb6$summary()[3:17, c(1, 2, 6, 7)])
+tmp <- cbind(Real, tmp) %>% relocate(Real, .after=variable)
+tmp %>% mutate(across(where(is.numeric), ~ round(., 3)))
+```
+
+
+# Comparacion
+
+```{r}
+tmp <- tibble(groupmis=datos$groupmis, idx_mis=datos$idx_mis)
+idx_mis <- subset(tmp, groupmis%in%c(2, 3), idx_mis)
+idx_mis <- idx_mis$idx_mis
+```
+
+
+```{r}
+fitted_vb1 <- apply(fit_vb1$draws('y_mis'), 2, mean)
+fitted_vb2 <- apply(fit_vb2$draws('y_mis'), 2, mean)
+# fitted_vb3 <- apply(fit_vb3$draws('y_mis'), 2, mean)
+fitted_vb6 <- apply(fit_vb6$draws('y_mis'), 2, mean)
+```
+
+
+```{r}
+metrics(fitted_vb1[idx_mis], datos$y_mis[idx_mis])
+metrics(fitted_vb2[idx_mis], datos$y_mis[idx_mis])
+# metrics(fitted_vb3[idx_mis], datos$y_mis[idx_mis])
+metrics(fitted_vb6[idx_mis], datos$y_mis[idx_mis])
+```
+
+```{r}
+plot(fitted_vb6[idx_mis], datos$y_mis[idx_mis], pch=19, col=4)
+points(fitted_vb2[idx_mis], datos$y_mis[idx_mis], pch=19, col=2)
+```
+
+

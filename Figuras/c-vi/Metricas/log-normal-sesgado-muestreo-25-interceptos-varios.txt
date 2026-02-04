@@ -1,0 +1,10 @@
+Corr. & 0.9062 & \bfseries 0.9065\\
+\hline
+MAE & \bfseries 0.9146 & 0.9133\\
+\hline
+RMSE & \bfseries 1.1575 & 1.1559\\
+\hline
+MAPE & 21.5789 & \bfseries 21.1643\\
+\hline
+Tiempo (s) & \bfseries 31.11 & 442.91\\
+\hline

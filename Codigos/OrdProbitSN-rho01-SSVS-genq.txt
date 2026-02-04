@@ -1,0 +1,56 @@
+data {
+  ...
+  // Restrictions
+  int<lower=1, upper=N_obs-2> N0;
+  int<lower=1, upper=N_obs-2> N1;
+  int<lower=1, upper=N_obs-2> N2;
+  array[N0] int<lower=1, upper=N_obs> n0;
+  array[N1] int<lower=1, upper=N_obs> n1;
+  array[N2] int<lower=1, upper=N_obs> n2;
+}
+transformed data {
+  real<lower=0> sigma=1.0;
+  real delta0=0.0;  
+}
+parameters {
+  ...
+  real<lower=0> w_tilde;
+  real<lower=delta0> delta1;
+  vector<upper=delta0>[N0] z0;
+  vector<lower=delta0, upper=delta1>[N1] z1;
+  vector<lower=delta1>[N2] z2;
+}
+transformed parameters {
+  vector[N_obs] z_obs;
+  for (n in 1:N0) {
+    z_obs[n0[n]] = z0[n];
+  }
+  for (n in 1:N1) {
+    z_obs[n1[n]] = z1[n];
+  }
+  for (n in 1:N2) {
+    z_obs[n2[n]] = z2[n];
+  }
+  vector<lower=0>[K] w = w_tilde .* sigma ./ sqrt(1 - 2*square(rho)./pi());
+}
+model {
+  …
+  // a priori para delta1
+  delta1 ~ normal(0, 100);
+  // distribución de w_tilde
+  target +=normal_id_glm_lupdf(z_obs | X_obs, intercept, b, sig);
+}
+generated quantities {
+  ...
+  // Ajustados
+  int<lower=1, upper=N_obs+N_mis> j;
+  vector[N_obs+N_mis] z_all;
+  real eta_ij;
+  real<lower=0> sigma_i;
+  for(i in 1:(N_obs+N_mis)){
+    j = group_all[i];
+    eta_ij = mu[j] + X_all[i]*b + (rho[j] .* w[j]) - sigma .* rho[j] .* sqrt(2/pi()) ./ sqrt(1 - 2/pi() * square(rho[j]));
+    sigma_i = sigma * sqrt(1 - square(rho[j]))./ sqrt(1 - 2/pi() * square(rho[j]));
+    z_all[i] = normal_rng(eta_ij, sigma_i);
+  }
+}

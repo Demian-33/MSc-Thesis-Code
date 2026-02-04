@@ -1,0 +1,50 @@
+\chapter{INTRODUCCIÓN}
+\label{ch:i-introduccion}
+
+Quizás uno de los retos más importantes dentro del paradigma de inferencia Bayesiana, consiste en determinar o tomar muestras de la distribución \textit{a posteriori} para algún modelo estadístico de interés, ya que pueden existir una gran cantidad de parámetros o variables latentes involucrados en este. La promesa de la inferencia Bayesiana variacional (BV), consiste en transformar el problema de encontrar o muestrear de la distribución \textit{a posteriori} a un problema de optimización: ganar tiempo de cómputo a expensas de perder un poco de precisión. El objetivo de esta optimización se mide en términos de la divergencia Kullback-Leibler (KL) entre la verdedera \textit{a posteriori} y la aproximación variacional propuesta.
+
+Por otro lado, el planteamiento central de los modelos de áreas pequeñas es que no se dispone del registro completo de las observaciones en cada región, lo que puede conducir a realizar inferencia, y en general, estimaciones sesgagas de la población, especialmente subestimando la incertidumbre. Desde la perspectiva de inferencia Bayesiana, es posible modelar las observaciones faltantes como variables latentes, no obstante, conforme el tamaño de cada subpoblación aumenta, los métodos usuales para realizar esta clase de inferencia (muestreo de la distribución \textit{a posteriori} basado en cadenas de Márkov Monte Carlo, \textit{Markov chain Monte Carlo} (MCMC) como \textit{Gibbs Sampler}, \textit{Metropolis-Hastings} y \textit{Hamiltonian Monte Carlo}) se vuelven prohibitivos, de ahí el potencial de la propuesta variacional.
+
+El tercer elemento principal de investigación, consiste en el uso de la distribución normal asimétrica como el objeto básico empleado para construir modelos de regresión, esta densidad generaliza la distribución normal y la hace más flexible para capturar relaciones donde la asimetría es inherente y relevante en los datos: para datos continuos se ajustó el modelo log-normal sesgado, mientras que para datos binarios y ordinales se ajustó el modelo probit, ambos con el enfoque de variable latente cuya función de distribución es la normal sesgada.
+
+La propuesta generada por estos tres elementos motiva la hipótesis de investigación que se plantea enseguida. Posteriormente, se muestra el objetivo general del proyecto y se exponen los objetivos particulares.
+
+El resto del documento se estructura de la siguiente manera. En el \autoref{ch:ii-iv-revision} se presenta la revisión de literatura con la teoría necesaria para estimar los modelos de regresión propuestos.
+% primero, se realiza un repaso acerca de la distribución normal asimétrica, abarcando sus diferentes parametrizaciones, propiedades y su génesis a partir del proceso de truncamiento oculto. Luego, se revisan tres métodos populares de muestreo de la distribución \textit{a posteriori} basados en MCMC. Posterior a esto, se presenta el enfoque Bayesiano Variacional y los aspectos teóricos detrás de este método de inferencia, así como un par de ejemplos que ilustran esta técnica.
+En el \autoref{ch:v-metodologia}, se describe la metodología para hilar los conceptos y elementos descritos previamente y dar lugar a los modelos de regresión propuestos bajo el régimen de áreas pequeñas, particularmente, se hace uso del teorema de Bayes y el proceso de truncamiento oculto; posteriormente se muestra como programar estos modelos en el lenguaje de programación probabilística {Stan}. En el \autoref{ch:vi-resultados}, se presentan los resultados obtenidos con el ajuste de cada uno de los tres modelos en áreas pequeñas propuestos, tanto para un estudio de simulación como para un conjunto de datos reales. En este último, se realizó la estimación del ingreso corriente total per cápita (ICTPC) en los hogares de la Ciudad de México, México, en el año 2025. Finalmente, en el \autoref{ch:vii-conclusion} se discuten los resultados más relevantes que se obtuvieron, también se emiten algunas recomendaciones concretas.
+
+% , donde se observó el fenómeno de \textit{label-switching}; este Capítulo concluye con el ajuste de ambos modelos propuestos al conjunto de datos del ICTPC. En el Capítulo 4 mostramos los principales resultados obtenidos en el ajuste, entre ellos las variables seleccionadas por la metodología de \textit{Stochastic Search Variable Selection} (SSVS).
+
+\section{Objetivos}
+
+El objetivo general de este proyecto es mostrar la teoría y metodología para estimar dos tipos de modelos de regresión mediante inferencia Bayesiana variacional en áreas pequeñas: un modelo log-normal y un modelo probit ordenado con variable latente, ambos basados en el uso de la distribución normal asimétrica.
+
+Los objetivos específicos son:
+
+\begin{itemize}
+
+\item Caracterizar la distribución normal sesgada, listando sus propiedades, parametrizaciones y describir su conexión con el proceso de truncamiento oculto.
+
+\item Describir de forma breve los métodos Bayesianos basados en MCMC.
+
+\item Presentar una introducción al método de inferencia Bayesiana variacional y algunas de sus variantes.
+
+\item Describir el modelo de regresión Bayesiana log-normal sesgado en el contexto de áreas pequeñas.
+
+\item Describir el modelo de regresión Bayesiana probit sesgado ordenado variable latente en el contexto de áreas pequeñas.
+
+
+\item Implementar los modelos de regresión log normal sesgado y probit ordenado sesgado con variable latente en el lenguaje de programación probabilística {Stan}, a través de la interfaz \code{cmdstanr} del lenguaje de programación {R}.
+
+\item Estimar las dos clases de modelos propuestos para analizar el ICTPC a nivel municipal, de acuerdo a fuentes de información oficiales y los criterios e indicadores establecidos por el Consejo Nacional de Evaluación de la Política de Desarrollo Social (Coneval).
+% en la Ley General de Desarollo Social (LGDS).
+
+\item Seleccionar los conjuntos de covariables más relevantes para el estudio del ICTPC a partir de la técnica de búsqueda estocástica de variables.
+
+\end{itemize}
+
+\section{Hipótesis}
+
+La hipótesis de esta investigación es que el método de inferencia Bayesiana variacional es una alternativa viable, en términos de precisión y tiempo de cómputo, a los métodos Bayesianos usuales basados en muestreo de la distribución \textit{a posteriori}, específicamente, al método Hamiltoniano Monte Carlo; para estimar los modelos de regresión log-normal y probit ordenado sesgado con variable latente, ambos basados en el uso de la distribución normal asimétrica.
+
+% ¿cabe mencionar: empleados en los modelos de áreas pequeñas?

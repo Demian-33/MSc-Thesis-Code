@@ -1,0 +1,456 @@
+%\chapter{Inferencia Bayesiana}
+\section{Inferencia Bayesiana}
+\label{sec:bayes-mcmc}
+
+El paradigma de inferencia Bayesiana considera que las cantidades de interés que desconocemos, por ejemplo parámetros en un modelo, son variables aleatorias y tienen asociada una función de densidad de probabilidad. El planteamiento general puede resumirse como sigue: sean $\boldsymbol{y}$ los datos observados, sea $p(\boldsymbol{y} \mid \boldsymbol{\theta})$ la función de verosimilitud del modelo propuesto, sea $\boldsymbol{\theta}\in\Theta$ el vector de parámetros del modelo y sea $\pi(\boldsymbol{\theta})$ la distribución \textit{a-priori} sobre $\boldsymbol{\theta}$. Actualizamos nuestras creencias sobre $\boldsymbol{\theta}$ -es decir $\pi(\boldsymbol{\theta})$- de acuerdo al teorema de Bayes:
+% \begin{align*}
+% p(\boldsymbol{\theta} | \mathcal{D}) &= \frac{p(\boldsymbol{y} | \boldsymbol{\theta}) \times p(\boldsymbol{\theta})}{p(\boldsymbol{y})},
+% \end{align*}
+\begin{equation}
+\pi(\boldsymbol{\theta} \mid \boldsymbol{y}) = \frac{p(\boldsymbol{y} \mid \boldsymbol{\theta}) \times \pi(\boldsymbol{\theta)}}{p(\boldsymbol{y})},
+\end{equation}
+donde $p(\boldsymbol{y})=\int p(\boldsymbol{y} \mid \boldsymbol{\theta}) \, \pi(\boldsymbol{\theta})\, d\boldsymbol{\theta}$ es llamada verosimilitud marginal o distribución predictiva \textit{a priori}\footnote{También recibe el nombre de evidencia, especialmente en inferencia Bayesiana variacional, como se verá en el capitulo siguiente \parencite{semipar-VI}.}. Si disponemos de información previa sobre estas cantidades desconocidas, por ejemplo, de conocimiento experto o experimentos anteriores, podemos emplear un enfoque \textit{Bayesiano subjetivo}, donde incorporamos toda la información disponible al modelo por medio de la densidad $\pi(\boldsymbol{\theta})$.
+
+
+Así mismo, con la distribución \textit{a-priori} también es posible reflejar nuestro estado de ignorancia sobre $\boldsymbol{\theta}$: si no disponemos de información relevante, podemos emplear una densidad $\pi(\boldsymbol{\theta})$ con información vaga o bastante general, por ejemplo, el soporte de los parámetros. Esta alternativa constituye el enfoque \textit{Bayesino objetivo}: las densidades $\pi(\boldsymbol{\theta})$ en este enfoque reciben los nombres \textit{objetivas}, \textit{no informativas}, o \textit{de referencia}\footnote{Sin embargo, reservamos este último para una clase de densidades \textit{a-priori} desarrollas por \textcite{bernardo:1992}.}.
+
+Uno de los retos que presenta la inferencia Bayesiana es determinar la distribución \textit{a posteriori} $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$. Usualmente, no es posible determinarla (i.e., identificar la densidad de probabilidad) ya que no conocemos $p(\boldsymbol{y})$, por lo que nos limitamos únicamente a generar muestras aleatorias de esta densidad: son varios, útiles y populares los esquemas de muestreo basados en cadenas de Márkov Monte Carlo, \textit{Markov Chain Monte Carlo} (MCMC), por ejemplo \textit{Metropolis-Hastings}, \textit{Gibbs sampler} y \textit{Hamiltonian Monte Carlo}.
+
+Usualmente, en inferencia Bayesiana usamos $\pi(\boldsymbol{\theta})$ para referirnos a la distribución \textit{a priori} sobre los parámetros $\boldsymbol{\theta}$, y en un estilo similar, $\pi(\boldsymbol{\theta} \mid \boldsymbol{y})$ representa la distribución \textit{a posteriori} de $\boldsymbol{\theta}$; no obstante, sin riesgo de ambiguedad, también podemos usar $p$ en lugar de $\pi$ para denotar también a estas dos densidades, y en la discusión posterior usaremos casi exclusivamente $p$, teniendo en mente que podemos intercambiar esta notación.
+
+Es relevante señalar que es posible efectuar inferencia Bayesiana sin emplear métodos MCMC, por ejemplo, empleando distribuciones \textit{a priori} conjugadas. De igual modo, existen otros métodos para realizar inferencia Bayesiana de forma aproximada, es decir, se busca aproximar la densidad \textit{a posteriori} $p(\boldsymbol{\theta} \mid \boldsymbol{y})$ con alguna densidad manejable o común, mediante la optimización de alguna función objetivo o criterio, tal es el caso de la inferencia Bayesiana variacional (BV) que se describe en el capítulo siguiente. 
+
+% ¿Debería agregar algo sobre los estimadores de Bayes?, es decir, pi(\theta | y) sigue siendo algo aleatorio... ¿cómo resumir o extraer información de \theta?
+
+Iniciamos este capítulo presentando los estimadores de Bayes en la \autoref{subsec:bayes-estimadores}, posteriormente, en la \autoref{subsec:bayes-monte-carlo} y \ref{subsec:bayes-markov-chain} presentamos de forma concisa los dos temas centrales que dan lugar a los métodos MCMC: los métodos Monte Carlo y las cadenas de Markov con espacio de estados continuo. Posteriormente, en la \autoref{subsec:bayes-mcmc} describimos brevemente los tres métodos MCMC mencionados previamente,
+%: \textit{Metrópolis-Hastings}, \textit{Gibbs sampler} y \textit{Hamiltonian MC};
+aunque puedan parecer distintos en su planteamiento, en las secciones subsecuentes se bosqueja su relación.
+
+\subsection{Estimadores Bayesianos}
+\label{subsec:bayes-estimadores}
+
+Para caracterizar completamente un problema desde la perspectiva de inferencia Bayesiana, es necesario utilizar elementos de teoría de la decisión. De acuerdo con \textcite{samanta-bayes:2006}, es posible abordar problemas de inferencia de una manera matemáticamente más formal a través de la teoría de la decisión, ya que proporciona un marco conceptual unificado para abordar problemas muy diversos.
+
+Típicamente, un problema de decisión involucra un espacio de acciones $a\in\mathcal{A}$, estados desconocidos de la naturaleza $\theta\in\Theta$, una función $u:\mathcal{A}\times\Theta\to\mathbb{R}$ que asigna utilidades a cada consecuencia $(a, \theta)$, o alternativamente, una función de `pérdida' no negativa $\ell(a, \theta)$ que representa la discrepancia o error incurrido cuando el parámetro es $\theta$ y la acción es $a$, y una especificación $\pi(\theta)$ en forma de una distribución de probabilidad con las creencias actuales sobre los posibles valores de los estados de la naturaleza.
+
+\begin{itemize}
+\item La respuesta óptima al problema de inferencia es una $a\in\mathcal{A}$ que maximiza la utilidad esperada:
+\begin{equation}
+\int_{\Theta} u(a, \theta)\, \pi(\theta)\, d\theta.
+\end{equation}
+
+\item Por otro lado, si se trabaja con la función de pérdida, la respuesta óptima al problema de inferencia es una $a\in\mathbb{A}$ que minimiza la pérdida esperada:
+\begin{equation}
+\int_{\Theta} \ell(a, \theta)\, \pi(\theta)\, d\theta.
+\end{equation}
+\end{itemize}
+
+También, definimos a un procedimiento de decisión $\delta$ como una forma sistemática de elegir acciones $a$ basadas en observaciones $x_{1:n}$, usualmente, es una función $a = \delta(x_{1:n})$. Así, un procedimiento o estimador de Bayes es un
+procedimiento de decisión $\delta$ que escoge una acción $a$ que minimiza la pérdida esperada \textit{a posteriori} $\rho(a, x_{1:n})$ para cada $x_{1:n}$:
+\begin{equation}
+\rho(a, x_{1:n}) \triangleq \mathbb{E}[\ell(a, \theta) \mid x_{1:n}],
+\end{equation}
+esta cantidad también recibe el nombre de riesgo \textit{a posteriori}. Note que los estimadores de Bayes dependen de la función de pérdida y la distribución $\textit{a priori}$.
+%particularmente, definir una función de pérdida: dependiendo de esta expresión podemos calcular los estimadores de Bayes, los cuáles definimos como aquellos que minimizan el valor esperado de la función de pérdida con respecto a la función \textit{a posteriori}. Esta esperanza recibe el nombre de \textit{Riesgo} y simbólicamente se denota como. 
+% Ecuación aqui
+% Así, dada una función de pérdida, un modelo p(\boldsymbol{\theta} \mid \boldsymbol{y}) y nuestro estado actual de conocimiento, $p(\boldsymbol{\theta})$, el estimador de Bayes $\hat{\boldsymbol{\theta}}$ está dado por
+% otra ecuacion
+De este modo, cada función de riesgo tiene asociado un estimador de Bayes. En el siguiente cuadro se resumen los estimadores Bayesianos para algunas funciones de pérdida
+usuales. En general, en el contexto de modelos de regresión, la pérdida error cuadrado medio se emplea con respuestas continuas, mientras que la perdida 0-1 se emplea con respuestas discretas, como en clasificación.
+
+\begin{table}[H]
+\caption[]{Algunas funciones de pérdida univariadas comunes.}
+\label{tab:ch-iii-estimadores-bayesianos}
+\centering
+\begin{tabular}{lll}
+\hline
+Función de pérdida & Definición & Estimador Bayesiano \\
+\hline
+Error cuadrado medio & \(\ell(a, \theta) = (a-\theta)^{2}\) & \(\mathbb{E}[\pi(\boldsymbol{\theta} \mid x_{1:n})]\) \\
+Error absoluto &  \(\ell(a, \theta) = |a-\theta|\) & \(m_{\theta}\, : \int_{-\infty}^{m_{\theta}} \pi(\boldsymbol{\theta} \mid x_{1:n})\, d\theta = 1/2\) \\
+0-1 & \(1(a \neq \theta)\) & \(\argmax_{\boldsymbol{\theta}} \pi(\boldsymbol{\theta} \mid x_{1:n}) \) \\
+\hline
+\end{tabular}
+\end{table}
+
+
+
+\subsection{Métodos de Monte Carlo}
+\label{subsec:bayes-monte-carlo}
+
+Los métodos de Monte Carlo (MC) son una técnica basada en la simulación de variables aleatorias que es útil en varias áreas de la estadística, su origen se suele señalar al final de la década de 1940 \parencite{handbook-of-mcmc}. A grandes rasgos, su actividad principal consiste en calcular integrales de forma numérica -ya sea en una o varias dimensiones-. Con frecuencia en probabilidad y estadística, estas aparecen al momento de evaluar esperanzas\footnote{Y como un caso particular, aproximar probabilidades: sea $A$ un evento de interés, definimos la variable aleatoria $X$ como $1_{A}(x)$ -es decir, $X=1$ si $x\in A$ y $X=0$ de otro modo-, entonces $\E[X]=\mathbb{P}[A]$.} o momentos en general, de ahí que sean útiles tanto en el paradigma Bayesiano como frecuentista. 
+
+La idea básica en los métodos MC es que estamos interesados en calcular
+\begin{align*}
+\mathbb{E}_{f}[h(X)] &\triangleq \int_{\mathcal{X}} h(x) \, f_{X}(x)\, dx,
+\end{align*}
+si $x_{1:m}=(x_{1},\ldots, x_{m})$ es una muestra aleatoria de tamaño $m$ que proviene de $f_{X}(x)$ entonces la cantidad
+\begin{align*}
+\bar{h}_{m} &\triangleq \frac{1}{m}\sum\limits_{i=1}^{m} h(x_{i})
+\end{align*}
+converge casi seguramente a $\mathbb{E}_{f}[h(X)]$ por la ley de los grandes números \parencite[][]{montecarlo}. Además, si $h^{2}$ tiene esperanza finita bajo $f$, la velocidad de convergencia de $\bar{h}_{m}$ puede ser medida ya que la varianza también puede ser estimada de la muestra,
+\begin{align*}
+\Var[\bar{h}_{m}] &\triangleq \frac{1}{m}\int_{\mathcal{X}} \left[h(x)-\E_{f}[h(X)]\right] f(x),\, dx, 
+\intertext{y aproximamos la varianza con}
+v_{m} &\triangleq \frac{1}{m^{2}}\sum_{i=1}^{m}[h(x_{i})-\bar{h}_{m}]^{2},
+\end{align*}
+por tanto, la velocidad de convergencia es $\mathcal{O}(\sqrt{1/n})$.
+
+En el contexto de los métodos MCMC, asumimos que podemos generar una muestra aleatoria de la distribución \textit{a posteriori}, y a partir de estas realizaciones, calculamos cantidades de interés.
+% Por ejemplo, si asumimos la función de pérdida error cuadrado medio, entonces el estimadores de Bayes es la esperanza de la distribución \textit{a posteriori}
+
+Otra técnica de simulación que es útil en el quehacer estadístico es el método \textit{Bootstrap}; este es bastante similar a los métodos MC, salvo que este calcula cantidades de interés efectuando re-muestreo de forma intensiva: esto es, dada una muestra aleatoria $\boldsymbol{x}=(x_{1},\, \ldots,\, x_{m})$, se obtienen $B$ muestras de tamaño $m$ realizando muestreo con remplazo de $\boldsymbol{x}$. Después, con estás $B$ muestras de tamaño $m$ es posible cuantificar la precisión o incertidumbre de las cantidades de interés.
+
+\subsection{Cadenas de Markov en un espacio de estados general}
+\label{subsec:bayes-markov-chain}
+
+Una cadena de Márkov es un proceso estocástico, es decir, una colección de variables aleatorias $\{X_{t}\}_{t\geq 0}$ que poseen ciertas propiedades especiales. De manera simplista, es posible clasificar a los procesos estocásticos de acuerdo a: (1) el índice o tiempo que parametriza esta colección y (2) el conjunto donde las variables aleatorias toma valores, llamado espacio de estados. Generalmente, cada uno de estos criterios puede ser discreto o contable, por ejemplo: colecciones ordenadas en el tiempo $\{X_{0},\, X_{1},\, \ldots \}$, espacio de estados finito: $\{x_{0},\, x_{1},\, \ldots,\, x_{S}\}$; o bien, continuo o no contable $\{X_{t} : t\in\mathbb{R}^{+}\}$, espacio de estados continuo $A\subseteq\mathbb{R}$. En la discusión posterior, centramos nuestra atención únicamente a procesos indexados por el tiempo. Así, decimos que el proceso estocástico a tiempo discreto $\{X_{n}\}_{n\geq 0}$ es una cadena de Markov si para todo $A\subseteq \mathcal{S}$, donde $\mathcal{S}$ es el espacio de estados, se cumple que \parencite[][]{handbook-of-statistics}
+\begin{align}
+\mathbb{P}[X_{k}\in A \mid X_{0}=x_{0},\, \ldots,\, X_{k-1}=x_{k-1}] = \mathbb{P}[X_{k} \in A \mid X_{k-1}=x_{k-1}].
+\end{align}
+% En el contexto de los métodos MCMC, estamos interesados en los procesos estocásticos a tiempo discreto cuyo espacio de estados es continuo y que satisfacen la propiedad de Márkov. Esta propiedad dice que estado actual del proceso depende sólo del estado anterior inmediato. Podemos representar esto simbólicamente como
+% \begin{align*}
+% p(X_{i}\in A \mid X_{i-1}=x_{i-1}\,,\ldots,\, X_{0}=x_{0}) = p(X_{i}\in A \mid X_{i-1}=x_{i-1}),
+% \end{align*}
+% donde $A\subseteq\mathcal{S}$, donde $\mathcal{S}$ es el espacio de estados. 
+Cuando el espacio de estados es discreto, es decir $\mathcal{S}=\{x_{0},\, x_{1},\, \ldots,\,\}$, la probabilidad de transición en un paso $p_{ij}$ nos dice la probabilidad de transitar del estado $j$ al estado $i$ en el tiempo $k$ al $k+1$. Simbólicamente, escribimos
+\begin{align}
+p_{ij} \equiv \mathbb{P}[X_{k}=i \mid X_{k-1}=j].
+\end{align}
+
+Por otra parte, cuando nos trasladamos al caso de espacio de estados continuo, en lugar de tener la probabilidad de transición en un paso $p_{ij}$, hablamos de un \textit{kernel de transición} $K(x,\, A)$, el cuál es una función de densidad de probabilidad, este kernel se define como \parencite{handbook-of-statistics, mcmc-in-practice, bayesian-econometrics}.
+\begin{align*}
+K(x,\, A) &\triangleq \mathbb{P}[X_{k} \in A \mid X_{k-1} = x],
+\end{align*}
+para $x\in\mathcal{S}$ y $A\in\mathcal{B}(\mathcal{S})$\footnote{Aquí $\mathcal{B}(\mathcal{S})$ denota el conjunto de Borel con respecto a $\mathcal{S}$.}.
+% no obstante, resulta más fácil entender este kernel como la densidad condicional $p(y\mid x)$: dado que un proceso está actualmente en el estado $x$, la probabilidad de que se mueva al punto $A\subseteq\mathbb{R}$ está dada por
+% \begin{align*}
+% K(x,\, A) \triangleq \int_{A} p(x,\, y),\, dy.
+% \end{align*}
+% [From Introduction to Bayesian Econometrics by Greenmen]
+Los métodos MCMC funcionan construyendo una cadena de Márkov -en un espacio de estados general, i.e., ya sea continuo o discreto- que es ergódica\footnote{Una cadena de Markov es ergódica si satisface tres propiedades, (1) es irreducible: dado cualquier valor inicial de la cadena, con probabilidad positiva es posible alcanzar cualquier conjunto $A$, (2) es aperiódica: esta propiedad garantiza que la cadena no queda atrapada en un comportamiento cíclico, por ejemplo, saltar entre dos estados por siempre y (3) es recurrente positiva: con probabilidad uno, la cadena revisita cada región del espacio de estados. \parencite[Vea][Sección 3.2]{mcmc-in-practice}} y tiene como distribución estacionaria o invariante la densidad \textit{a-posteriori} (o en general, alguna densidad objetivo). La condición de ergodicidad implica convergencia a la distribución estacionaria y convergencia a los promedios de la trayectoria, esto último dice que a partir de una muestra de la cadena de Márkov, podemos estimar características de la densidad objetivo \parencite{mcmc-in-practice}.
+
+Cuando se considerara un espacio de estados general es posible desarrollar la teoría de MCMC, ya que usualmente trabaja con conjuntos de la forma $\mathbb{R}^{p} \subseteq\mathcal{S}$; de este modo, podemos explorar la densidad objetivo $\pi$ posiblemente intratable.
+
+
+\subsection{Métodos Markov Chain Monte Carlo}
+\label{subsec:bayes-mcmc}
+
+% A continuación presentamos dos técnicas empleadas en inferencia Bayesiana, se trata de la combinación del Método Monte Carlo de la Sección 3.1 junto a el uso de cadenas de Markov con espacio de estados contonuo de la Sección 3.2, cuya distribución estacionaria coincide con la distribución objetivo, es decir, la distribución \textit{a posteriori}. Así, se da origen a los métodos Markov Chain Monte Carlo, MCMC.
+
+Después de mostrar el panorama general, definimos que un método MCMC para la simulación de una distribución $\pi$ es cualquier técnica que genera una cadena de Markov $\{X_{t}\}_{t\geq 0}$ ergódica cuya distribución estacionaria es $\pi$ \parencite[][]{montecarlo}. Esto es, genera realizaciones o trayectorias de la cadena de Márkov ergódica
+\begin{align*}
+\boldsymbol{\theta}^{(1)},\, \boldsymbol{\theta}^{(2)},\, \ldots ,\, \boldsymbol{\theta}^{(k)},\, \ldots,
+\end{align*}
+de tal modo que se explore el espacio de parámetros completamente y que converga a la distribución estacionaria; en la práctica, consideramos cierto número de iteraciones como un periodo de calentamiento o \textit{warmup} y a partir de este punto, los números simulados constituyen una muestra (pseudo)aleatoria que es la base para calcular cantidades de interés con el método de Monte Carlo.
+
+Vale la pena señalar que, a paser de que la teoría detrás de los métodos MCMC garantiza la convergencia a la densidad objetivo, en la práctica no siempre se obtienen resultados satisfactorios. Por esta razón, se han construido varios criterios que permiten evaluar la calidad de la simulación MCMC, las herramientas más comúnes para evaluar la simulación son (1) el \textit{tamaño efectivo de muestra}, este compara las realizaciones de la cadena de Markov contra simulaciones independientes e identicamente distribuidas y (2) el coeficiente $\hat{R}$ o estadístico de Gelman-Rubin, el cuál evalúa la convergencia de las simulaciones MCMC, entre otros.
+
+% https://arxiv.org/pdf/1903.08008
+% An improved Rb for assessing convergence of MCMC
+
+\begin{comment}
+
+\subsection{Algoritmo Metrópolis-Hasting}
+
+El algoritmo de Metrópolis fue propuesto en 1953 por Nicholas Metropolis y varios autores más para abordar problemas relacionados con la física. Posteriormente, Wilfred Hastings en 1970, generaliza al algoritmo original y esparce su uso en estadística, donde recibe el nombre de Metropolis-Hastings (MH) \parencite{understanding-metropolis-hastings, handbook-of-mcmc}.
+
+El algoritmo MH permite obtener muestras de la densidad objetivo $p$ -probablemente multivariada- proponiendo una densidad $q$ y aplicando un esquema de muestreo similar a aceptación-rechazo, \textit{acceptation-rejection} (AR). Una ventaja del método es que las restricciones impuestas sobre $q$ son usualmente pocas, por ejemplo, una condición necesaria es que $q$ sea positiva. Retomando la discusión en Sección 3.3, usualmente conocemos el \textit{kernel} de transición $K(x,\; A)$, pero no conocemos la distribución estacionaria $\pi(x)$ de la cadena; el algoritmo MH plantea el problema al revés: la densidad estacionaria es la distribución objetivo -es decir, la distribución \textit{a posteriori}-, pero no conocemos el \textit{kernel} de transición \parencite{understanding-metropolis-hastings}. Así, nuestra tarea es proponerer un kernel $q$ de transición al cuál llamaremos generadora de candidatos. El algoritmo MH se plantea a continuación
+
+\begin{algorithm}[H]
+\LinesNumbered
+\DontPrintSemicolon
+\SetKwInput{KwData}{Input}
+\SetKwInput{KwResult}{Output}
+\caption{Algoritmo Metropolis-Hastings}\label{alg:MH}
+\KwData{El kernel de la densidad objetivo $\pi(x)$, por ejemplo, la distribución \textit{a posteriori} $p(\boldsymbol{\theta} \mid \boldsymbol{y})$. Una densidad generadora de candidatos $q$}
+\KwResult{Una muestra (pseudo)aleatoria de tamaño $M$ de la densidad objetivo $\pi(x)$.}
+\kwInit{Un valor inicial $x^{(0)}$}
+
+\For{$t=0,\, 1,\, 2,\, \ldots, M$}{
+Generar $x^{\star}$ de $q(x^{\star} \mid x^{(t)})$ \;
+% Generar $u$ de $\text{Unif}(0,\, 1)$ \;
+Calcular la probabilidad de aceptación
+\[
+\alpha(x^{(t)},\, x^{\star}) = \min\left\{1,\, \frac{\pi(x^{\star})}{\pi(x^{(t)})} \, \cdot \frac{q(x^{(t)} \mid x^{\star})}{q(x^{\star} \mid x^{(t)})} \right\}
+\]
+\eIf{$u\leq \alpha(x^{(t)},\, x^{\star})$}{$x^{(t+1)}\gets x^{\star}$
+}{$x^{(t+1)}\gets x^{(t)}$}
+}
+
+\Return{$\{x^{(1)},\, x^{(2)},\, \ldots,\, x^{(M)}\}$}
+\end{algorithm}
+
+Como se comentó previamente, este algoritmo es similar al método AR para generar variables aleatorias: aceptamos un nuevo candidato $x^{\star}$ con probabilidad $\alpha$, y en caso contrario continuamos en el estado $x^{(t)}$. 
+
+Como señalan varios autores, el algoritmo MH es bastante útil y bastente general, pero en muchos casos encontrar la densidad canditata `óptima', en algún sentido -por ejemplo, tamaño efectivo de la muestra, autocorrelación entre observaciones, exploración de la densidad posterior- no es una tarea sencilla. Por otro lado, tambiés es posible proponer variantes de este algoritmo, algunas de ellas son:
+\begin{enumerate}
+\item Algoritmo Metropolis: este es la propuesta original, considera que la distribución candidata es simétrica, es decir $q(x^{(t)}\mid x^{\star}) = q(x^{\star} | x^{(t)})$, por tanto, la probabilidad de aceptación $\alpha$ se simplifica como
+\begin{align}
+\alpha(x^{(t)},\, x^{\star}) &= \min\left\{1,\, \frac{\pi(x^{\star})}{\pi(x^{(t)})}\right\}.
+\end{align}
+\item Algoritmo Metropolis-Hastings con caminata aleatoria, \textit{random walk Metropolis-Hastings} (RWMH): la densidad candidata toma la forma
+\begin{align}
+q(x^{(t)}\mid x^{\star}) &= q(x^{\star} - x^{(t)}),
+\end{align}
+por ejemplo, si $q$ tiene ley Gaussiana, entonces
+\begin{align}
+q(x^{(t)} \mid x^{\star}) &= N(x^{(t)} \mid x^{\star},\, \sigma^{2}) \\
+&\equiv N(x^{(t)} - x^{\star} \mid 0,\, \sigma^{2})
+\end{align}
+\item Algoritmo Langevin. La distribución candidata toma la forma
+\begin{align}
+q(x^{(t)}\mid x^{\star}) &= N(x^{(t)} + (\delta/2)\nabla\log\pi(x^{(t)}),\, \delta),
+\end{align}
+para algún $\delta>0$ pequeño. Proviene de una aproximación discreta al proceso de difusión de Langevin. \parencite[Vea][]{roberts-rosenthal}
+\end{enumerate}
+
+% Tiempo de espera?
+% Autocorrelación?
+% 23% de porcentaje de aceptación?
+
+En la siguiente sección, mostraremos que el muestreador de Gibbs, otro algoritmo basado en MCMC, puede entenderse como un caso particular del algoritmo HM descrito previamente.
+
+
+\subsection{Algoritmo Gibbs sampler}
+
+El muestreador de Gibbs es un algoritmo estadístico basado en el cómputo intensivo propuesto por \textcite{geman-geman}; el nombre de este método toma su nombre de los campos aleatorios de Gibbs y fue nombrado así por estos autores \parencite{bayesian-choice}. No obstante, también es posible considerar su origen al mismo momento que el algoritmo de Metropolis o Metropolis-Hastings \parencite{explaining-gibbs}.
+
+Este método es especialmente útil en aplicaciones del paradigma Bayesiano, ya que su uso principal es tomar muestras de la distribución \textit{a posteriori}. El muestreador de Gibbs es el algoritmo más simple de simulación en cadenas de Markov, así como la primera elección para modelos condicionalmente conjugados donde es posible muestrear directamente de cada distribución condicional completa. \parencite[][]{bda}.
+
+Para implementar este algoritmo se requiere de un trabajo analítico adicional, ya que es necesario obtener la \textit{distribución condicional completa} de cada parámetro, es decir $\boldsymbol{\theta}_{i}\mid \boldsymbol{\theta}_{-i},\, \boldsymbol{y}$, también denotada como $\boldsymbol{\theta} \mid \text{else}$. Sin embargo, la principal limitante de este método es que dependemos de la conjugancia entre la verosimilitud del modelo y de la distribución \textit{a priori}, fuera de este caso, la implementación se dificulta.
+
+
+En cada iteración del algoritmo, tomamos una muestra de cada distribución condicional completa y usamos estos valores actuales para muestrear del resto de distribuciones. Después de un tiempo, esta cadena de estados converge a la distribución estacionaria, que al igual que en el algoritmo MH, definimos convenientemente que sea la distribución \textit{a posteriori}.
+
+\begin{algorithm}[H]
+\LinesNumbered
+\DontPrintSemicolon
+\SetKwInput{KwData}{Input}
+\SetKwInput{KwResult}{Output}
+\caption{Algoritmo Gibbs Sampler}\label{alg:GS}
+\KwData{Las $p$ densidades condicionales completas $\pi(x_{i} \mid \boldsymbol{x}_{-i})$ de la distribución objetivo $\pi(\boldsymbol{x})$, por ejemplo, las condicionales posteriores completas $p(\theta_{i} \mid \boldsymbol{y},\, \boldsymbol{\theta}_{-i})$.}
+\KwResult{Una secuencia de $M$ realizaciones de una cadena de Márkov de la densidad objetivo $\pi(x)$.}
+\kwInit{Valores iniciales $\boldsymbol{\theta} = (x_{1}^{(0)},\, x_{2}^{(0)}, \, \ldots,\, x_{p}^{(0)})^{T}$.}
+
+\For{$t=0,\,1,\, 2,\, \ldots, M$}{
+Generar \;
+\begin{align*}
+x_{1}^{(t+1)} &\sim \pi(x_{1} \mid \boldsymbol{x}_{-1}^{(0)}) \\
+x_{2}^{(t+1)} &\sim \pi(x_{2} \mid x_{1}^{(t+1)},\, x_{2}^{(t)},\, \ldots,\, x_{p}^{(t)}) \\
+x_{3}^{(t+1)} &\sim \pi(x_{3} \mid x_{1}^{(t+1)},\, x_{2}^{(t+1)},\,x_{4}^{(t)},\, \ldots,\, x_{p}^{(t)}) \\
+&\phantom{ll}\vdots \\
+x_{p}^{(t+1)} &\sim \pi(x_{p} \mid \boldsymbol{x}_{-p}^{(t+1)})
+\end{align*}
+}
+\Return{$\boldsymbol{x}^{(1)},\, \boldsymbol{x}^{(2)},\, \ldots,\, \boldsymbol{x}^{(M)}$}
+\end{algorithm}
+A continuación, mostramos que el muestreador de Gibbs puede ser visto como un caso particular del algoritmo MH donde todos los candidatos son aceptados; para ello, consideramos que $\boldsymbol{x}$ tiene $p$ elementos y actualizamos uno a la vez, además, en el la iteración $t$ del muestreador de Gibbs generamos un nuevo valor a través de la densidad condicional completa, así, para $i=1,\, 2,\, \ldots,\, p$, se tiene que
+\begin{align}
+x_{i}^{(t+1)} & \sim p(x_{i}^{(t)} \mid \boldsymbol{x}_{-i}^{(t)}),
+\end{align}
+con esto en mente, calculamos la probabilidad de aceptación $\alpha$ para la coordenada $i$ de $\boldsymbol{x}$ en la interación $t$, esto es
+\begin{align}
+\begin{aligned}
+\alpha\bigg([x_{i}^{(t+1)},\, \boldsymbol{x}_{-i}^{(t)}],\,[x_{i}^{(t)},\, \boldsymbol{x}_{-i}^{(t)}]\bigg)
+&= \min\left\{1,\,
+\frac{\pi(x_{i}^{(t+1)},\, \boldsymbol{{x}}^{(t)}_{-i})}{\pi(x_{i}^{(t)},\, \boldsymbol{x}_{-i}^{(t)})} \cdot 
+\frac{q\left( [x_{i}^{(t+1)},\, \boldsymbol{x}_{-i}^{(t)}] \mid [x_{i}^{(t)},\, \boldsymbol{x}_{-i}^{(t)}] \right)}{q\left( [x_{i}^{(t)},\, \boldsymbol{x}_{-i}^{(t)}] \mid [x_{i}^{(t)},\, \boldsymbol{x}_{-i}^{(t)}] \right)}
+\right\} \\
+&= \min\left\{1,\,
+\frac{\pi(x_{i}^{(t+1)}\mid \boldsymbol{{x}}^{(t)}_{-i})\,\cancel{\pi(\boldsymbol{{x}}^{(t)}_{-i})}}{\pi(x_{i}^{(t)}\mid \boldsymbol{x}_{-i}^{(t)})\,\cancel{\pi(\boldsymbol{x}_{-i}^{(t)})}} \cdot 
+\frac{p(x_{i}^{(t)} \mid \boldsymbol{x}_{-i}^{(t)})}{p(x_{i}^{(t+1)} \mid \boldsymbol{x}_{-i}^{(t)})}
+\right\} \\
+% &= \min\left\{1,\,
+% \frac{\cancel{\pi(x_{i}^{(t+1)}\mid \boldsymbol{{x}}^{(t)}_{-i})}}{\bcancel{\pi(x_{i}^{(t)}\mid \boldsymbol{x}_{-i}^{(t)})}} \cdot 
+% \frac{\bcancel{p(x_{i}^{(t)} \mid \boldsymbol{x}_{-i}^{(t)})}}{\cancel{p(x_{i}^{(t+1)} \mid \boldsymbol{x}_{-i}^{(t)})}}\right\} \\
+&= 1,
+\end{aligned}
+\end{align}
+por lo tanto, visto desde la perspectiva del algoritmo Metropolis-Hastings, en la iteración $(t)$ y para cada coordenada, se acepta con probabilidad uno a los candidatos $x_{i}^{(t+1)}$.
+
+Vale la pena comentar algunos aspectos adicionales de este método. En varios casos, es natural trabajar con un desglose completo de $\boldsymbol{x}$ -por ejemplo, los parámetros- en todos sus componentes escalares. En otros casos, los componentes podrían ser subvectores o matrices. Una consideración importante al elegir el nivel en el que se eligen los componentes para las condicionales, es la estructura de correlación de de $\pi(x)$, ya que de acuerdo con \textcite{mcmc-in-practice}:
+\begin{itemize}
+\item Si se trata individualmente a componentes escalares con alta correlación, podría haber convergencia lenta de la cadena como resultado de un movimiento muy pequeño en cada paso de generación de variables aleatorias condicionales.
+
+\item Por otro lado, si los escalares correlacionados se unen para formar un componente subvectorial, se evita este problema, pero a expensas de tener que realizar una extracción de una distribución condicional multivariada.
+\end{itemize}
+
+% Finalmente, vale la pena notar que el algoritmo de Gibbs realiza actualizaciones un parámetro (vector de parámetros) a la vez, por lo que puede ser prohibitivo cuando existe un gran número de estos.
+
+De igual modo a como sucede con el método de Metropolis-Hastings, se han propuesto modificaciones al método de Gibbs con el fin de acelerar este proceso o incluso hacerlo plausible -es decir, que sea conjugado para obtener las densidades condicionales completas-, una de estas alternativas es el muestreador de Gibbs colapsado \parencite{collapsed-gibbs}; en esta alternativa, integramos fuera del modelo parámetros o variables latentes \textit{de ruido} y aplicamos el método a a la densidad marginal. Un ejemplo de esta aplicación son los modelos de mezcla con procesos Dirichlet, un método Bayesiano no-paramétrico.
+
+Finalmente, es relevante señalar que podemos emplear al mismo tiempo el algoritmo de Gibbs y el algoritmo de Metrópolis-Hastings para muestrar distribuciones objetivo complicadas. Si algunas de las distribuciones \textit{a posteriori} condicionales en algún modelo se pueden muestrear directamente y otras no, entonces los parámetros pueden ser actualizados uno a la vez con el muestreador de Gibbs cuando sea posible y con la actualización Metropolis en caso contrario \parencite{bda}.
+
+\end{comment}
+
+
+\subsection{Algoritmo Hamiltonian Monte Carlo}
+
+%La tercera técnica MCMC que presentamos es el método de Hamiltonian Monte Carlo o Monte Carlo Híbrido, \textit{Hybrid Monte Carlo} (HMC), el cuál, así como los dos algoritmos descritos previamente, podemos trazar sus orígenes en la física.
+
+El método Hamiltoniano Monte Carlo o Monte Carlo Híbrido, \textit{Hybrid Monte Carlo} (HMC), al igual que otros algoritmos populares basados MCMC, tiene su origen en la física. Este algoritmo evita el comportamiento de caminata aleatoria y la sensibilidad a parámetros correlacionados que afectan a muchos de los métodos MCMC mediante una serie de pasos que emplea información del gradiente \parencite{nuts}.\footnote{Otro método MCMC que evita el comportamiento de caminata aleatoria, es el método de caminata $t$, $t$-\textit{walk} \parencite{twalk:2010}. No obstante, no se revisa en este capítulo.} Algunas características particulares de este método son (1) únicamente puede muestrear densidades continuas en $\mathbb{R}^{p}$ y (2) transforma el problema de muestrear de una distribución objetivo a simular dinámicas Hamiltonianas \parencite{handbook-of-mcmc, stan_mcmc}. Estas características permiten que converga a distribuciones objetivo de gran dimensión mucho más rápido que métodos más simples como Metropolis con caminata aleatoria o muestreador de Gibbs \parencite{nuts}.
+
+No obstante, estas virtudes no vienen sin costo adicional: como se señaló previamente, se requiere calcular o aproximar las derivadas de primer orden de la función objetivo para generar transiciones eficientes, esto en modelos complejos puede ser costoso e incluso imposible. Así mismo, pese a ser un algoritmo poderoso, su desempeño se ve afectado drásticamente por dos parámetros controlados por el usuario: el tamaño de paso $\epsilon$ y el número de pasos $L$. En el \autoref{ch-iii-HMC-stepsize}, mostramos de forma resumida que sucede si no empleamos valores adecuados para estos parámetros.
+
+De acuerdo con \textcite{nuts}, podemos hacer menos oneroso el requirimiento de calcular el vector gradiente de la distribución objetivo -por ejemplo, la \textit{a posteriori}- a través de diferenciación automática. Así mismo, los autores proponen una modificación al algoritmo HMC llamada el muestreador no vuelta-en-U, \textit{no-U-turn sampler} (NUTS), cuya virtud es que elimina la necesidad de elegir el parámetro $L$, a la vez que propone un esquema para ajustar automáticamente el parámetro $\epsilon$.
+
+Actualmente, el lenguaje de programación probabilística {Stan} implementa como único método de muestreo de la distribución \textit{a posteriori} el método HMC con esta variante adaptativa \parencite{stan_mcmc}. Equipados con herramientas de diferenciación automática y el método NUTS, es posible ejecutar el método la variante NUTS del método HMC sin ningún tipo de \textit{tuning} manual \parencite{nuts}. En el \autoref{alg:HMC} se muestra el algoritmo HMC básico.
+
+\begin{table}[H]
+\centering
+\caption[]{Algunas consecuencias de elegir malas elecciones para los parámetros $L$ y $\epsilon$ en el método HMC. Fuente: elaboración propia basado en \textcite{nuts}.}
+\label{ch-iii-HMC-stepsize}
+\begin{tabularx}{\textwidth}{lXX}
+% \begin{tabular}{lll}
+\hline
+ & \multicolumn{2}{c}{Condición} \\
+Parámetro & Demasiado pequeño & Demasiado grande \\
+\hline
+$\epsilon$ & Se pierde tiempo de cómputo al realizar muchos pasos pequeños & \makecell[Xt]{La simulación será imprecisa \\ Se producen bajas tasas de aceptación }\\ 
+$L$ & Las muestras sucesivas están próximas entre sí: se genera una caminata aleatoria y mezcla lenta & Se generan trayectorias que retroceden y vuelven sobre sus pasos. \\ 
+& \multicolumn{2}{>{\hsize=\dimexpr2\hsize+2\tabcolsep+\arrayrulewidth\relax}X}{\textbf{Mala elección.} Es posible que al usar una elección inapropiada de $L$ los parámetros `saltan' de un lado del espacio parámetrico al otro en cada iteración, resultando que la cadena de Márkov incluso no sea ergódica. De igual modo, puede ser que la cadena sea ergódica, pero con movimiento muy lento entre las regiones de baja y alta densidad.} \\
+\hline 
+% \end{tabular}
+% https://tex.stackexchange.com/questions/236155/tabularx-and-multicolumn, note this
+\end{tabularx}
+\end{table}
+
+
+% Hamiltonian Monte Carlo (HMC) es un método MCMC que usa las derivadas de la función de densidad que se está muestreando para generar transiciones eficientes que abarcan la distribución \textit{a posteriori}. La motivación de este método es que las dos técnicas anteriores son algoritmos que emulan una \textit{caminata aleatoria}, mientras que el método propuesto aprovecha la dinámica Hamiltoniana, lo que se refleja en que se explora el espacio de estados de manera más eficiente.
+
+
+% En \cite{bda} se da una introducción a este método y en \cite{hmc-conceptual, hmc-hierarchical, handbook-of-mcmc} se brinda una discusión más detallada.
+
+% específicamente en la mecánica Hamiltoniana.
+% que es una re-formulación de la mecánica clásica.
+
+\begin{algorithm}[H]
+\LinesNumbered
+\DontPrintSemicolon
+\SetKwInput{KwData}{Input}
+\SetKwInput{KwResult}{Output}
+\caption{Algoritmo Hamiltonian Monte Carlo}\label{alg:HMC}
+\KwData{Tamaño de paso $\epsilon$. Número de pasos $L$. Logaritmo de la función objetivo $\log\,p(\boldsymbol{\theta})$. Vector de derivadas parciales $\nabla_{\boldsymbol{\theta}} \log\,p(\boldsymbol{\theta})$.}
+\KwResult{Una muestra (pseudo)aleatoria de tamaño $M$ de la densidad objetivo $p(\boldsymbol{\theta})$.}
+\kwInit{Un valor inicial $\boldsymbol{\theta}^{(0)}$}
+
+\For{$t=0,\, 1,\, 2,\, \ldots, M$}{
+Generar $\boldsymbol{r}^{(0)} \sim N(\boldsymbol{r},\ I)$ \tcp*{Similar al muestreador de Gibbs} \;
+Asignar $\boldsymbol{\theta}^{(m)} \gets \boldsymbol{\theta}^{(m-1)}$,\, $\tilde{\boldsymbol{\theta}} \gets \boldsymbol{\theta}^{(m-1)}$,\, $\tilde{\boldsymbol{r}}^{m} \gets \boldsymbol{r}^{(0)}$ \;
+\For{$i=1,\, 2,\, \ldots,\, L$}{
+Asignar $(\tilde{\boldsymbol{\theta}},\, \tilde{\boldsymbol{r}})\gets \text{Leapfrog}(\tilde{\boldsymbol{\theta}},\, \tilde{\boldsymbol{r}},\, \epsilon)$ \;
+}
+Con probabilidad $\alpha$, asignar $\boldsymbol{\theta}^{(m)} \gets \tilde{\boldsymbol{\theta}}$,\, $\boldsymbol{r}^{(m)}\gets -\tilde{\boldsymbol{r}}$ \[\alpha = \min\left\{1,\, \frac{\exp\{\log\,p(\tilde{\boldsymbol{\theta}}) - \frac{1}{2}\tilde{\boldsymbol{r}}^{T}\, \tilde{\boldsymbol{r}} \}}{\exp\{\log\,p(\boldsymbol{\theta}^{(m-1)}) - \frac{1}{2}\boldsymbol{r}^{(0)\,T}\, \boldsymbol{r}^{(0)} \}} \right\}\]\tcp*{Similar al método MH}
+}
+\SetKwFunction{LeapFrog}{Leapfrog}
+\SetKwProg{Leap}{function}{:}{} % {que va al inicio:}{que va al final: return \Kwret}
+\Leap{\LeapFrog($\boldsymbol{\theta}$, $\boldsymbol{r}$, $\epsilon$)}{
+Asignar $\tilde{\boldsymbol{r}}\gets\boldsymbol{r}+(\epsilon/2)\nabla_{\boldsymbol{\theta}}p(\boldsymbol{\theta})$ \;
+Asignar $\tilde{\boldsymbol{\theta}}\gets\boldsymbol{\theta}+\epsilon\tilde{\boldsymbol{r}}$ \;
+Asignar $\tilde{\boldsymbol{r}} \gets \tilde{\boldsymbol{r}} + (\epsilon/2)\nabla_{\boldsymbol{\theta}}p(\tilde{\boldsymbol{\theta}})$ \;
+\KwRet $\tilde{\boldsymbol{\theta}},\, \tilde{\boldsymbol{r}}$
+}
+\Return{$\boldsymbol{\theta}^{(1)},\, \boldsymbol{\theta}^{(2)},\, \ldots,\, \boldsymbol{\theta}^{(M)}$}
+\end{algorithm}
+
+Note que, en el paso 8 del \autoref{alg:HMC}, es posible trazar similitudes con el algoritmo Metrópolis-Hastings (MH), específicamente en calcular la probabilidad de aceptación de un nuevo candidato, de este modo, el método HMC también puede ser visto como una instancia del algoritmo MH.
+
+% el método HMC también como una instancia del algoritmo Metrópolis-Hastings, donde la densidad propuesta es reversible en el tiempo y usa la dinámica Langevin. (de donde obtuve esta cita?)
+
+% Sería interesante agregar un ejemplo de como evolucionan las iteraciones en estos métodos: en un plano 2D (curvas de nivel), en Gibbs así como rectas, Metropolis una caminata aleatoria y HMC una exploracion diferente a una caminata aleatoria
+
+
+\subsection{Ejemplo 1: aproximando una distribución normal bivariada}
+\label{subsec:ch-iii-ejemplo-normal}
+
+%Como se comentó en las secciones previas, estos métodos de muestreo son de uso general, es decir, su uso no se limita a generar muestras de la \textit{a posteriori}, si no que también pueden explorar cualquier otro tipo de densidad objetivo. A continuación, se ilustran estos tres métodos MCMC para explorar la densidad
+
+Los métodos de muestreo MCMC son de uso general, es decir, su uso no se limita a generar muestras de la \textit{a posteriori}, si no que también pueden explorar cualquier otro tipo de densidad objetivo. A continuación, se ilustra el método HMC para explorar la densidad
+\begin{equation}
+\begin{aligned}
+p(\boldsymbol{x} \mid \boldsymbol{\mu}, \Sigma) &= \frac{1}{\sqrt{2\pi\det(\Sigma^{-1})}}\exp\left(-\frac{1}{2}(\boldsymbol{x}-\boldsymbol{\mu})^{T}\Sigma^{-1}(\boldsymbol{x}-\boldsymbol{\mu})\right)\, 1(\boldsymbol{x}\in\mathbb{R}^{2}), \\
+\boldsymbol{\mu} &= (-1, 1)^{T} \\
+\Sigma &=
+\begin{pmatrix}
+1.0 & 0.7 \\ 0.7 & 2.0
+\end{pmatrix},
+\end{aligned}
+\end{equation}
+es decir, una normal bivariada donde conocemos el vector de localidad y la matriz de covarianzas. De este modo, el objetivo es explorar la distribución -generar muestras aleatorias- de $(x_{1}, x_{2})$. A continuación, se describen los pasos generales para este método.
+\begin{itemize}
+\begin{comment}
+\item Muestreador de Gibbs: de acuerdo a la discusión previa, es necesario obtener las densidades condicionales $p(x_{i} \mid x_{j}, \boldsymbol{\mu}, \Sigma) \equiv p(x_{i} \mid \text{else})$, y dado que conocemos tanto $\boldsymbol{\mu}$ como $\Sigma$, entonces, $p(x_{i} \mid \text{else}) \equiv p(x_{i} \mid x_{j})$. Por tanto, realizamos actualizaciones de forma cerrada mediante
+\begin{equation}
+\begin{aligned}
+p(x_{i} \mid x_{j}) &= N(x_{i} \mid \mu_{i}^{\star}, \Sigma_{i}^{\star}) \\
+\mu_{i}^{\star} &= \mu_{i} + \Sigma_{ij}\Sigma_{jj}^{-1}(x_{j}-\mu_{j}) \\
+\Sigma_{i}^{\star} &= \Sigma_{i} - \Sigma_{ij}\Sigma_{jj}^{-1}\Sigma_{ji}.
+\end{aligned}
+\end{equation}
+En la \autoref{fig:ch-iii-ejemplo-normal-gibbs-a} y \autoref{fig:ch-iii-ejemplo-normal-gibbs-b} se muestra la trayectoria del método despues de 20 y 200 iteracciones respectivamente.
+
+\item Método Metropolis con caminata aleatoria. Sea $\boldsymbol{x}^{(t)}$ el valor actual, se propone un nuevo valor Gaussiano $\boldsymbol{x}^{\star}$ centrado en el valor actual, es decir $\boldsymbol{x}^{\star}\sim N_{2}(\boldsymbol{x}^{\star} \mid \boldsymbol{x}^{(t)}, I_{2})$. Con probabilidad $\alpha(\boldsymbol{x}^{(t)}, \boldsymbol{x}^{\star})$ se acepta al valor candidato.
+\end{comment}
+
+\item Método HMC simple, basado en \textcite[][Capítulo 5]{handbook-of-mcmc}. A partir de esta implementación mostrada en el texto, sólo hace falta calcular la log-densidad y el gradiente de la log-densidad con respecto a cada entrada de $(x_{1}, x_{2})$. Estas cantidades están dadas por
+\begin{equation}
+\begin{aligned}
+U(q) &\propto -\frac{1}{2}(\boldsymbol{x}-\boldsymbol{\mu})^{T}\Sigma^{-1}(\boldsymbol{x}-\boldsymbol{\mu}) \\
+\nabla U(q) &= -2\Sigma^{-1}(\boldsymbol{x}-\boldsymbol{\mu}),
+\end{aligned}
+\end{equation}
+el vector gradiente corresponde a la derivada del vector $\boldsymbol{x}$ en una forma cuadrática \parencite{matrix-cookbook:2012}.
+\end{itemize}
+Todas estas simulaciones se inician en el punto $(-2.0, 2.5)$. En la \autoref{fig:ch-iii-ejemplo-normal} se ilustran esta técnica MCMC, usando 20 y 200 iteraciones en el lado izquierdo y derecho de cada subfigura. Además, se dibujan los contornos de la densidad normal bivariada que se muestrea.
+
+\begin{comment}
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.48\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-iii/normal-gibbs.pdf}
+\caption[]{Método de Gibbs, 20 iteraciones.}
+\label{fig:ch-iii-ejemplo-normal-gibbs-a}
+\end{subfigure}
+\begin{subfigure}{0.48\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-iii/normal-gibbs-after.pdf}
+\caption[]{Método de Gibbs, 200 iteraciones.}
+\label{fig:ch-iii-ejemplo-normal-gibbs-b}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+\ContinuedFloat
+\centering
+\begin{subfigure}{0.48\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-iii/normal-metropolis.pdf}
+\caption[]{Método de Metropolis, 20 iteraciones.}
+\label{fig:ch-iii-ejemplo-normal-metropolis-a}
+\end{subfigure}
+\begin{subfigure}{0.48\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-iii/normal-metropolis-after.pdf}
+\caption[]{Método de Metropolis, 200 iteraciones.}
+\label{fig:ch-iii-ejemplo-normal-metropolis-b}
+\end{subfigure}
+\end{figure}
+\end{comment}
+
+\begin{figure}[H]
+%\ContinuedFloat
+\centering
+\begin{subfigure}{0.48\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-iii/normal-hmc.pdf}
+\caption[]{Método HMC, 20 iteraciones.}
+\label{fig:ch-iii-ejemplo-normal-hmc-a}
+\end{subfigure}
+\begin{subfigure}{0.48\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-iii/normal-hmc-after.pdf}
+\caption[]{Método HMC, 200 iteraciones.}
+\label{fig:ch-iii-ejemplo-normal-hmc-b}
+\end{subfigure}
+\caption[Exploración mediante tres métodos MCMC de una densidad normal en dos dimensiones.]{De izquierda a derecha y de arriba hacia abajo, exploración mediante tres métodos MCMC de una densidad normal en dos dimensiones. El tamaño e intensidad de los puntos corresponde a la densidad en esas zonas, además, se traza la ruta seguida por cada algoritmo. Fuente: elaboración propia.}
+\label{fig:ch-iii-ejemplo-normal}
+\end{figure}
+
+
+

@@ -1,0 +1,139 @@
+\noindent 1. Número de activos A en el hogar (microondas, lavadora y computadora)
+
+\noindent 2. Número de activos B en el hogar (radio, tv y refrigerador)
+
+\noindent 3. Cantidad de activos de comunicación en el hogar
+
+\noindent 4. Cantidad de bienes (radio, tv, refrigerador, lavadora y auto) en el hogar
+
+\noindent 5. Cantidad de bienes selecionados
+
+\noindent 6. Número de cuartos del hogar
+
+\noindent 7. Cantidad de equipamientos (tinaco boiler cisterna regadera) en el hogar
+
+\noindent 8. Promedio de habitantes por cuarto
+
+\noindent 9. Número de hijas
+
+\noindent 10. Número de hijos
+
+\noindent 11. Número de hombres en el hogar
+
+\noindent 12. Carencias en la vivienda
+
+\noindent 13. Indicador de presencia de mujeres con ingresos mayores a los de los hombres en el hogar
+
+\noindent 14. Número de bienes de equipamiento (regadera, tinaco, cisterna, calentador de agua, bomba de agua, aire acondicionado)
+
+\noindent 15. Escolaridad del jefe
+
+\noindent 16. Escolaridad relativa del jefe del hogar
+
+\noindent 17. Edad del jefe del hogar
+
+\noindent 18. Escolaridad relativa estandarizada del jefe
+
+\noindent 19. Nivel educativo del cónyuge del jefe
+
+\noindent 20. Número de personas entre 16 y 64 años en el hogar
+
+\noindent 21. Máximo nivel académico en el hogar
+
+\noindent 22. Número de personas de 65 o más años en el hogar
+
+\noindent 23. Número de menores de 16 años en el hogar
+
+\noindent 24. Número de mujeres en el hogar
+
+\noindent 25. Número de personas con 60 años o más
+
+\noindent 26. Número de personas que saben leer y escribir en el hogar
+
+\noindent 27. Número de hijos(as) fallecidos de mujeres entre 12 y 49 años
+
+\noindent 28. Número de hijos(as) fallecidos
+
+\noindent 29. Número de hijos(as) que tiene 16 años o más y que está en la pea
+
+\noindent 30. Número de hijos(as) nacidos (as) vivos en el hogar
+
+\noindent 31. Número de hijos(as) menor(es) de 16 años
+
+\noindent 32. Número de personas hablantes de lengua indígena en el hogar
+
+\noindent 33. Número de menores de 12 años en el hogar
+
+\noindent 34. Número de personas menores de 50 años
+
+\noindent 35. Número de personas ocupadas en el hogar
+
+\noindent 36. Número de perceptores de ingresos ocupados
+
+\noindent 37. Personas mayores de 16 años con rezago educativo
+
+\noindent 38. Personas menores de 16 años con rezago educativo
+
+\noindent 39. Personas con carencia en servicios de salud en el hogar
+
+\noindent 40. Porcentaje de personas de 65 años o más en el hogar
+
+\noindent 41. Porcentaje de hombres en el hogar
+
+\noindent 42. Porcentaje de personas indígenas en el hogar
+
+\noindent 43. Porcentaje de menores de 12 años en el hogar
+
+\noindent 44. Porcentaje de mujeres en el hogar
+
+\noindent 45. Porcentaje de ocupados en el hogar
+
+\noindent 46. Porcentaje de perceptores ocupados
+
+\noindent 47. Porcentaje de personas mayores de 16 con rezago educativo
+
+\noindent 48. Porcentaje de personas menores de 16 con rezago educativo
+
+\noindent 49. Porcentaje de personas con carencia en salud en el hogar
+
+\noindent 50. Relación de dependencia
+
+\noindent 51. Tasa de mortalidad
+
+\noindent 52. Proxy de mortalidad infantil
+
+\noindent 53. Dispone de aire acondicionado el hogar
+
+\noindent 54. Indicador de posesión de automovil en el hogar
+
+\noindent 55. Condición de recepción de ingresos por apoyo de otro hogar
+
+\noindent 56. Condición de recepción de ingresos por programas de gobierno en el hogar
+
+\noindent 57. Dispone de boiler el hogar
+
+\noindent 58. Dispone de bomba de agua el hogar
+
+\noindent 59. Dispone de calentador solar de agua el hogar
+
+\noindent 60. Dispone de teléfono móvil o celular el hogar
+
+\noindent 61. Hogar con todos sus integrantes mayores de 60 años (envejecido)
+
+\noindent 62. Hogar nuclear con algún hijo en la PEA (en proceso de fisión)
+
+\noindent 63. Hogar nuclear sin hijos con sus integrantes menores a 50 años (en formación)
+
+\noindent 64. Hogar nuclear con hijos menores, sin hijos en la PEA
+
+\noindent 65. Dispone de cisterna el hogar
+
+\noindent 66. Disponibilidad de cuarto para cocinar
+
+\noindent 67. Tipo de combustible para cocinar
+
+\noindent 68. Identificador de combustible: Leña o carbón o cuenta con chimenea estufa (fogón) de leña o carbón
+
+\noindent 69. Dispone de al menos una computadora el hogar
+
+\noindent 70. Indicador de cónyuge

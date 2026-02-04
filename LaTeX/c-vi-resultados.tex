@@ -1,0 +1,1519 @@
+\chapter{RESULTADOS}
+\label{ch:vi-resultados}
+
+% Estoy valorando quitar el porcentaje de muestreo 25%
+% Igual el caso sin intercepto es mas relevante para el modelo probit y probit ordenado, entonces quizas podemos quitar unico intercepto y sin interceptos del log normal
+
+% Quizas sea bueno agregar la distribución de las clases en el conjunto de datos reales, es decir, una tabla de 0's, 1's y 2's.
+
+En este capítulo mostramos los principales resultados del ajuste de los dos modelos de regresión Bayesiana en áreas pequeñas descritos en el \autoref{ch:v-metodologia}: un modelo para datos continuos y un modelo para datos ordinales, a los cuales denominamos log-normal sesgado y probit ordenado sesgado latente. Para realizar inferencia sobre los parámetros y variables latentes, se consideran los métodos Hamiltoniano Monte Carlo y variacional Bayesiano de forma fija, ambos descritos en el \autoref{ch:ii-iv-revision}.
+
+En las secciones \ref{sec:resultados-i} y \ref{sec:resultados-ii}, se exhiben dos estudios de simulación preliminares sobre la generación de variables respueta $y_{ij}$ binarias y el ajuste del modelo log-normal sesgado sin restricciones en los $\rho_{i}$. Luego, en las secciones \ref{sec:resultados-iii} a \ref{sec:resultados-v} se muestran los resultados para los experimentos de simulación descritos en la \autoref{sec:metodologia-xi}, donde se proponen $M=4$ regiones y pocos predictores para cada clase de modelo. En estos apartados, se reportan y comparan entre sí las estimaciones de los parámetros para ambos métodos de inferencia, con los valores reales, así como su tiempo de cómputo.
+
+Posterior a esto, en la \autoref{sec:resultados-vi} se inicia presentando estadísticos descriptivos acerca del conjunto de datos del ingreso corriente total per cápita (ICTPC) de la Ciudad de México en 2025. Después, se ajustan los tres modelos de regresión propuestos al logaritmo de los ingresos y a dos conjuntos discretizados de este. En las secciones \ref{sec:resultados-vii} a \ref{sec:resultados-viii}, se reportan estimaciones, tiempos de ejecución y los porcentajes de la población bajo alguna línea de pobreza. Se concluye el estudio sobre los ingresos en la Ciudad revelando los parámetros $\boldsymbol{\beta}$ que fueron seleccionados más del 75\% de las veces por cada modelos de regresión y por ámbos métodos.
+
+El uso de negritas sobre los distintos resultados, indica que la estimación obtenida con ese método -indicado en la columna- está más cerca del valor real, así mismo, las negritas indican que cierta métrica es mejor en un método que en otro, por ejemplo, correlación con la respuesta, tiempo de ejecución, etcétera.
+
+
+
+% Quizas en la sección de la normal sesgada
+%\section{Generación de variables $y_{ij}$ continuas, binarias y ordinales}
+
+\section{Efecto de $\rho_{i}$ con $\mu_{i}$}
+\label{sec:resultados-i}
+
+Con el propósito de evaluar el efecto o la interacción entre estos dos parámetros, se desarrolla el siguiente experimento sencillo. Dada la malla de valores generada a partir de $\rho_{i}\in\pm\{0.01, 0.02, \ldots, 0.99\}$ y $\mu_{i}\in\pm\{0.0, 0.1, \ldots, 2.5\}$. En cada punto de este ráster se generan $n=500$ variables aleatorias binarias $y_{i}$ a través de dos métodos equivalentes y siguiendo el enfoque de variable latente:
+\begin{enumerate}
+\item Por medio del signo de $z_{i}$: $y_{i}=1(z_{ij}>0)$, generando $z_{i} \sim SN(\mu_{i}, 1, \lambda_{i})$.
+\item Con una variable indicadora Bernoulli: $y_{i}\sim\text{Bern}(p_{i})$, cuya probabilidad de éxito está dada por
+\begin{equation}
+p_{i}=\mathbb{P}(Y_{i}=1) = \mathbb{P}(Z_{i} > 0 ) = 1-\Phi_{SN}(0 - \mu_{i};\lambda_{i})
+\end{equation}
+\end{enumerate}
+
+En la \autoref{fig:ch-vi-probit-estudio-rho-mu} se muestra la proporción de valores $\frac{1}{n}\sum_{i=1}^{n}y_{i}$, es decir, aquellos iguales a uno, para cada punto de la cuadrícula. No consideramos el uso de parámetros centrados. 
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/probit-estudio-rho01-mu.pdf}
+\caption{$\rho_{i}>0$}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/probit-estudio-rho10-mu.pdf}
+\caption{$\rho_{i}<0$}
+\end{subfigure}
+\caption{Proporción de valores $y_{ij}=1$ simulados.}
+\label{fig:ch-vi-probit-estudio-rho-mu}
+\end{figure}
+
+De forma adicional, se dibuja la función liga para el modelo probit sesgado latente para los valores $\lambda_{i}\pm\{0, 1, 3\}$. En la \autoref{sec:modelo-probit} se obtiene su expresión, por comodidad, aquí se repite, además, $\eta_{ij}=\mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}$.
+\begin{equation*}
+\mathbb{P}(y_{ij} = 1 \mid p_{ij} ) = 1 - \Phi_{SN}(-\eta_{ij},\, \lambda_{i}).
+\end{equation*}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/probit-fn-liga-rho01.pdf}
+\caption{$\lambda_{i}>0$}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/probit-fn-liga-rho10.pdf}
+\caption{$\lambda_{i}<0$}
+\end{subfigure}
+\caption{Función liga del modelo probit ordenado sesgado.}
+\label{fig:ch-vi-probit-estudio-rho-mu}
+\end{figure}
+
+\section{Ajuste de los modelos de regresión sin reestricción en $\rho_{i}$}
+\label{sec:resultados-ii}
+
+
+A continuación, se presenta un caso especial de estimación donde se permite que $\rho_{i}\in(-1, 1)$, es decir, el parámetro de forma $\lambda_{i}$ toma valores en $\mathbb{R}$. Se considera un único intercepto, y además, se omite la salida de los parámetros $\mu_{i}$ y $\boldsymbol{\beta}$ para centrarnos en la inferencia sobre $\rho_{i}$. El porcentaje de muestreo fue del 25\%.
+
+
+%Sin embargo, para el caso de aplicación que nos ocupa, se reestringe a que $\rho_{i}\in(0, 1)$
+
+
+\subsection{Modelo log-normal sesgado}
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal con único intercepto en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-i-25-tabla11}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-25-interceptos-unico-rho11.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\caption[]{}
+\centering
+\includegraphics[width=0.9\textwidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-unico-rho11.pdf}
+\label{ch-vi-logsn-i-rho11}
+\end{figure}
+
+\subsection{Modelo probit sesgado con variable latente}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado con único intercepto en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-i-25-tabla11}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-unico-rho11.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\caption{}
+\centering
+\includegraphics[width=0.9\textwidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico-rho11.pdf}
+\label{ch-vi-logsn-i-rho11}
+\end{figure}
+
+\subsection{Modelo probit ordenado sesgado con variable latente}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado con único intercepto en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-tabla11}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-unico-rho11.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\caption{}
+\centering
+\includegraphics[width=0.9\textwidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico-rho11.pdf}
+\label{ch-vi-probitord-i-rho11}
+\end{figure}
+
+
+
+
+\section{Ajuste del Modelo log-normal sesgado, datos simulados}
+\label{sec:resultados-iii}
+
+\begin{comment}
+\subsection{Modelos sin interceptos en cáda área pequeña}
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal sesgado sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-ni-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-5-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-no.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-logsn-ni-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo log-normal sesgado sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-ni-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-5-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-5-interceptos-no.pdf}
+\caption{Modelo log-normal sesgado sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-ni-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal sesgado sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-ni-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-25-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-no.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-logsn-ni-25-scatter}
+\end{figure}
+
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo log-normal sesgado sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-ni-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-25-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-25-interceptos-no.pdf}
+\caption{Modelo log-normal sesgado sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-ni-25-ssvs}
+\end{figure}
+\end{comment}
+
+\subsection{Modelos con interceptos en cada área pequeña}
+
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-vi-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-5-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-varios.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-logsn-vi-5-scatter}
+\end{figure}
+
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-vi-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-5-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-5-interceptos-varios.pdf}
+\caption{Modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-vi-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-vi-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-25-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-varios.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-logsn-vi-25-scatter}
+\end{figure}
+
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-vi-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-25-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-25-interceptos-varios.pdf}
+\caption{Modelo log-normal sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-vi-25-ssvs}
+\end{figure}
+
+\begin{comment}
+\subsection{Modelos con único intercepto en todas las áreas pequeñas}
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal sesgado con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-i-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-logsn-i-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo log-normal sesgado con único intercepto en todas las área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-i-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption{Modelo log-normal sesgado con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-logsn-i-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo log-normal sesgado con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-i-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-logsn-i-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo log-normal sesgado con único intercepto en todas las área pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-i-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption{Modelo log-normal sesgado con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-logsn-i-25-ssvs}
+\end{figure}
+\end{comment}
+
+\section{Ajuste del Modelo probit sesgado con variable latente, datos simulados}
+\label{sec:resultados-iv}
+
+\subsection{Modelos sin interceptos en cáda área pequeña}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-ni-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-no.pdf}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probit-ni-5-scatter}
+\end{figure}
+
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-ni-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-no.pdf}
+\caption{Modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-ni-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-ni-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-no.pdf}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probit-ni-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-ni-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-no.pdf}
+\caption{Modelo probit sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-ni-25-ssvs}
+\end{figure}
+
+\subsection{Modelos con interceptos en cada área pequeña}
+
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-vi-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-varios.pdf}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probit-vi-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-vi-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-varios.pdf}
+\caption{Modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-vi-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-vi-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-varios.pdf}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probit-vi-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-vi-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-varios.pdf}
+\caption{Modelo probit sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-vi-25-ssvs}
+\end{figure}
+
+\subsection{Modelos con único intercepto en todas las áreas pequeñas}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado latente con único intercepto para todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-i-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probit-i-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-i-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption{Modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probit-i-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-i-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probit-i-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-i-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption{Modelo probit sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probit-i-25-ssvs}
+\end{figure}
+
+
+\section{Ajuste del Modelo probit ordenado sesgado con variable latente, datos simulados}
+\label{sec:resultados-v}
+
+\subsection{Modelos sin interceptos en cáda área pequeña}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-ni-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-5-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-no.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probitord-ni-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-ni-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-5-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-no.pdf}
+\caption{Modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-ni-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-ni-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-no.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probitord-ni-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-ni-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-no.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-no.pdf}
+\caption{Modelo probit ordenado sesgado latente sin interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-ni-25-ssvs}
+\end{figure}
+
+\subsection{Modelos con interceptos en cada área pequeña}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-vi-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-5-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-varios.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probitord-vi-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-vi-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-5-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-varios.pdf}
+\caption{Modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-vi-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-vi-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-varios.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probitord-vi-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit ordenado sesgado latente con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-vi-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-varios.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-varios.pdf}
+\caption{Modelo probit ordenado sesgado con interceptos en cada área pequeña. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-vi-25-ssvs}
+\end{figure}
+
+
+\subsection{Modelos con único intercepto en todas las áreas pequeñas}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado latente con único intercepto para todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-i-5-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probitord-i-5-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-i-5-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-5-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pdf}
+\caption{Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 5\%.}
+\label{ch-vi-probitord-i-5-ssvs}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-tabla}
+%\begin{tabular}{lr *{3}{r} *{3}{r}}
+\begin{tabular}{lQ *{3}{Q} *{3}{Q}}
+\hline
+& & \multicolumn{3}{c}{\bfseries Bayes Variacional}& \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{3-8}
+%\colnames \\
+\siunitxcolnames \\
+\hline
+\input{Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\label{ch-vi-probitord-i-25-scatter}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Métricas del ajuste del modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-metricas}
+\begin{tabular}{lQQ}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-unico.txt}
+\end{tabular}
+\end{table}
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\linewidth]{Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-unico.pdf}
+\caption{Modelo probit ordenado sesgado latente con único intercepto en todas las áreas pequeñas. Porcentaje de muestreo: 25\%.}
+\label{ch-vi-probitord-i-25-ssvs}
+\end{figure}
+
+
+\section{Análisis descriptivo del conjunto de datos del ICTPC}
+\label{sec:resultados-vi}
+
+En la \autoref{ch-vi-cdmx-hist-log-ictpc} se muestra la densidad estimada del log-ICTPC, en la izquierda se agrupan los datos de toda la Ciudad y en la derecha se agrupan de acuerdo al ámbito (rural y urbano). Los datos de toda la ciudad indican que la variable respuesta está sesgada hacia la derecha. Por otro lado, cuando clasificamos de acuerdo al tipo de ámbito, el conjunto de  hogares urbanos exhiben mayor sesgo, es decir, se observan valores más grandes, mientras que los ingresos en los hogares rurales están más concentrados.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/dist-log-ict.pdf}
+\caption{}
+\label{ch-vi-cdmx-hist-log-ictpc-a}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/dist-log-ict-ambito.pdf}
+\caption{}
+\label{ch-vi-cdmx-hist-log-ictpc-b}
+\end{subfigure}
+\caption{Estimación por kernel (suavizado) de la densidad empírica del logaritmo natural de la respuesta (log-ICTPC) e histograma de probabilidad. Se omitieron tres observaciones asociadas a ingresos pequeños (52.66, 187.71 y 367.30 pesos mexicanos). Fuente: elaboración propia.}
+\label{ch-vi-cdmx-hist-log-ictpc}
+\end{figure}
+
+En el \autoref{ch-vi-cdmx-tabla-descripcion} se muestran estadísticos resumen básicos sobre el ICTPC por alcaldía y por ámbito, notamos que sólo en las demarcaciones Milpa Alta, Tláhuac y Xochimilco se tiene registro de hogares que pertenecen al ámbito rural, sumando a un total de 553, el 21.8\% con respecto al total de hogares encuestados (2,329). En el \autoref{ch-vi-cdmx-tabla-descripcion-ambito}, se muestran los estadísticos resumen agrupados de acuerdo al tipo de ámbito; por ejemplo, la desviación estándar en el ámbito rural es de aproximadamente 17,800 pesos mexicanos, mientras que en el ámbito rural es de 4,000. Así, pese a que el ingreso corriente total per cápita en este ámbito sea en promedio menor, tienen menos dispersión. Sin embargo, mayor dispersión no implica que exista un mayor grado de desigualdad, por ejemplo, medido con el índice de Gini.
+
+% Cuadro grande => nueva página
+\begin{xltabular}{\textwidth}{XX RVVTV I}
+\caption[Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito.]{Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito. Fuente: Elaboración propia a partir de información de la ENIGH 2024.}
+\label{ch-vi-cdmx-tabla-descripcion} \\
+%%%%%% for xltabular
+\hline
+{Alcaldia} & {Ámbito} & {Minimo} & {Mediana} & {Media} & {Maximo} & {Desv. est.} & {$n_{i}$}\\
+\hline	
+\endhead
+%%%%%%
+Azc. & Urbano & 2102.456 & 12090.792 & 16910.051 & 114668.00 & 16878.831 & 111\\
+\hline
+Azc. & Rural &  &  &  &  &  & 0\\
+\hline
+Cyc. & Urbano & 1551.186 & 11696.878 & 14677.289 & 83211.33 & 12202.847 & 105\\
+\hline
+Cyc. & Rural &  &  &  &  &  & 0\\
+\hline
+CdM. & Urbano & 3177.718 & 8461.970 & 14948.206 & 118785.32 & 19527.767 & 53\\
+\hline
+CdM. & Rural &  &  &  &  &  & 0\\
+\hline
+GAM. & Urbano & 781.046 & 7787.525 & 10774.117 & 68570.14 & 9824.513 & 252\\
+\hline
+GAM. & Rural &  &  &  &  &  & 0\\
+\hline
+Iztc. & Urbano & 631.123 & 8913.196 & 13545.988 & 61666.93 & 12877.532 & 105\\
+\hline
+Iztc. & Rural &  &  &  &  &  & 0\\
+\hline
+Iztp. & Urbano & 187.717 & 6073.853 & 8171.228 & 48248.66 & 7074.950 & 349\\
+\hline
+Iztp. & Rural &  &  &  &  &  & 0\\
+\hline
+LMC. & Urbano & 1504.451 & 5995.553 & 10735.292 & 72000.85 & 12073.719 & 68\\
+\hline
+LMC. & Rural &  &  &  &  &  & 0\\
+\hline
+MlA. & Urbano & 1277.369 & 6171.656 & 7005.241 & 21981.60 & 4342.122 & 31\\
+\hline
+MlA. & Rural & 529.397 & 4949.803 & 5483.564 & 17037.63 & 2809.900 & 227\\
+\hline
+ÁlO. & Urbano & 1564.368 & 9434.721 & 13817.397 & 118931.95 & 14118.201 & 207\\
+\hline
+ÁlO. & Rural &  &  &  &  &  & 0\\
+\hline
+Tlh. & Urbano & 1245.704 & 7960.860 & 8400.618 & 21017.26 & 4244.966 & 52\\
+\hline
+Tlh. & Rural & 2531.590 & 5178.865 & 6949.424 & 29950.02 & 5877.352 & 23\\
+\hline
+Tll. & Urbano & 2163.907 & 9171.878 & 13563.610 & 65103.11 & 12886.281 & 117\\
+\hline
+Tll. & Rural & 720.764 & 5180.475 & 6142.782 & 21935.70 & 3720.346 & 162\\
+\hline
+Xch. & Urbano & 1430.432 & 6970.185 & 10052.865 & 56342.32 & 9781.255 & 87\\
+\hline
+Xch. & Rural & 1069.667 & 4786.025 & 6545.860 & 29559.91 & 5240.275 & 141\\
+\hline
+BnJ. & Urbano & 3741.365 & 20065.175 & 25167.655 & 176719.22 & 22441.338 & 135\\
+\hline
+BnJ. & Rural &  &  &  &  &  & 0\\
+\hline
+Cht. & Urbano & 921.870 & 8436.753 & 17636.413 & 313206.74 & 35445.246 & 115\\
+\hline
+Cht. & Rural &  &  &  &  &  & 0\\
+\hline
+MgH. & Urbano & 2290.712 & 17156.079 & 25668.338 & 132651.56 & 23268.993 & 96\\
+\hline
+MgH. & Rural &  &  &  &  &  & 0\\
+\hline
+VnC. & Urbano & 52.668 & 7880.444 & 15085.567 & 297123.05 & 32880.344 & 101\\
+\hline
+VnC. & Rural &  &  &  &  &  & 0\\
+\hline
+\end{xltabular}
+
+
+\begin{table}[H]
+\caption{Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito. Fuente: elaboración propia con información de la ENIGH 2024.}
+\label{ch-vi-cdmx-tabla-descripcion-ambito}
+\centering
+\begin{tabular}{lrrrrrr}
+\hline
+Ámbito & Minimo & Mediana & Media & Maximo & Desv. est. & Conteo\\
+\hline
+Urbano & 52.668 & 8520.740 & 13769.613 & 313206.74 & 17793.618 & 1984\\
+\hline
+Rural & 529.397 & 5032.302 & 6008.504 & 29950.02 & 3979.968 & 553\\
+\hline
+\end{tabular}
+\end{table}
+
+En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variables binarias y ordinales obtenidas al discretizar el conjunto de datos del ICTPC, agrupadas de acuerdo al tipo de corte que pertenecen. Para el caso binario, se observa una mayor proporción de observaciones $y_{ij}=0$, es decir, sin carencias. Lo mismo sucede en el caso ordinal, una mayor parte de observaciones son sin carencias, es decir $y_{ij}=2$.
+
+\begin{figure}[H]
+\centering
+\caption{}
+\label{fig:cdmx-dist-probit}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/dist-probit.pdf}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/dist-probitord.pdf}
+\end{subfigure}
+\end{figure}
+
+\section{Ajuste del Modelo log-normal asimétrico, datos del ICTPC}
+\label{sec:resultados-vii}
+
+% (1) Porcentaje de personas
+% (2) Estimaciones de los parametros?, podria ser
+
+% Porcentaje de la poblacion + mapas
+% ¿hacerlo con vb y hmc?, ¿solo con vb?
+% Podemos hacer este con HMC también, por el tiempo de ejecución
+
+\begin{xltabular}{\textwidth}{l *{3}{Q} *{4}{Q}}
+\caption{Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\label{ch-vi-cdmx-lognormal-tabla} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{3}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesi \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-tabla.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{X *{2}{Q} *{2}{Q}}
+\caption{Los porcentajes de población bajo la LPI y LPEI son de 18.81\% y 2.58\% para el método VB, y de 31.14\% y 5.60\% para el método HMC. La medición estatal oficial es de 25.70\% y 4.45\%.}
+\label{ch-vi-cdmx-lognormal-personas} \\
+%%%%%% for xltabular
+\hline
+ & \multicolumn{2}{c}{\bfseries Bayes Variacional} & \multicolumn{2}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-5}
+{\bfseries Alcaldía} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-personas.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+% [trim=5cm 0 4cm 0, clip]
+
+\begin{figure}[H]
+\centering
+\label{ch-vi-cdmx-lognormal-mapasvb}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpi.pdf}
+\caption{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpei.pdf}
+\caption{}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+\ContinuedFloat
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/log-normal-sesgado-mapahmc-lpi.pdf}
+\caption{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/log-normal-sesgado-mapahmc-lpei.pdf}
+\caption{}
+\end{subfigure}
+\caption[Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI.]{Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
+\end{figure}
+
+\begin{xltabular}{\textwidth}{X Q *{2}{Q} *{2}{Q}}
+\caption[Sesgo promedio calculado a partir de la muestra \textit{a posteriori}.]{Sesgo promedio calculado a partir de la muestra \textit{a posteriori}. El sesgo promedio para el método VB es de 815 pesos mexicanos y 798 para el método HMC. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-lognormal-personas} \\
+%%%%%% for xltabular
+\hline
+&  & \multicolumn{2}{c}{\bfseries Bayes Variacional} & \multicolumn{2}{c}{\bfseries Hamiltoniano MC} \\
+\bfseries Alcaldía \textbackslash Media & {\bfseries ICTPC obs.} & {\bfseries Ajustados} & {\bfseries Dif. abs.} & {\bfseries Ajustados} & {\bfseries Dif. abs} \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-sesgo.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+
+\subsection{Validación (entrenamiento-prueba)}
+
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020VB.pdf}
+\caption{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020HMC.pdf}
+\caption{}
+\end{subfigure}
+\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal)]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC.}
+\label{ch-vi-cdmx-lognormal8020-scatter}
+\end{figure}
+
+\begin{table}[H]
+\caption[Métricas del ajuste entre los valores observados y pronósticos en escala original.]{Métricas del ajuste entre los valores observados y pronósticos en escala original. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-lognormal8020-metricas}
+\centering
+\begin{tabular}{l Q Q}
+\hline
+\bfseries Métrica & {\bfseries  \bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-metricas8020.txt} \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Pronóstico de nuevas observaciones $(n_{i}=0)$}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoVB.pdf}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoHMC.pdf}
+\end{subfigure}
+\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal).]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-lognormalpronostico-scatter}
+\end{figure}
+
+% ¿poner solo las regiones 8 y 15?, parece mas informativo
+
+\begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
+\caption{Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\label{ch-vi-cdmx-lognormalpronostico0-tabla} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesi \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-pronostico0-tabla.txt}\\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{table}[H]
+\centering
+\caption[Métricas del ajuste entre los valores observados y pronósticos en escala original.]{Métricas del ajuste entre los valores observados y pronósticos en escala original. Fuente: elaboración propia.}
+\begin{tabular}{l Q Q}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-metricas-pronostico.txt}
+\\ \hline
+\end{tabular}
+\end{table}
+
+% ----Usando un intercepto---- %
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronostico1VB.pdf}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronostico1HMC.pdf}
+\end{subfigure}
+\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal).]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-lognormalpronostico1-scatter}
+\end{figure}
+
+% ¿poner solo las regiones 8 y 15?, parece mas informativo
+
+\begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
+\caption{Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\label{ch-vi-cdmx-lognormalpronostico1-tabla} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesi \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-pronostico1-tabla.txt}\\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{table}[H]
+\centering
+\caption[Métricas del ajuste entre los valores observados y pronósticos en escala original.]{Métricas del ajuste entre los valores observados y pronósticos en escala original. Fuente: elaboración propia.}
+\begin{tabular}{l Q Q}
+\hline
+Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-metricas-pronostico1.txt}
+\\ \hline
+\end{tabular}
+\end{table}
+
+
+\section{Ajuste del Modelo probit sesgado con variable latente, datos del ICTPC}
+\label{sec:resultados-viii}
+
+\begin{xltabular}{\textwidth}{l *{3}{Q} *{4}{Q}}
+\caption{Ajuste del modelo probit sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\label{ch-vi-cdmx-probit-tabla} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesi \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/probit-sesgado-tabla.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{l *{1}{Q} *{1}{Q}}
+\caption{Los porcentajes de población bajo la LPI son de 31.70\% para el método VB y 27.25\% para el método HMC.}
+\label{ch-vi-cdmx-probit-personas} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{1}{c}{\bfseries Bayes Variacional} & \multicolumn{1}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-3}
+{\bfseries Alcaldía} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPI (\%)}} \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/probit-sesgado-personas.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{figure}[H]
+\centering
+\caption{}
+\label{ch-vi-cdmx-probit-mapas}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-sesgado-mapavb-lpi.pdf}
+\end{subfigure} \hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-sesgado-mapahmc-lpi.pdf}
+\end{subfigure}
+\end{figure}
+
+
+\subsection{Validación (entrenamiento-prueba)}
+
+\begin{figure}[H]
+\centering
+\label{ch-vi-cdmx-probit-scatter}
+\caption[Matriz de confusión entre la respuesta binaria discretizada observada (columnas) y los valores ajustados (renglones).]{Matriz de confusión entre la respuesta binaria discretizada observada (columnas) y los valores ajustados (renglones). Fuente: elaboración propia.}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/probit-sesgado-scatter8020VB.pdf}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/probit-sesgado-scatter8020HMC.pdf}
+\end{subfigure}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption[Métricas del ajuste entre los valores binarios observados y pronósticos.]{Métricas del ajuste entre los valores binarios observados y pronósticos. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-probit-metricas}
+\begin{tabular}{lQQ}
+\hline
+\bfseries Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/CDMX/probit-sesgado-metricas8020.txt}\\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Ajuste del Modelo probit ordenado sesgado con variable latente, datos del ICTPC}
+\label{sec:resultados-ix}
+
+
+\begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
+\caption{Ajuste del modelo probit ordenado sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\label{ch-vi-cdmx-probitord-tabla} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesi \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/probit-ordenado-sesgado-tabla.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{X *{2}{O} *{2}{O}}
+\caption{Ajuste del modelo probit ordenado sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible. Los porcentajes obtenidos con BV son 19.26\% y 7.59\%, con HMC son 22.61\% y 4.88\%. Los totales estales oficiales son 25.7\% y 4.5\%. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-probitord-personas} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{2}{c}{\bfseries Bayes Variacional} & \multicolumn{2}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-5}
+{\bfseries Alcaldía} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/probit-ordenado-sesgado-personas.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{figure}[H]
+\centering
+\caption{Estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
+\label{ch-vi-cdmx-probitord-mapas}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpi.pdf}
+\caption{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpei.pdf}
+\caption{}
+\end{subfigure}
+\end{figure}
+
+\begin{figure}[H]
+\ContinuedFloat
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpi.pdf}
+\caption{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpei.pdf}
+\caption{}
+\end{subfigure}
+\end{figure}
+
+
+\subsection{Validación (entrenamiento-prueba)}
+
+\begin{figure}[H]
+\centering
+\label{ch-vi-cdmx-probitord-scatter}
+\caption[Matriz de confusión entre la respuesta ordinal observada (columnas) y las categorías ajustadas (renglones)]{Matriz de confusión entre la respuesta ordinal observada (columnas) y las categorías ajustadas (renglones). Fuente: elaboración propia.}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=0.95\textwidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-scatter8020VB.pdf}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-scatter8020HMC.pdf}
+\end{subfigure}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption[Métricas del ajuste entre los valores ordinales observados y pronósticos]{Métricas del ajuste entre los valores ordinales observados y pronósticos. Fuente: elaboración propia.}
+\label{ch-vi-cdmx-probit-metricas}
+\begin{tabular}{lQQ}
+\hline
+\bfseries Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\hline
+\input{Figuras/c-vi/CDMX/probit-ordenado-sesgado-metricas8020.txt}\\
+\hline
+\end{tabular}
+\end{table}
+
+\section{Estimaciones de $\beta$ en los tres modelos, datos del ICTPC}
+\label{sec:resultados-x}
+
+Con el propósito de no hacer abrumadora la cantidad de estimaciones de $\boldsymbol{\beta}$, se reportan sólo aquellos coeficientes $\beta_{k}$ con frecuencia de aparición marginal mayor al 75\% en ambos métodos de estimación.
+\begin{itemize}
+\item Para el modelo log-normal sesgado, el método VB determina que 78 de 106 covariables cumplen esta condición, mientras que el método HMC selecciona 24 de 106 covariables.
+\item Por su parte, en el modelo probit sesgado latente se seleccionan 75 y 10 con los métodos BV y HMC.
+\item Finalmente, en el modelo probit ordenado sesgado latente se selccionaron 76 y 12 con los métodos BV y HMC.
+\end{itemize}
+
+\begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
+\caption{Estimaciones de los coeficientes de regresión en el modelo log-normal sesgado.}
+\label{ch-vi-cdmx-lognormal-beta} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesii \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/log-normal-sesgado-beta.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+
+\begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
+\caption{Estimaciones de los coeficientes de regresión en el modelo probit sesgado.}
+\label{ch-vi-cdmx-probit-beta} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesii \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/probit-sesgado-beta.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+\begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
+\caption{Estimaciones de los coeficientes de regresión en el modelo probit ordenado sesgado.}
+\label{ch-vi-cdmx-probitord-beta} \\
+%%%%%% for xltabular
+\hline
+& \multicolumn{3}{c}{Bayes Variacional\bf} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
+%\cline{2-8}
+\siunitxcolnamesii \\
+\hline
+\endhead
+%%%%%%
+\input{Figuras/c-vi/CDMX/probit-ordenado-sesgado-beta.txt} \\
+\hline
+% borrar el ultimo \\ en la tabla .txt
+\end{xltabular}
+
+
+% Dependiendo de lo que me digan, puedo meter las 106 estimaciones
+% Podría incluir la freq. también, aunque quizás ahi deba de hacer mas chica la fuente...
+

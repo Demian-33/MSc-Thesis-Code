@@ -1,0 +1,1342 @@
+\chapter{METODOLOGÍA}
+\label{ch:v-metodologia}
+
+% Vamos a centrarnos en estudiar el ajuste de los modelos cuando n_i>0 para todas las areas, dejando el otro escenario como un caso especial
+
+% Puedes mencionar estudios previos sobre aplicaciones en áreas pequeñas usando métodos similares (aunque no sean idénticos). Eso ubica mejor tu contribución.
+
+% Indica de forma más explícita cuál es tu contribución metodológica: ¿es la implementación de inferencia variacional en estos modelos? ¿Una parametrización nueva?
+
+% Considera incluir una sección corta sobre validación, por ejemplo: ¿compararás los resultados contra MCMC para ver qué tan bien se aproxima?
+
+
+% Puedes justificar mejor por qué se usan distribuciones a priori objetivas, especialmente en un contexto donde podría interesar la inferencia subjetiva o informada.
+
+% ¿por que podría interesar?, porque no se tiene mucha información....
+
+La principal contribución metodológica de esta investigación, es la implementación de un método de inferencia Bayesiana variacional para estimar dos clases de modelos de regresión en áreas pequeñas, ambos basados en el uso de la distribución normal sesgada. Además, con el fin de aliviar el costo computacional, se recurre a la representación estocástica generada por el proceso truncamiento oculto, sumado a esto, se centran los parámetros de localidad y escala de esta densidad.
+
+En la primera sección de este capítulo, se describe el escenario particular del modelo de regresión en áreas pequeñas que estudiamos, el cuál recibe el nombre de \textit{modelo a nivel unidad con error anidado}. Luego, se obtiene el modelo de regresión propuesto para respuesta continua, haciendo uso del proceso de truncamiento oculto descrito en la \autoref{subsec:truncamiento-oculto}. Posterior a esto, se detalla como obtener los modelos de regresión para respuesta binaria y respuesta ordinal, podemos adelantar que el tratamiento aplicado es similar al caso previo. Después, se presentan las distribuciones \textit{a priori} que se utilizarán con intención de mantener la objetividad en el análisis Bayesiano, para ello se considera emplear la distribución \textit{a priori} de referencia, así como otra distribución \textit{a priori} que permite seleccionar variables de forma estocástica. Enseguida, se comenta como acomplar la verosimilitud y las distribuciones \textit{a priori} para obtener la distribución \textit{a posteriori} proporcional para cada uno de estos modelos, por medio del teorema de Bayes. Finalizamos el capítulo mostrando como implementar los modelos en el lenguaje de programación probabilística {Stan} y describiendo el conjunto de datos de estudio.
+
+%Para los modelo probit binario y ordenado sesgados con variable latente, requerimos un paso analítico adicional que consiste en marginalizar fuera a las observaciones $y_{ij}$ faltantes. Posterior a esto, mostramos brevemente cuál es el procedimiento usual para hacer inferencia sobre este modelo mediante técnicas MCMC.
+
+
+\section{Descripción de los modelos en áreas pequeñas}
+
+La estimación en áreas pequeñas, \textit{small-area estimation} (SAE), aborda el problema de generar pronósticos y estimaciones confiables de parámetros de interés, con sus medidas de incertidumbre asociadas, para subgrupos (áreas, dominios o regiones) de una población finita de la cual no hay muestras disponibles o no hay tamaños adecuados \parencite{Rao-Molina:2015}. De forma general, el contexto de áreas pequeñas plantea que tenemos $M$ regiones y en cada región existen $N_{i}$ objetos o entidades de interés, pero solo se dispone de una muestra de tamaño $n_{i} < N_{i}$ de estos objetos en cada una de ellas. Usualmente, se realizan estudios en este tipo de planteamientos, por ejemplo al realizar encuestas estatales, como la Encuesta Nacional de Ingresos y Gastos en los Hogares (ENIGH), por tanto, es atractivo construir modelos de regresión para realizar inferencia, particularmente predicción en los objetos o entidades no muestreadas. En la \autoref{ch-v-areas-pequenas} se ilustra una idealización sobre como se ve un conjunto de observaciones $\{y_{ij}\}^{i=1,\,\ldots,\,M}_{j=1,\ldots,\,N_{i}}$ en el contexto de áreas pequeñas. 
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{Figuras/c-v/areas-pequenas.pdf}
+\caption[]{Representación de $M=4$ áreas pequeñas. Las observaciones $y_{ij}$ se indexan de acuerdo a la región y número de observación en esta, los círculos sólidos (vacíos) representan instancias (no) observadas. Fuente: elaboración propia.}
+\label{ch-v-areas-pequenas}
+\end{figure}
+
+De acuerdo con \textcite{sae-apa}, es posible clasificar a los estimadores de un dominio en dos tipos:
+\begin{enumerate}
+\item Estimadores directos: llevan a cabo la inferencia con información exclusiva de cada área pequeña en un periodo de tiempo específico, y casi siempre se construyen a partir de un diseño muestral, por ejemplo, encuestas. \textcite{Araceli} señala que los estimadores directos se basan en muestreo probabilístico y son caracterizados por las propiedades de insesgamiento y consistencia bajo el diseño muestral en el que se construyen.
+\item Estimadores indirectos: utilizan información auxiliar de fuera del dominio o de periodos de tiempo anteriores. Un estimador indirecto toma información o `fuerza' de áreas vecinas, de tal modo que se pueden hacer inferencias más robustas. En general, los estimadores indirectos emplean modelos estadísticos con el fin de hacer predicciones sobre la(s) variable(s) de estudio.
+\end{enumerate}
+\textcite{Araceli} realiza una revisión extensa sobre la estimación en áreas pequeñas, abarcando ambos tipos de estimadores. Ahora bien, vale la pena notar que en la estimación de áreas pequeñas, no es el área la que es `pequeña', sino la muestra tomada del dominio específico: un dominio se considera pequeño si su tamaño de muestra no es lo suficientemente grande como para obtener estimaciones directas con la precisión adecuada. En caso contrario, se dice que el dominio es grande.\footnote{\textcite{sae-apa} menciona también que una expresión mejor podría ser `estimación de muestra pequeña'.} Por lo tanto, el término área pequeña no se limita a una región en el sentido geográfico, sino que se refiere a cualquier subpoblación para la que no se pueden producir estimaciones directas con una precisión adecuada. Así mismo, \textcite{sae-apa} también señala que los términos `estimador indirecto' y `estimador en áreas pequeñas' se usan de forma intercambiable.
+
+La aplicación en particular que se propone se ubica dentro del paradigma de estimación indirecta, y se plantean tres modelos de regresión para su estudio: uno para respuesta continua, otro para respuesta binaria y uno más para respuesta ordinal (categorías ordendas). En el contexto de áreas pequeñas se dispone del conjunto de datos $\left\{ \left( y_{ij},\, \boldsymbol{x}_{ij} \right)\right\}^{i=1,\ldots,M}_{j=1,\ldots, N_{i}}$, donde $\boldsymbol{x}_{ij}^{T}$ es un vector con $p$ covariables asociadas a la respuesta $y_{ij}$, así, $\boldsymbol{y}_{i}$ es el vector de respuestas en la región $i$, $X_{i}$ es la matriz de covariables en la región $i$, $\boldsymbol{y}$ es el vector de respuestas de las $M$ regiones y $X$ es la matriz de covariables de las $M$ regiones, es decir
+\begin{align}
+\begin{aligned}
+\boldsymbol{y} &\equiv (\boldsymbol{y}_{1},\,\ldots,\, \boldsymbol{y}_{M})^{T} \\ X &\equiv [X_{1},\,\ldots,\, X_{M}]^{T},
+\end{aligned}
+\end{align}
+como se comentó previamente, normalmente sólo se conoce una muestra de tamaño $n_{i}<N_{i}$ en cada dominio, mientras que se tiene acceso a toda la matriz de covariables $X$. En este caso, es posible hacer la distinción entre los elementos observados -o muestreados- y no observados, por tanto, para la región $i$ escribimos:
+\begin{align}
+\begin{aligned}
+\boldsymbol{y}^{s}_{i}&=(y_{1}, y_{2}, \ldots, y_{n_{i}})^{T} \\
+\boldsymbol{y}^{r}_{i}&=(y_{n_{i}+1}, y_{n_{i}+2}, \ldots, y_{N_{i}})^{T}
+\end{aligned}
+\end{align}
+y para toda la población:
+\begin{align}
+\begin{aligned}
+\boldsymbol{y}^{s} &= (\boldsymbol{y}_{i}^{s}, \boldsymbol{y}_{2}^{s},\ldots, \boldsymbol{y}_{M}^{s})^{T} \\
+\boldsymbol{y}^{r} &= (\boldsymbol{y}_{i}^{r}, \boldsymbol{y}_{2}^{r},\ldots, \boldsymbol{y}_{M}^{r})^{T},
+\end{aligned}
+\end{align}
+los superíndices $(r, s)$ denotan los elementos muestreados y no muestreados, en este orden. Formalmente, para escribir esta representación, se asume que la muestra es intercambiable, sin embargo, en este caso es un supuesto inocente.
+
+Ahora bien, dentro de corriente de SAE, -es decir, la metodología de estimación indirecta o inferencia basada en modelos estadísticos-, \textcite{Rao-Molina:2015} mencionan que es posible clasificar estas técnicas en dos tipos principales:
+\begin{itemize}
+\item Modelos a nivel agregado (o de área), que relacionan los estimadores directos de área pequeña con covariables específicas del área. Estos modelos son necesarios si no se dispone de datos a nivel de unidad (o elemento).
+
+\item Modelos a nivel de unidad, los cuales relacionan los valores unitarios de una variable de estudio con covariables específicas de la unidad. Así mismo, un supuesto crítico para esta clase de modelos es que la muestra $\boldsymbol{y}_{i}^{s}$ de cada área  obedece al modelo de población asumido, es decir, no existe sesgo de selección. Este punto es particularmente relevante para generar pronósticos acerca de $\boldsymbol{y}^{r}$.
+\end{itemize}
+
+En la siguiente sección, se profundiza acerca del caso de estimación indirecta con el modelo a nivel unidad.
+
+\subsection{Modelo a nivel unidad con error anidado}
+
+\textcite{BHF} propusieron un modelo a nivel unidad con errores anidados, el cuál identificamos como un modelo de regresión lineal con un efecto aleatorio para cada región de estudio: sea $(y_{ij},\, \boldsymbol{x}_{ij})$ el atributo de interés y la información auxiliar asociada, para las regiones $i=1,\, 2,\, \ldots,\, M$ y observación $j=1,\, 2,\, \ldots.\, N_{i}$ se asume que
+\begin{equation}
+\label{eq:modelo-lineal-mixto}
+y_{ij} = \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + u_{i} + e_{ij},
+\end{equation}
+donde $u_{i}\sim N(0,\, \sigma^{2}_{u})$, $e_{ij}\sim N(0,\, \sigma^{2}_{e})$ y además, $u_{i}$ es indendiente de $e_{ij}$, para todo par $(i,\, j)$. Además, es posible escribir el modelo en forma matricial como sigue:
+\begin{equation}
+\begin{bmatrix}
+\boldsymbol{y}_{i}^{r} \\ \boldsymbol{y}_{i}^{s}
+\end{bmatrix} = \begin{bmatrix}
+\mathbf{X}_{i}^{r} \\ \mathbf{X}_{i}^{s}
+\end{bmatrix}\boldsymbol{\beta} + 
+\begin{bmatrix}
+\boldsymbol{1}_{i}^{r} \\
+\boldsymbol{1}_{i}^{s}
+\end{bmatrix}u_{i} +
+\begin{bmatrix}
+\boldsymbol{e}_{i}^{r} \\ \boldsymbol{e}_{i}^{s}
+\end{bmatrix},
+\end{equation}
+los superíndices $(r,\, s)$ denotan los elementos no muestreados y muestreados. Adicionalmente, se asume que no existe sesgo, de modo que la inferencia puede realizarse únicamente con los datos observados. Como $\boldsymbol{y}_{i}^{r}$ depende de los efectos aleatorios $\boldsymbol{u}_{i}^{r}$ (siempre no observados), la alternativa frecuentista consiste en obtener la estimaciones de máxima verosimilitud de los parámetros de interés, y la predicción del efecto aleatorio $u_{i}$ mediante la técnica del mejor predictor lineal insesgado, \textit{best linear unbiased estimator} (BLUP). Concretamente, estos estimadores están dados por \parencite[][]{Rao-Molina:2015}
+\begin{equation}
+\begin{aligned}
+\tilde{\boldsymbol{\beta}}^{\text{BLUE}} &= (\sum_{i=1}^{M}X_{i}^{T}V_{i}^{-1}X_{i})^{-1}\sum_{i=1}^{M}X_{i}^{T}V_{i}^{-1}\boldsymbol{y}_{i} \\
+\tilde{u}_{i}^{\text{BLUE}} &= \sigma^{2}_{u}\boldsymbol{1}_{i}^{T}V_{i}^{-1}(\boldsymbol{y}_{i}-X_{i}\boldsymbol{\beta}^{\text{BLUE}}), \\
+V_{i} \equiv \mathbb{V}\text{ar}[\boldsymbol{y}_{i}] &= \sigma^{2}_{u}\boldsymbol{1}_{n_{i}}\boldsymbol{1}_{n_{i}}^{T} + \sigma^{2}_{e}I_{n_{i}}.
+\end{aligned}
+\end{equation}
+Al momento de calcular los estimadores, el modelo toma información de las demás regiones de estudio, de ahí a que se consideren estimadores indirectos. Así mismo, también se puede adoptar un enfoque Bayesiano y tomar muestras de la distribución \textit{a posteriori} para cada uno de estos términos. Ahora bien, siguiendo este sentido,  \textcite{BHF-SN} proponen generalizar este modelo al relajar el supuesto de normalidad: ahora ambos errores pertenecen a la familia normal asimétrica, dotándolo de mayor flexibilidad; específicamente, los autores propusieron
+\begin{equation}
+\label{eq:modelo-lineal-mixto-sn}
+\begin{aligned}
+u_{i} &\sim SN(-\rho_{u}\sigma_{u}\sqrt{2/\pi},\, \sigma^{2}_{u},\, \lambda_{u}), \\
+e_{ij} &\sim SN(-\rho_{e}\sigma_{e}\sqrt{2/\pi},\, \sigma^{2}_{e},\, \lambda_{e})
+\end{aligned}
+\end{equation}
+donde $\rho_{u} = \lambda_{u}/ \sqrt{1 + \lambda_{u}^{2}}$, $\rho_{e} = \lambda_{e}/ \sqrt{1 + \lambda_{e}^{2}}$ y nuevamente $u_{i}$ es independiente de $e_{ij}$, para todo par $(i,\, j)$. Es posible observar dos cosas:
+\begin{itemize}
+\item Aquí ya han centrado las variables aleatorias a fin de que su valor esperado sea cero, como se comenta en la \autoref{subsec:normal-asimetrica-centrada}.
+\item $u_{i}$ es un efecto aleatorio dentro de cada área pequeña, sin embargo, los parámetros de forma $\lambda_{u}$ y $\lambda_{e}$ son los mismos para todas las $M$ regiones.
+\end{itemize}
+Luego, con el propósito de obtener la verosimilitud del modelo, los autores recurren a una generalización de la distribución normal sesgada multivariada llamada \textit{Closed Skew Normal} (CSN), la cuál es equivalente a la familia SUN de la \autoref{subsec:normal-asimetrica-multivariada} salvo un cambio de parametrización \parencite{arellano-azzalini:2020, farias-cimat:2007}. La familia CSN, como su nombre sugiere, posee las propiedades de cerradura bajo condicionamiento y marginalización, que también posee la distribución normal asimétrica multivariada mostrada previamente, no obstante, esta otra familia de densidades, tiene la propiedad de cerradura bajo conjunción y transformaciones lineales, es decir, las sumas de variables aleatorias CSN se distribuyen CSN. Cabe señalar que esta generalización viene acompañada de mayor complejidad computacional.
+%
+% Notar que la CSN es equivalente, salvo un cambio de parametrizacion a la SUN!
+% la Extended Skew Normal es mas simple que estos dos casos, de hecho, se parece a lo que ya hizo Arnold en Hidden Truncation Methods
+
+El interés principal de esta clase de modelos, es realizar pronósticos y medir la incertidumbre sobre alguna función $h(\boldsymbol{y}_{i}^{r})$ acerca de los datos faltantes, para ello, la alternativa usual de la estimación en áreas pequeñas, es basar la inferencia a partir de los parámetros estimados con la colección de las variables de estudio observadas y su información auxiliar, esto es
+\begin{align}
+\boldsymbol{y}_{i}^{s} &= \mathbf{X}_{i}^{s}\boldsymbol{\beta} + \mathbf{Z}_{i}^{s}\boldsymbol{v} + \boldsymbol{e}_{i}^{s}.
+\end{align}
+
+Al inicio de este capítulo, se comentó la propuesta de estimación para tres modelos a nivel unidad, caracterizados por el uso de la distribución normal sesgada y la naturaleza de la variable respuesta: continua, ordinal y binaria. En el \autoref{ch-v-nombres} mostramos un resumen de cada uno de estos.
+
+%\mid \rho_{i},\, \sigma^{2},\, \mu_{i},\, \boldsymbol{\beta}
+\begin{table}[H]
+\centering
+\caption[Resumen sobre los tres modelos de regresión a nivel unidad.]{Resumen sobre los tres modelos de regresión a nivel unidad. $k$ denota el número de categorías ordenadas y $\delta_{c}$ el umbral que separa a las clases $c-1$ y $c$. Aquí $\eta_{ij} \triangleq \mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}$. Fuente: elaboración propia.}
+\label{ch-v-nombres}
+\begin{tabular}{lll}
+\hline
+Modelo de regresión & Respuesta & Definición \\
+\hline
+Log-normal sesgado & Continua en $\mathbb{R}$ & $p(y_{ij}) = SN(y_{ij} \mid \eta_{ij},\, \sigma^{2},\, \lambda_{i} )$, $y_{ij}\equiv \log\,\tilde{y}_{ij}$ \\
+\makecell[l]{Probit sesgado \\ con variable latente} & \makecell[l]{Binaria: \\ $\{0,\, 1\}$} & $\mathbb{P}(y_{ij}=1) = 1 - \Phi_{SN}(-\eta_{ij};\, \lambda_{i})$  \\
+\makecell[l]{Probit ordinal sesgado \\ con variable latente} & \makecell[l]{Ordinal: \\ $\{0,\, 1,\, \ldots,\, k\}$} & $\mathbb{P}(y_{ij} \leq c) = \Phi_{SN}(\delta_{c-1}-\eta_{ij};\, \lambda_{i}) - \Phi_{SN}(\delta_{c}-\eta_{ij};\, \lambda_{i})$ \\
+\hline
+\end{tabular}
+\end{table}
+
+En cada uno de estos modelos, no se incluyen explícitamente efectos aleatorios como parte del componente lineal, ya que como se verá en los apartados siguientes, se obtiene una aportación equivalente por medio de los parámetros de forma/correlación $\rho_{i}$. De igual manera, en los tres casos propuestos se asume que tanto $\sigma^{2}$ como $\boldsymbol{\beta}$ gobiernan las $M$ regiones, mientras que los parámetros exclusimos de cada área pequeña son $\rho_{i}$, así mismo, también puede emplearse un intercepto $\mu_{i}$ asociado a cada área pequeña.
+
+% Creo que no es necesario emplear esto... lo usó Araceli-Sergio para obtener la distribución a priori de referencia, pero podemos obtener el modelo de acuerdo solamente mediante truncamiento oculto...
+
+% El modelo propuesto se deduce a partir del siguiente modelo de regresión, por tanto, se procede de forma similar a \textcite{Araceli}. Sea
+% \begin{align*}
+% \begin{bmatrix}
+% \boldsymbol{U}_{i} \\
+% W_{i}
+% \end{bmatrix} &\sim N_{N_{i}+1}\left(
+% \begin{bmatrix}
+% \mathbf{X}_{i}\boldsymbol{\beta} + 
+% \end{bmatrix}
+% \right)
+% \end{align*}
+
+En general, los modelos de regresión que se presentan a continuación, son análogos al procedimiento de \textcite{Araceli}, y estos se deducen a partir de la representación estocástica descrita en la \autoref{subsec:representacion-alternativa}. A continuación, se muestra su derivación. Note que es posible bosquejar similitudes entre este planteamiento y un modelo de regresión con efectos mixtos. Sea
+\begin{align}
+\label{ch-v-eq-modelo}
+\boldsymbol{V_{i}} &= \mu_{i}\boldsymbol{1}_{N_{i}} +  X_{i}^{T}\boldsymbol{\beta} + \rho_{i}W_{i} + e_{ij}\sqrt{1-\rho^{2}_{i}},
+\end{align}
+donde $e_{i} \sim N_{N_{i}}(\boldsymbol{0},\, \sigma^{2}\mathbf{I}_{N_{i}})$, $W_{i} \sim N(0,\, \sigma^{2})$ y también $e_{ij}\perp W_{i}$. Por propiedades de la distribución normal se sigue que $e_{ij} \perp e_{ij'}$. Note que fijamos $\Var[\boldsymbol{e_{i}}] = \sigma^{2}(1-\rho^{2})\mathbf{I}_{N_{i}}$, aunque la elección de esta covarianza pueda parecer extraña, conduce a que la covarianza de $\boldsymbol{V}_{i}$ reproduzca apropiadamente una generalización del proceso de truncamiento oculto a más de dos dimensiones, como se muestra en la \autoref{subsec:truncamiento-oculto}, así mismo, su estructura induce dependencias entre los elementos dentro de un mismo dominio, es decir, entre $V_{ij}$ y $V_{ij'}$. Luego, con el fin de mantener simple la notación, en este momento no insistimos en hacer un tratamiento Bayesiano completo, es decir, omitimos la dependencia de $\boldsymbol{V}_{i}$ en $\rho_{i}.\, \sigma^{2}$ y $\boldsymbol{\beta}$. El propósito ahora es describir la distribución de $\boldsymbol{V}_{i}$ y de $[\boldsymbol{V}_{i},\, W_{i}]^{T}$, note que podemos escribir $\boldsymbol{V}_{i}$ como una combinación lineal de $\boldsymbol{e}_{i}$ y $W_{i}$ como se muestra a continuación:
+\begin{align*}
+\boldsymbol{V}_{i} &= \mu_{i}\boldsymbol{1}_{N_{i}} + X_{i}\boldsymbol{\beta} + 
+\underbrace{
+\begin{bmatrix}
+\sqrt{1-\rho_{i}^{2}}I_{N_{i}} & \rho_{i}\boldsymbol{1}_{N_{i}} \end{bmatrix}}_{A}
+\begin{bmatrix}
+\boldsymbol{e}_{i} \\
+W_{i}
+\end{bmatrix},
+\end{align*}
+por propiedades de la densidad normal multivariada, se sigue que
+\begin{align*}
+\boldsymbol{V_{i}} &\sim N_{N_{i}+1}
+\left(
+\mu_{i}\boldsymbol{1}_{N_{i}} + X_{i}\boldsymbol{\beta} ,\,
+A
+\begin{bmatrix}
+\sigma^{2}I_{N_{i}} & 0 \\
+0 & \sigma^{2}
+\end{bmatrix}
+A^{T}
+\right) \\
+\Sigma_{V_{i}} &= \sigma^{2}(1-\rho^{2})I_{N_{i}} + \sigma^{2}\rho^{2}\boldsymbol{1}_{N_{i}}\boldsymbol{1}_{N_{i}}^{T}  \\
+&= \sigma^{2}\left[(1-\rho_{i}^{2})I_{N_{i}} + \rho_{i}^{2}J_{N_{i}}\right],
+\end{align*}
+a partir del planteamiento, $\Cov[e_{ij},\, W_{i}]=0$. Ahora, dado que $\boldsymbol{e}_{i}$ tiene ley Gaussiana multivariada, nuevamente, por propiedades de esta distribución, la densidad conjunta de $[\boldsymbol{V}_{i},\, W_{i}]^{T}$ tiene ley Gaussiana, la nuestra única tarea restante es determinar $\Cov[\boldsymbol{V}_{i},\, W_{i}]$, para ello escribimos
+\begin{align*}
+\Cov[\boldsymbol{V}_{i},\, W_{i}] &= \Cov[\sqrt{1-\rho_{i}}\boldsymbol{e}_{i}+\rho_{i}W_{i}+X_{i}\boldsymbol{\beta} + \mu_{i}\boldsymbol{1}_{N_{i}},\, W_{i}],
+\intertext{por linealidad de la covarianza podemos separar términos y sacar constantes, por tanto}
+&= \sqrt{1-\rho_{i}^{2}}\cancelto{0}{\Cov[\boldsymbol{e}_{i},\, W_{i}]} + \rho_{i}\Cov[W_{i},\, W_{i}]\boldsymbol{1}_{N_{i}} + \cancelto{0}{\Cov[X_{i}\boldsymbol{\beta} + \mu_{i}\boldsymbol{1}_{N_{i}},\, W_{i}]} \\
+&= \rho_{i}\Var[W_{i}]\boldsymbol{1}_{N_{i}} = \rho_{i}\sigma^{2}\boldsymbol{1}_{N_{i}},
+\end{align*}
+de este modo, se obtiene que
+\begin{align}
+\begin{bmatrix}
+\boldsymbol{V_{i}} \\ W_{i}
+\end{bmatrix} &\sim N_{N_{i}+1}
+\left(
+\begin{bmatrix}
+\mu_{i}\boldsymbol{1}_{N_{i}} + X_{i}\boldsymbol{\beta} \\ 0
+\end{bmatrix} ,\,
+\begin{bmatrix}
+\Sigma_{U_{i}} & \rho_{i}\sigma^{2}\boldsymbol{1}_{N_{i}} \\
+\rho_{i}\sigma^{2}\boldsymbol{1}_{N_{i}}^{T} & \sigma^{2}
+\end{bmatrix}
+\right),
+\end{align}
+este es el modelo básico a partir del cuál podemos generar variables aleatorias normales asimétricas, es decir, definimos $\boldsymbol{U}_{i}=\boldsymbol{V}_{i}$ si $W_{i}>0$, o de forma equivalente, $U_{ij}=V_{ij}$ si $W_{i}>0$, para $j=1, 2, \ldots, N_{i}$, y por los resultados de la \autoref{subsec:normal-asimetrica} y \autoref{subsec:normal-asimetrica-multivariada}, $U_{ij}$ y $\boldsymbol{U}_{i}$ tienen ley normal asimétrica univariada y multivariada.
+
+%Finalmente, note que la estructura de la media, es decir $X_{i}\boldsymbol{\beta}$, admite un término constante para cada región al definir que la primera columna de $X_{i}$ sea una columna diseño, esto es, compuesta únicamente de unos.
+
+
+% \begin{align*}
+% p(e_{ij},\, w_{i}) &= N\left(
+% \begin{bmatrix}
+% 0 \\ 0
+% \end{bmatrix},\,
+% \begin{bmatrix}
+% \sigma^{2} & 0 \\ 0 & \sigma^{2}
+% \end{bmatrix}
+% \right),
+% \end{align*}
+% luego, $V_{ij}$ puede obtenerse como una combinación lineal esta última densidad conjunta, específicamente
+% \begin{align*}
+% V_{ij} &= \left[\sqrt{1-\rho_{i}^{2}},\, \rho_{i}\right] \,\begin{bmatrix}
+% e_{ij} \\ w_{i}
+% \end{bmatrix}\, + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},
+% \intertext{y usando resultados estándar de la distribución normal, particularmente la cerradura de combinaciones lineales, podemos escribir}
+% V_{ij} &\sim N\left(\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, \sigma^{2}\right),
+% \intertext{ahora, como $V_{ij}$ se distribuye normal y $W_{i}$ también se distribuye normal por construcción, la densidad conjunta $V_{ij},\, W_{i}$ existe y es normal bivariada, más aún, sólo es necesario determinar $\Cov(V_{ij},\, W_{i})$ para caracterizar completamente la densidad, por tanto, escribimos}
+% \Cov(V_{ij},\, W_{i}) &= \Cov(\sqrt{1-\rho_{i}^{2}}e_{ij}+\rho_{i}W_{i} + \boldsymbol{x}_{ij}\boldsymbol{\beta},\, W_{i}) \\
+% &= \sqrt{1-\rho_{i}^{2}}\cancelto{0}{\Cov(e_{ij},\, W_{i})} + \rho_{i}\Cov(W_{i},\, W_{i}) + \cancelto{0}{\Cov(\boldsymbol{x}_{ij}\boldsymbol{\beta},\, W_{i})} \\ 
+% &=\rho_{i}\sigma^{2}.
+% \intertext{Continuamos nuestra exposición para determinar la densidad conjunta que nos interesa y para ello empleamos nuevamente el último resultado: dado que $Y_{ij}$ y $Y_{ij'}$ tienen distribución normal, la distribución conjunta de $[Y_{ij},\, Y_{ij'}]$ es normal bivariada, de nuevo la tarea es determinar $\Cov[Y_{ij},\, Y_{ij'}]$, por tanto escribimos}
+% \Cov[Y_{ij},\, Y_{ij'}] &= \Cov[\sqrt{1-\rho_{i}^{2}}e_{ij}+\rho_{i}W_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, Y_{ij'}] \\
+% &= \sqrt{1-\rho_{i}^{2}}\Cov[e_{ij},\, Y_{ij'}] +\Cov[\rho_{i}W_{i},\, Y_{ij'}] + \cancelto{0}{\Cov[\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, Y_{ij'}]} \\
+% &= \sqrt{1-\rho_{i}^{2}}\Cov[e_{ij},\, \sqrt{1-\rho_{i}^{2}}e_{ij'}+\rho_{i}W_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}] + \rho_{i}\Cov[W_{i},\, Y_{ij'}],
+% \intertext{note que justo arriba calculamos el segundo término, por tanto escribimos}
+% &= (1-\rho_{i}^{2})\cancelto{0}{\Cov[e_{ij},\, e_{ij'}]} + \sqrt{1-\rho_{i}^{2}}\rho_{i}\cancelto{0}{\Cov[e_{ij},\, W_{i}]} \\
+% &+\cancelto{0}{\sqrt{1-\rho_{i}}\Cov[e_{ij},\, \boldsymbol{x}_{ij'}^{T}\boldsymbol{\beta}]}+\rho_{i}(\rho_{i}\sigma^{2}) \\
+% &= \rho_{i}^{2}\sigma^{2},
+% \end{align*}
+% esto implica que a partir de los supuestos del modelo de regresión lineal planteados arriba, se deduce que
+% \begin{align*}
+% \begin{bmatrix}
+% \boldsymbol{V}_{i} \\ W_{i}
+% \end{bmatrix} &\sim N_{N_{i}+1}
+% \left(
+% \begin{pmatrix}
+% X_{i}\boldsymbol{\beta} \\ 0
+% \end{pmatrix},\,
+% \begin{pmatrix}
+% \Sigma_{i} & \boldsymbol{1}_{N_{i}}\rho_{i} \\ \boldsymbol{1}_{N_{i}}^{T}\rho_{i} & \sigma^{2}
+% \end{pmatrix}
+% \right),
+% \end{align*}
+% donde $\Sigma_{i}\equiv \left\{\sigma^{2}\rho_{i}^{2}([\rho_{i}^{-2}-1])\delta_{rs} + 1\right\}^{r=1,\, \ldots,\, N_{i}}_{s=1,\, \ldots,\, N_{i}}$, aquí $\delta_{rs}$ es la función delta de Kronocker, i.e. $\delta_{rs}=1$ si $r=s$ y cero de otro modo. De forma explícita escribimos
+% \begin{align*}
+% \Sigma_{i} = \sigma^{2}\rho_{i}^{2}\left[\left(\rho_{i}^{-2}+1\right)I_{N_{i}} + J_{N_{i}} \right],
+% \end{align*}
+% donde $I_{N_{i}}$ es la matriz identidad cuadrada de orden $N_{i}$ y $J_{N_{i}}$ es una matriz cuadrada de unos, además $J_{N_{i}} = \boldsymbol{1}_{N_{i}}\, \boldsymbol{1}_{N_{i}}^{T}$.
+
+
+\section{Modelo log-normal sesgado}
+\label{sec:modelo-log-normal}
+
+Antes de obtener la densidad log-normal asimétrica, recordamos como generar la densidad log-normal usual, esto es: si $X\sim N(\mu,\, \sigma^{2})$, entonces se dice que $Y =\exp(X)$ tiene distribución log-normal con densidad
+\begin{align}
+f_{Y}(y|\mu,\, \sigma^{2}) &= \frac{1}{y\sqrt{2\pi\sigma^{2}}}\exp\left\{-\frac{1}{2}\frac{(\ln y - \mu)^{2}}{\sigma^{2}}\right\}I_{(0,\, \infty)}(y),
+\end{align}
+y escribimos $Y\sim \text{LogN}(\mu, \, \sigma^2)$. Ahora, hacemos que $X$ tenga distribución normal asimétrica y se define $Y= \exp(X)$, entonces, se dice que $Y$ tiene distribución log-normal sesgada con densidad
+\begin{align}
+f_{Y}(y|\mu,\, \sigma^{2},\, \lambda) &= \frac{2}{y\sigma}\phi\left(\frac{\ln y -\mu}{\sigma}\right)\Phi\left(\lambda\frac{\ln y -\mu}{\sigma}\right)I_{(0,\, \infty)}(y),
+\end{align}
+y escribimos $Y\sim\text{LogSN}(\mu,\, \sigma^{2},\, \lambda)$. Usando la técnica de la función de distribución, no es difícil obtener esta expresión. Note que, por propiedades de estas distribuciones, podemos expresar la variable aleatoria $Y$ en ambos casos como $Y = e^{\mu + \sigma Z}$, donde $Z$ es normal (sesgada) estándar. Vale la pena notar algunos aspectos concretos
+\begin{itemize}
+\item El nombre de estas densidades podría resultar confuso y es conveniente interpretarse como sigue: la variable aleatoria $X$ es normal (sesgada) después de tomar logaritmo a $Y$.
+
+\item Similar al caso anterior, en ambas densidades, la interpretación de los parámetros es antes de tomar el logaritmo, es decir, $(\mu, \sigma^2)$ se refieren al parámetro de localidad y escala de $X$, antes de aplicar esta transformación.
+\end{itemize}
+
+Por otra parte, en un modelo de regresión lineal, usualmente se modela la media o esperanza de la variable respuesta y en el caso del modelo log-normal usual, se tiene que
+\begin{equation}
+\mathbb{E}[y_{i} \mid \mu, \sigma^{2}] = \mathbb{E}[\exp(x_{i}) \mid \mu, \sigma^{2}] = m_{x_{i}}(1),
+\end{equation}
+donde $x_{i}\sim N(\mu, \sigma^{2})$, se identifica esta esperanza como la función generadora de momentos Gaussiana evaluada en $t=1$, en cuyo caso es igual a $\exp(\mu + \sigma^{2}/2)$. Es decir, el pronóstico de $y_{i}$ no sólo consiste en tomar exponencial al pronóstico de $x_{i}$, si no que además se multiplica por un factor de $\exp(\sigma^{2}/2)$.\footnote{Si únicamente se toma exponencial, se obtiene un pronóstico para la mediana de $y_{i}$} Aunque es posible emplear una procedimiento similar para el modelo log-normal sesgado, dada la naturaleza del método, los pronósticos de $y_{i}$ se obtienen mediante integración Monte Carlo.
+
+Algunas aplicaciones que emplean la distribución Log-normal sesgada se muestran en \textcite{logsn0:2023, logsn1:2020, logsn3:2013}.
+
+Ahora bien, el modelo propuesto pertenece a la misma corriente de estimación indirecta a nivel unidad: se supone que, condicional a los parámetros, el logaritmo la variable objetivo sigue una distribución log-normal sesgada, lo cual intenta mimetizar dos aspectos inherentes al conjunto de datos de ingresos: siempre son positivos y su distribución empírica es asimétrica. Para la observación $(i,\, j)$ se plantea:
+\begin{align}
+\tilde{y}_{ij} \mid \lambda_{i}, \mu_{i}, w_{i}, \sigma^{2}, \boldsymbol{\beta} &\sim \text{LogSN}(\mu_{i}+\boldsymbol{x}_{ij}\boldsymbol{\beta},\, \sigma^{2},\, \lambda_{i}),
+\end{align}
+es decir que $\tilde{y_{ij}} \equiv \exp( \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + \tilde{e}_{ij} )$, donde $\tilde{e}_{ij}\sim \text{LogSN}(0,\, 1,\, \lambda_{i})$, por tanto podemos definir $y_{ij} \triangleq \log(\tilde{y}_{ij}) = \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij}$, donde $e_{ij} \sim SN(0,\, 1,\, \lambda_{i})$. Esto significa que $\tilde{y}_{ij}$ es la variable aleatoria que modela el fenómeno de interés, cuyo soporte son los reales positivos (por ejemplo, el conjunto de datos del ingreso corriente total pér capita) y además admite un parámetro de asimetría, mientras que la transformación $y_{ij}\triangleq \log(\tilde{y}_{ij})$ tiene soporte en todos los reales y también admite un parámetro de asimetría: en la práctica, $\tilde{y}_{ij}$ son los valores observados y por simplicidad modelamos $\log(\tilde{y}_{ij})$. Ahora, al centrar los parámetros de localidad y escala, para $y_{ij}$, el logaritmo de la observación $(i, j)$, se plantea:
+\begin{equation}
+\label{eq:modelo-log-normal-sn}
+y_{ij}\mid \lambda_{i}, \sigma^{2},  \mu_{i}, \boldsymbol{\beta} \sim SN(\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} - \sigma\rho_{i}\sqrt{2/\pi},\, \sigma^{2}/(1-2\rho_{i}^{2}/\pi),\, \lambda_{i}),
+\end{equation}
+y de forma equivalente:
+\begin{equation}
+y_{ij} = \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + \sigma\frac{e_{ij}-\mathbb{E}[e_{ij}]}{\sqrt{\mathbb{V}\text{ar}[e_{ij}]}}
+% = \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + \frac{e_{ij}-\sigma\sqrt{\frac{2}{\pi}\rho^{2}_{i}}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}}
+,
+\end{equation}
+donde $e_{ij}\sim SN(0,\, \sigma^{2},\, \lambda_{i})$. También es posible escribir el modelo en forma matricial como sigue
+\begin{equation}
+\begin{bmatrix}
+\boldsymbol{y}_{i}^{r} \\
+\boldsymbol{y}_{i}^{s}
+\end{bmatrix} =
+\begin{bmatrix}
+\boldsymbol{1}_{i}^{r} \\ \boldsymbol{1}_{i}^{s}
+\end{bmatrix}\mu_{i} + 
+\begin{bmatrix}
+\mathbf{X}_{i}^{r} \\ \mathbf{X}_{i}^{s}
+\end{bmatrix} \boldsymbol{\beta} - 
+\frac{\sigma\sqrt{\frac{2}{\pi}\rho_{i}^{2}}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}}\begin{bmatrix}
+\boldsymbol{1}^{r}_{i} \\ \boldsymbol{1}^{s}_{i}
+\end{bmatrix} + 
+\frac{1}{\sqrt{1-\frac{2}{\pi}\rho^{2}}}\begin{bmatrix}
+\boldsymbol{e}_{i}^{r} \\ \boldsymbol{e}_{i}^{s}
+\end{bmatrix} ,
+\end{equation}
+como ya se centraron los parámetros de localidad y escala, dada la discusión previa, se garantiza que $\mathbb{E}[y_{ij}] = \mu_{i} + \boldsymbol{x}_{ij}^{T}$ y $\mathbb{V}\text{ar}[y_{ij}] = \sigma^{2}$;
+de igual modo, los superíndices $(r,\, s)$ denotan nuevamente a los elementos no muestreados y muestreados de cada región. Note que a diferencia del planteamiento en la \autoref{eq:modelo-lineal-mixto-sn}, aquí se estima un parámetro de forma para cada área pequeña, de este modo se obtiene un resultado similar a incorporar un efecto aleatorio para cada región, sin embargo, dada la naturaleza del caso de estudio, se prioriza la estimación del parámetro de asimetría en cada dominio; $\mu_{i}$ es el parámetro de intercepto de área pequeña.
+% aunque puede incluirse dentro de $\boldsymbol{x}_{ij}^{T}$, se prefiere mantener explícitamente en el componente lineal.
+% esto para resaltar el hecho de que la parametrización centrada es necesaria para evitar problemas de identificación\footnote{Es decir, que no se confundan sus efectos.} entre $\mu_{i}$ y $\lambda_{i}$.
+En general, esta representación es más simple, ya que no incorporamos la estructura de errores anidados (es decir, efectos aleatorios) y no es necesario recurrir a la familia CSN en virtud que solo requiere el proceso de truncamiento oculto de la \autoref{subsec:truncamiento-oculto}.\footnote{Esto debido a que el proceso de truncamiento oculto es menos costoso en términos computacionales que escribir directamente las densidades normales sesgadas.} De forma concreta, se emplea el siguiente mecanismo de selección para la área $i$, sea
+\begin{equation}
+\label{eq:truncamiento-oculto}
+%\begin{bmatrix}
+%U_{i1}  \\ \vdots \\ U_{iN_{i}} \\ W_{i}
+%\end{bmatrix} \sim N_{N_{i}+1}\left(
+%\begin{bmatrix}
+%\mu_{i} + \boldsymbol{x}_{1j}^{T}\boldsymbol{\beta} - \sigma\frac{\sqrt{\frac{2}{\pi}\rho_{i}^{2}}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}} \\  \vdots \\ \mu_{i} + \boldsymbol{x}_{1j}^{T}\boldsymbol{\beta} - \sigma\frac{\sqrt{\frac{2}{\pi}\rho_{i}^{2}}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}}  \\ 0
+%\end{bmatrix}
+\begin{bmatrix}
+V_{i1}  \\ \vdots \\ V_{iN_{i}} \\ W_{i}
+\end{bmatrix} \sim N_{N_{i}+1}\left(
+\begin{bmatrix}
+\mu_{i}\boldsymbol{1}_{N_{i}} + X_{i}\boldsymbol{\beta} - \sigma\frac{\sqrt{\frac{2}{\pi}\rho_{i}^{2}}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}}\boldsymbol{1}_{N_{i}} \\ 0
+\end{bmatrix},\,
+\frac{\sigma^{2}}{1-\frac{2}{\pi}\rho_{i}^{2}}
+\begin{bmatrix}
+1 & \cdots & \rho_{i}^{2} &  \rho_{i} \\
+\vdots & \ddots & \vdots &  \vdots \\
+\rho_{i}^{2} & \cdots & \rho_{i}^{2} &  \rho_{i} \\
+\rho_{i} & \cdots & \rho_{i} &  1 \\
+\end{bmatrix}
+\right),
+\end{equation}
+y definimos $y_{ij}\triangleq V_{ij}$ o $\boldsymbol{y}_{i} \triangleq\boldsymbol{V}_{i}$ siempre que $W_{i}>0$. En este caso, ya se centraron los parámetros de localidad y escala para aliviar en parte la dificultad sobre la inferencia de este modelo. Es útil recordar que al definir $y_{ij}$ como arriba, entonces por los resultados de la \autoref{subsec:truncamiento-oculto}, la distribución marginal de $y_{ij}$ es como se muestra en la \autoref{eq:modelo-log-normal-sn}. A continuación escribimos la verosimilitud del modelo asociada a los $M$ dominios, haciendo uso de esta representación estocástica, sea $\boldsymbol{\theta}=(\rho_{1:M}, \sigma^{2}, \mu_{1:M}, \boldsymbol{\beta})$,
+\begin{align}
+\label{eq:modelo-logsn}
+\begin{aligned}
+p(\boldsymbol{y}_{1},\,\ldots,\, \boldsymbol{y}_{M},\, w_{1:M} \mid \boldsymbol{\theta}) &=\prod_{i=1}^{M}\Bigg[\prod_{j=1}^{N_{i}} N(y_{ij}\mid \eta_{ij},\, \sigma^{2}_{i})\Bigg] \, 2N(w_{i} \mid 0,\, \sigma^{2\star}_{i})I_{(0,\, \infty)}(w_{i}) \\
+\eta_{ij}  &\triangleq \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + \rho_{i}w_{i} - \sigma\rho_{i}\sqrt{2/\pi}  \\
+\sigma_{i}^{2} &\triangleq \sigma^{2}(1-\rho_{i}^{2})/(1-2\rho_{i}^{2}/\pi)) \\
+\sigma_{i}^{2\star} &\triangleq \sigma^{2} /(1-2\rho_{i}^{2}/\pi)).
+\end{aligned}
+\end{align}
+Note que $w_{1:M}$ son variables no observadas, generadas durante el proceso de truncamiento oculto. De forma técnica, no es preciso denominar `verosimilitud' a densidad en la \autoref{eq:modelo-logsn}, ya que no observamos a $w_{1:M}$.
+%Por otro lado, podemos obtener la `verdadera' verosimilitud por medio de $p(\boldsymbol{y} \mid w_{1:M}, \theta)=p(\boldsymbol{y} , w_{1:M} \mid \boldsymbol{\theta}) / p(w_{1:M} \mid \boldsymbol{\theta})$.
+
+
+\section{Modelo probit sesgado latente}
+\label{sec:modelo-probit}
+
+Esta sección inicia mostrando el planteamiento general del modelo probit a partir de la técnica de variable latente. Luego, al igual que en la sección previa, se escribe la verosimilitud del modelo. Podemos mencionar que el procedimiento para obtener este modelo es bastante similar a obtener el modelo log-normal sesgado, salvo dos diferencias principales:
+\begin{enumerate}
+\item Se fija $\sigma^{2}\equiv 1$, de tal modo que se obtiene cierta simplificación en las expresiones involucradas en la verosimilitud y distribución \textit{a priori}, como se verá más adelante.
+\item Se emplea una variable latente que desempeña el rol de `intermediario' entre el proceso truncamiento oculto y la respuesta binaria observada.
+\end{enumerate}
+
+
+Sea $e_{ij}\sim SN(0, 1, \lambda_{i})$, de modo que $Z_{ij}\triangleq \mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij} \sim SN(\mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, 1,\, \lambda_{i})$, en este momento no se insiste en centrar los parámetros de localidad y escala. Definimos la variable aleatoria $Y_{ij}$ como
+\begin{align}
+\label{eq:yij-binary}
+Y_{ij} &= 
+\begin{cases}
+1 & \text{ si } Z_{ij}>\delta_{0} \\
+0 & \text{ si } Z_{ij}<\delta_{0}
+\end{cases},
+\end{align}
+con $\delta_{0}\in\mathbb{R}$, entonces $Y_{ij} \, \mid\, p_{ij}\sim \text{Bern}(p_{ij})$, donde
+\begin{align}
+\begin{aligned}
+p_{ij}&\triangleq \mathbb{P}(Z_{ij}>\delta_{0}) \\
+&= \mathbb{P}(\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij}> \delta_{0}) \\
+&= 1 - \mathbb{P}(e_{ij} < \delta_{0} - \mu_{i} - \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}) \\
+&= 1 - \Phi_{SN}(\delta_{0}-\mu_{i}-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta};\, \lambda_{i}),
+\end{aligned}
+\end{align}
+de esta forma, se define el modelo probit cuya función liga es la distribución normal sesgada, $\delta_{0}$ es el umbral que permite obtener $y_{ij}\in\{0,\, 1\}$. Se observa que, si fijamos $\delta_{0} = 0$ y $\lambda_{i} = 0$, obtenemos el modelo probit usual, ya que
+\begin{align*}
+p_{ij} &= 1-\Phi_{SN}(-\mu_{i}-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta};\, 0)=\Phi(\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}),
+\end{align*}
+por simetría de $\Phi$. Así mismo, con respecto a la identificación del modelo, es posible notar dos aspectos:
+\begin{enumerate}
+\item El problema de dejar que $\delta_{0}$ tome cualquier valor en $\mathbb{R}$, es que su efecto se confunde con el intercepto $\mu_{i}$, esto es:
+\begin{align}
+1 - \Phi_{SN}(\delta_{0}-\mu_{i}-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta};\, \lambda_{i}) &= 1 - \Phi_{SN}((\delta_{0}+c)-(\mu_{i}+c)-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta};\, \lambda_{i}),
+\end{align}
+es decir, para cualquier real $c$, las cantidades $(\mu_{i}, \boldsymbol{\beta}, \delta_{0})$ y $(\mu_{i}+c, \boldsymbol{\beta}, \delta_{0}+c)$ son indistingibles. Por tanto, a partir de ahora, fijamos $\delta_{0} = 0$ por identificación de estos parámetros.
+
+\item En el modelo probit usual, se fija $\sigma^{2}\equiv 1$, ya que de otra forma se estimaría $(\mu_{i}/\sigma, \boldsymbol{\beta}/\sigma)$ en lugar de $(\mu_{i}, \boldsymbol{\beta})$:
+\begin{align}
+\Phi(\frac{1}{\sigma}(\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta})) &= \Phi(\frac{\mu_{i}}{\sigma} + \boldsymbol{x}_{ij}^{T}\frac{\boldsymbol{\beta}}{\sigma}).
+\end{align}
+Similar al caso previo, si consideramos centrar el parámetro de escala en la distribución normal sesgada -esto es, $e_{ij}\sim(0,\, 1/\sqrt{\Var[{e_{ij}}]},\, \lambda_{i})$-, no es suficiente especificar $\sigma^{2}\equiv 1$, ya que aún así se estimaría $(\sqrt{\Var{[e_{ij}}]}\,\mu_{i}, \, \sqrt{\Var{[e_{ij}]}}\,\boldsymbol{\beta})$ en lugar de $(\mu_{i}, \boldsymbol{\beta})$:
+\begin{align}
+1-\Phi_{SN}(\Var{[e_{ij}]}\, (-\mu_{i}-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta})) &= 1- \Phi_{SN}(-\sqrt{\Var{[e_{ij}]}}\,\mu_{i} - \boldsymbol{x}_{ij}^{T}\sqrt{\Var{[e_{ij}]}}\,\boldsymbol{\beta}),
+\end{align}
+donde $\Var{[e_{ij}]} = 1-2\rho_{i}^{2}/\pi$. En el \hyperlink{anexo1}{Anexo 1} se cubre brevemente el concepto de idetificabilidad en un modelo estadístico.
+\end{enumerate}
+A continuación, se presenta el enfoque de variable latente, el cuál sortea los posibles problemas de identificación del modelo al emplear una estrategia similar a la técnica de aumentación de datos, así mismo, el método es análogo al desarrollado por \textcite{albert-chib:1993}. Sea $\boldsymbol{\theta}=(\rho_{i}, \sigma^{2}, \mu_{i}, \boldsymbol{\beta})$; ya se observó que $Y_{ij} \mid p_{ij} \sim \text{Bern}(p_{ij})$ y además $p(z_{ij} \mid \boldsymbol{\theta})$ $=$ $SN(z_{ij} \mid \mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, 1,\, \lambda_{i})$, obtengamos la distribución conjunta $p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta})$, para ello, escribimos $p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta})$ $=$ $p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta})\, p(z_{ij} \mid \boldsymbol{\theta})$, por el planteamiento, ya conocemos a esta última densidad y sólo hace falta determinar $p(y_{ij}\mid z_{ij}, \boldsymbol{\theta})$, para tal propósito, note que $Y_{ij}\in\{0,\, 1\}$, entonces, para $Y_{ij}=1$:
+\begin{align}
+\begin{aligned}
+\mathbb{P}(Y_{ij}=1\mid Z_{ij},\, \boldsymbol{\theta}) &= P(Y_{ij}=1\, \mid \, Z_{ij}) \\
+&= \mathbb{P}(Y_{ij}=1 \mid Z_{ij} > 0 ) + \cancelto{0}{P(Y_{ij}=1 \mid Z_{ij} < 0 )} \\
+&= \mathbb{P}(Y_{ij}=1 \mid Z_{ij} > 0 ) = 1,
+\end{aligned}
+\end{align}
+empleando un argumento análogo obtenemos $P(Y_{ij}=0\mid Z_{ij},\, \boldsymbol{\theta})=1$. Con estas dos expresiones, podemos notar que $Y_{ij}\mid Z_{ij},\, \boldsymbol{\theta}$ es una variable aleatoria degenerada, ya que está completamente determinada por el signo de $Z_{ij}$, así, esta función de densidad condicional está dada por
+\begin{align}
+p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta}) &= 1(y_{ij}=1)1(z_{ij}>0) + 1(y_{ij}=0)1(z_{ij}<0),
+\end{align}
+desde un punto de vista numérico es evidente que esta expresión siempre evalúa a uno para todos todos los valores de su soporte. Ahora bien, juntando estas dos densidades, podemos expresar la densidad conjunta $p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta})$ como
+\begin{align}
+\label{eq:pre-modelo-probitsn}
+\begin{aligned}
+p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta}) &= p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta}) \, p(z_{ij} \mid \boldsymbol{\theta}) \\
+&= \left[ 1(y_{ij}=1)1(z_{ij}>0) + 1(y_{ij}=0)1(z_{ij}<0) \right] \, SN(z_{ij} \mid \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, 1,\ \lambda_{i}), 
+\end{aligned}
+\end{align}
+este enfoque nos permite realizar inferencia en la variable latente $z_{ij}$ como si se tratara de un modelo de regresión lineal usual \parencite{albert-chib:1993}. Una vez planteado el modelo, podemos usar el mismo proceso de truncamiento oculto de la \autoref{eq:truncamiento-oculto} -fijando $\sigma^{2}\equiv 1$- para expresar la densidad normal asimétrica $p(z_{ij} \mid \boldsymbol{\theta})$ en la \autoref{eq:pre-modelo-probitsn}. De forma análoga, si definimos $Z_{ij}=V_{ij}$ siempre que $W_{i}>0$, para la observación $(i, j)$ se tiene que
+\begin{align*}
+p(y_{ij},\, z_{ij},\, w_{i} \mid \boldsymbol{\theta}) &\equiv p(y_{ij} \mid z_{ij},\, w_{i},\, \boldsymbol{\theta})\, p(z_{ij}\mid w_{i},\, \boldsymbol{\theta})\, p(w_{i}\mid \, \boldsymbol{\theta}) \\
+&=p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta})\, p(z_{ij} \mid \boldsymbol{\theta})\, p(w_{i},\, \boldsymbol{\theta}) \\
+&= 1(y_{ij}, z_{ij})\, N(z_{ij}\, \mid\, \eta_{ij},\, \sigma^{2}_{i}) \, 2N(w_{i} \, \mid\, 0,\, \sigma^{2\star}_{i})\, I(w_{i}>0),
+\end{align*}
+con $1(y_{ij}, z_{ij})$ $\triangleq$ $\left[ 1(y_{ij}=1)1(z_{ij}>0) + 1(y_{ij}=0)1(z_{ij}<0) \right]$, de manera adicional, $\eta_{ij}$, $\sigma^{2}_{i}$ y $\sigma^{2\star}_{i}$ se definen en la \autoref{eq:modelo-logsn}, salvo que $\sigma^{2}\equiv 1$. Notamos que $Y_{ij}$ depende sólo del signo de $Z_{ij}$ -esta es la parte latente-, mientras que $Z_{ij}$ se genera a partir de truncamiento oculto con $W_{i}$. Procediendo de forma análoga a la sección previa, ahora escribimos la verosimilitud del modelo asociada a los $M$ dominios y a los $N_{i}$ objetos en cada uno de ellos,
+\begin{align}
+\begin{aligned}
+&p(\boldsymbol{y}_{1},\, \ldots,\, \boldsymbol{y}_{M},\, \boldsymbol{z}_{1},\, \ldots,\, \boldsymbol{z}_{M},\, {w}_{1:M} \mid \boldsymbol{\theta}) \\
+&\equiv \prod_{i=1}^{M}\Bigg[\prod_{j=1}^{N_{i}} p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta}) \, p(z_{ij} \mid \boldsymbol{\theta}) \Bigg] \, p(w_{i}\mid \boldsymbol{\theta}) \\
+&=\prod_{i=1}^{M}\Bigg[\prod_{j=1}^{N_{i}}
+1(y_{ij}, z_{ij}) \, N(z_{ij} \mid \eta_{ij},\, \sigma^{2}_{i})\Bigg]\, 2N(w_{i}\mid 0,\, \sigma^{2\star})\,1_{(0,\, \infty)}(w_{i}).
+\end{aligned}
+\end{align}
+
+
+\begin{comment}
+
+% Me parece que no es necesaria esta sección, ya que el modelo Stan no necesita conocer y_{ij} explicitamente, sino unicamente las posiciones de los 0's y 1's para poner las restricciones a z
+%
+%
+\subsection{Suma sobre observaciones \texorpdfstring{$y_{ij}$}{} binarias faltantes}
+
+En la Sección 2.7 se presentó la distribución \textit{a priori} para realizar búsqueda estocástica de variables, y se consideró una modificación a esta distribución, la cuál consistía en integrar fuera la variable aleatoria Bernoulli que denota la inclusión de cierta covariable, la motivación es que en el lenguaje de programación \code{Stan} no soporta trabajar con parámetros, es decir variables aleatorias, discretas. Ahora bien, para el caso de las observaciones $y_{ij}$ no muestreadas, es necesario proceder de forma análoga: marginalizamos fuera mediante una integral -o suma- estas variables de la distribución \textit{a posteriori} en la Ecuación 3.x.
+
+
+No obstante, antes de presentar el caso general, mostramos un escenario más simple: suponemos que tenemos una sola área pequeña, dos unidades y solo se muestrea una, es decir, $M=1$, $N_{1}=2$ y $n_{1}=1$. Sea $y_{11}$ la unidad observada y $y_{12}$ la unidad faltante. La densidad \textit{a posteriori} es proporcional a
+% \begin{align*}
+% p(\boldsymbol{\theta} \mid \boldsymbol{y}, \boldsymbol{z}, \boldsymbol{w}) &\propto
+% \prod_{i=1}^{M}\prod_{j=1}^{N_{i}} \bigg\{\left[ 1(y_{ij}=1)1(z_{ij}>0) + 1(y_{ij}=0)1(z_{ij}\leq 0) \right] \\
+% & \times  \phi_{Z_{ij} \mid W_{i}}(z_{ij} \mid \eta_{ij}, \sigma_{i}^{2}) \times 2\phi_{W_{i}}(w_{i}) 1_{(0, \infty)}(w_{i}) \times \dfrac{\sqrt{1+\rho_{i}^{2}}}{1-\rho_{i}^{2}} \bigg\}
+% \end{align*}
+% Multiplicamos $\sum\limits_{i=1}^{M} N_{i}$ términos, podemos separar cada término
+% Podríamos `agrupar' el modelo en hogares muestreados y no muestreados, es decir de acuerdo a los $y_{ij}$ observados y $y_{ij}$ faltantes
+% Consideremos un escenario sencillo, donde tenemos un sólo municipio, dos hogares y solo muestreamos uno
+\begin{align*}
+p(\boldsymbol{\theta} \mid \boldsymbol{y}, \boldsymbol{z}, \boldsymbol{w}) &\propto \bigg\{\left[ 1(y_{11}=1)1(z_{11}>0) + 1(y_{11}=0)1(z_{11}\leq 0) \right]\times \\
+&  \underbrace{\phi_{Z_{11} \mid W_{1}}(z_{11} \mid \eta_{11}, \sigma_{1}^{2}) \bigg\} \hspace{5.2cm}}_{p_{11}}  \\ 
+ & \times \bigg\{\left[ 1(y_{12}=1)1(z_{12}>0) + 1(y_{12}=0)1(z_{12}\leq 0) \right] \times \\
+&  \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2})\bigg\} \times \underbrace{2\phi_{W_{1}}(w_{1}) 1_{(0, \infty)}(w_{1})}_{f_{W_{1}}(w_{1})} \times \underbrace{\dfrac{\sqrt{1+\rho_{1}^{2}}}{1-\rho_{1}^{2}}}_{\pi(\boldsymbol{\theta}_{1})},
+\end{align*}
+donde definimos
+\begin{align*}
+\eta_{ij}&\triangleq \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}-\rho_{i}w_{i} , \\
+\sigma^{2}_{i} &\triangleq 1-\rho_{i}^{2},
+\end{align*}
+aquí $p_{11}$ denota la parte del modelo asociada a la observación $y_{11}$; luego, escribimos
+\begin{align*}
+p(\boldsymbol{\theta} \mid \boldsymbol{y}, \boldsymbol{z}, \boldsymbol{w}) &\propto f_{W_{1}}(w_{1})\times \pi(\boldsymbol{\theta}_{1})\times p_{11}  \\ 
+\times &\bigg\{\left[ 1(y_{12}=1)1(z_{12}>0) + 1(y_{12}=0)1(z_{12}\leq 0) \right] \times \\
+&  \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2}) \bigg\},
+\end{align*}
+sea $C$ la constante de normalización\footnote{Note que $C$ no depende de los valores de $y_{ij}$, de otro modo, sería variable y estaría involucrada en el kernel de la densidad \textit{a posteriori}.}, la usamos para escribir la igualdad
+\begin{align*}
+p(\boldsymbol{\theta} \mid \boldsymbol{y}, \boldsymbol{z}, \boldsymbol{w}) &= C\times f_{W_{1}}(w_{1})\times \pi(\boldsymbol{\theta}_{1})\times p_{11}  \\ 
+\times &\bigg\{\left[ 1(y_{12}=1)1(z_{12}>0) + 1(y_{12}=0)1(z_{12}\leq 0) \right] \times \\
+&  \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2}) \bigg\},
+\end{align*}
+ahora, sumamos $y_{12}$ en la distribución \textit{a posteriori}, escribimos
+\begin{align*}
+\sum_{y_{12}\in\{0, 1\}} p(\boldsymbol{\theta} \mid \boldsymbol{y}, \boldsymbol{z}, \boldsymbol{w}) &= \sum_{y_{12}\in\{0, 1\}} \bigg\{C\times f_{W_{1}}(w_{1}) \times \pi(\boldsymbol{\theta}_{1})\times p_{11} \times \\
+&[ 1(y_{12}=1)1(z_{12}>0) + 1(y_{12}=0)1(z_{12}\leq 0) ]\times \\
+&   \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2}) \bigg\} \\
+&= C\times f_{W_{1}}(w_{1}) \times \pi(\boldsymbol{\theta}_{1})\times p_{11} \times \\
+\sum_{y_{12}\in\{0, 1\}}& \bigg\{[ 1(y_{12}=1)1(z_{12}>0) + 1(y_{12}=0)1(z_{12}\leq 0) ]\bigg\} \times \\
+&   \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2}) \\
+\sum_{y_{12}\in\{0, 1\}} p(\boldsymbol{\theta} \mid \boldsymbol{y}, \boldsymbol{z}, \boldsymbol{w}) &= C\times f_{W_{1}}(w_{1}) \times \pi(\boldsymbol{\theta}_{1})\times p_{11} \times \\
+&\underbrace{[1(z_{12}>0) + 1(z_{12}\leq 0) ] \times  \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2})}_{\equiv \; \phi_{Z_{12} \mid W_{1}}} \\
+&=C\times f_{W_{1}}(w_{1}) \times \pi(\boldsymbol{\theta}_{1})\times p_{11} \times  \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12}, \sigma_{1}^{2}),
+\end{align*}
+note que solo las funciones indicadoras dependen de los valores que toma la observación faltante $y_{12}$ y ahora removimos esta dependencia. Al sumar sobre $y_{12}$, la aportación al modelo de la observación faltante es por medio de la normal sin truncamiento $Z_{12}|W_{1}$, así, incorporamos información de las covariables al modelo mediante $\eta_{12}$. Por otro lado, no consideramos áreas sin al menos una unidad, en otras palabras, no hay que explorar el caso donde $N_{i}\geq 1$ y $n_{i}=0$.
+
+De modo similar, cuando tenemos más unidades muestreadas y faltantes, el razonamiento es el mismo: dado que podemos separar cada término de la verosimilitud, cada suma sobre las observaciones perdidas se hace de forma separada, es decir tratamos el resto de términos -asociados a observaciones faltantes y observados- como una constante. Esto se muestra en el Anexo C.1. 
+\end{comment}
+
+
+\section{Modelo probit ordenado sesgado latente}
+\label{sec:modelo-probit-ordenado}
+
+En este apartado consideramos la extensión del modelo probit sesgado latente cuando tenemos más de dos categorías y es posible ordenarlas, en otras palabras, la respuesta es ordinal. La deducción del modelo es análoga al caso del modelo binario, pero con algunas diferencias: quizás las características más relevantes son el uso de la distribución categórica en la respuesta -que generaliza la distribución Bernoulli- y la restricciones que se impone en los puntos de corte o umbrales, además de que fijamos el primero de ellos para poder identificar, y por lo tanto, estimar el resto de estos.
+
+Nuevamente, sea $e_{ij}\sim SN(0, 1, \lambda_{i})$, de modo que $Z_{ij}\triangleq \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij} \sim SN(\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, 1,\, \lambda_{i})$. Definimos la variable aleatoria $Y_{ij}$ como
+\begin{align*}
+Y_{i} &=
+\begin{cases}
+0 & \text{ si } -\infty  <Z_{i} \leq \delta_{0} \\ 
+1 & \text{ si } \phantom{xx,}\delta_{0} < Z_{i} \leq \delta_{1} \\
+\ldots \\
+k-1 & \text{ si } \phantom{x}\delta_{k-1} < Z_{i} \leq \delta_{k} \\
+k & \text{ si } \phantom{lllll} \delta_{k} < Z_{i} < \infty
+\end{cases},
+\end{align*}
+entonces $Y_{i}\mid{p}_{0:k}\sim \text{Cat}(p_{0},\, \ldots, p_{k})$, esto es, multinomial con $n=1$. Ahora, definimos $\delta_{-1}=-\infty$ y $\delta_{k+1}=\infty$, entonces
+\begin{align*}
+p_{ij} &= \mathbb{P}(\delta_{i-1} < Z_{ij} \leq \delta_{i}) \\
+&= \mathbb{P}(\delta_{i-1} <  \mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij} \leq \delta_{i}) \\ 
+&= \mathbb{P}(\delta_{i-1} - \mu_{i} -\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} < e_{ij} \leq \delta_{i} - \mu_{i} - \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} ) \\ 
+&=\Phi_{SN}(\delta_{i-1}-\mu_{i}-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}) - \Phi_{SN}(\delta_{i}-\mu_{i}-\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}),
+\end{align*}
+de forma análoga a la sección anterior, así definimos el modelo probit ordenado sesgado, los $\delta_{i}$ son los umbrales que permiten obtener $y_{ij}\in\{0,\, 1,\, \ldots,\, k\}$. Note que para obtener $k$ categorías, es necesario definir $k-1$ umbrales $\delta_{i}$, los cuales están ordenados, es decir
+\begin{align*}
+-\infty \equiv \delta_{-1} < \delta_{0} < \delta_{1} < \ldots < \delta_{k} < \delta_{k+1} \equiv \infty,
+\end{align*}
+sin embargo, para evitar el problema de identificación en los puntos de corte $\delta_{i}$, es necesario considerar algún tipo de restricción, por ejemplo, fijar uno de estos; la alternativa usual es asignar $\delta_{0}$ a cero, lo cuál es análogo a la restricción en la sección previa. Así mismo, como se comentó en el apartado previo, también establecemos $\sigma^{2}\equiv 1$.
+
+Luego, se procede de forma análoga al modelo probit, el siguiente paso es emplear el método de variable latente: ya observamos que $Y_{ij} \, \mid p_{0:k} \sim \text{Cat}(p_{0}, p_{1}, \ldots, p_{k})$ y $Z_{ij}\sim SN(\mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, 1,\, \lambda_{i})$, además, sea $\boldsymbol{\theta}=(\rho_{i}, \delta_{1:k}, \mu_{i}, \boldsymbol{\beta})$, note que se desea hacer inferencia sobre los puntos de corte $\delta_{1}$ al $\delta_{k}$. Para continuar el desarrollo, se obtiene la distribución conjunta $p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta})$, para ello, escribimos $p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta})$ $=$ $p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta})\, p(z_{ij} \mid \boldsymbol{\theta})$, por el planteamiento, ya conocemos a esta última densidad y sólo hace falta determinar $p(y_{ij}\mid z_{ij},\, \boldsymbol{\theta})$, y para tal propósito, note que $Y_{ij}\in\{0,\, 1,\, \ldots,\, k\}$, entonces, para $Y_{ij}=c$:
+\begin{align*}
+\mathbb{P}(Y_{ij}=c\mid Z_{ij}, \, \boldsymbol{\theta}) &= P(Y_{ij}=c\, \mid \, Z_{ij}) \\
+&= P(Y_{ij}=c \mid Z_{ij} \in(\delta_{c-1},\, \delta_{c}]) + \cancelto{0}{P(Y_{ij}=c \mid Z_{ij} \not\in(\delta_{c-1},\, \delta_{c}])} \\
+&= P(Y_{ij}=c \mid Z_{ij} \in(\delta_{c-1},\, \delta_{c}) ) = 1,
+\end{align*}
+dado que $c\in\{0,\, 1,\, \ldots,\, k\}$, podemos notar que $Y_{ij}\mid Z_{ij},\, \boldsymbol{\theta}$ es una variable aleatoria degenerada, ya que está completamente determinada por el intervalo al que pertenece $Z_{ij}$, así, su función de densidad está dada por\footnote{En el último umbral se abusa de la notación ya que $z_{ij}\in(\delta_{k-1},\, \infty]$!.}
+\begin{align*}
+p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta}) &= \sum_{c=0}^{k} 1(y_{ij}=c)\, 1\left(z_{ij}\in(\delta_{c-1},\, \delta_{c}]\right)
+\end{align*}
+desde un punto de vista numérico, es evidente que esta densidad siempre evalúa a uno. Ahora bien, juntando estas dos densidades, podemos expresar la densidad conjunta $p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta})$ como
+\begin{align}
+\label{eq:foo}
+p(y_{ij},\, z_{ij} \mid \boldsymbol{\theta}) &=\left[\sum_{c=0}^{k} 1(y_{ij}=c)1\left(z_{ij}\in(\delta_{c-1},\, \delta_{c}]\right)\right]\, SN(z_{ij} \mid \mu_{i} + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta},\, 1,\, \lambda_{i}).
+\end{align}
+Empleando un argumento similar a las dos secciones previas, empleamos el mismo proceso el truncamiento oculto de la \autoref{eq:truncamiento-oculto} para expresar la densidad normal asimétrica $p(z_{ij}\mid\boldsymbol{\theta})$ en la \autoref{eq:foo}. De forma análoga, si definimos definimos $Z_{ij}=V_{ij}$ siempre que $W_{i}>0$, para la observación $(i, j)$ se tiene que
+\begin{align}
+\begin{aligned}
+p(y_{ij},\, z_{ij},\, w_{i},\, \boldsymbol{\theta}) &\equiv p(y_{ij} \mid z_{ij},\, w_{i},\, \boldsymbol{\theta})\, p(z_{ij}\mid w_{i},\, \boldsymbol{\theta})\, p(w_{i}\mid \, \boldsymbol{\theta}), \\
+&=p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta})\, p(z_{ij} \mid \boldsymbol{\theta})\, p(w_{i},\, \boldsymbol{\theta}) \\
+&= 1(y_{ij}, z_{ij}, \delta_{0:k}) \times \\
+&\phantom{=x}N(z_{ij}\, \mid\, \eta_{ij},\, \sigma^{2}_{i}) \, N(w_{i} \, \mid\, 0,\, \sigma^{2\star}_{i})\, I(w_{i}>0),
+\end{aligned}
+\end{align}
+con $1(y_{ij}, z_{ij}, \delta_{0:k})$ $\triangleq$ $\sum_{c=1}^{k}1(y_{ij}=c)\, 1(z_{ij} \in (\delta_{c-1}, \, \delta_{c}])$, de manera adicional, $\eta_{ij}$, $\sigma^{2}_{i}$ y $\sigma^{2\star}_{i}$ se definen en la \autoref{eq:modelo-logsn}, salvo que $\sigma^{2} \equiv 1$. De forma análoga, notamos que $Y_{ij}$ depende sólo del intervalo al que $Z_{ij}$ pertenece -esta es la parte latente-, mientras que $Z_{ij}$ se genera a partir de truncamiento oculto con $W_{i}$. Finalmente,
+%procediendo de forma análoga a la sección previa, ahora
+escribimos la verosimilitud del modelo asociada a los $M$ dominios y a los $N_{i}$ objetos en cada uno de ellos,
+\begin{align}
+\begin{aligned}
+&p(\boldsymbol{y}_{1},\, \ldots,\, \boldsymbol{y}_{M},\, \boldsymbol{z}_{1},\, \ldots,\, \boldsymbol{z}_{M},\, {w}_{1:M} \mid \boldsymbol{\theta}) \\
+& \equiv \prod_{i=1}^{M}\Bigg[\prod_{j=1}^{N_{i}} p(y_{ij} \mid z_{ij},\, \boldsymbol{\theta}) \, p(z_{ij} \mid \boldsymbol{\theta}) \Bigg] \, p(w_{i}\mid \boldsymbol{\theta}) \\
+&=\prod_{i=1}^{M}\Bigg[\prod_{j=1}^{N_{i}}
+1(y_{ij}, z_{ij}, \delta_{0:k}) \, N(z_{ij} \mid \eta_{ij},\, \sigma^{2}_{i})\Bigg]\, 2N(w_{i}\mid 0,\, \sigma^{2\star})\,1_{(0,\, \infty)}(w_{i}),
+\end{aligned}
+\end{align}
+
+
+\begin{comment}
+
+% Al igual que en el probit, no es necesario calcular esto
+%
+%
+\subsection{Suma sobre observaciones \texorpdfstring{$y_{ij}$ ordinales faltantes}{}}
+
+Procedemos de forma análoga a la Sección 5.5.6, por tal motivo, iniciamos con un caso simple: consideramos $M=1$, $N_{i}=2$ y $n_{i}=1$, suponemos que $y_{11}$ es observado\footnote{No es necesario insistir en la categoría donde toma valores.} y $y_{12}$ no se muestreo, así, el modelo puede ser escrito como
+\begin{align*}
+p(\boldsymbol{\theta} \mid \boldsymbol{y},\, \boldsymbol{z},\, \boldsymbol{w}) &\propto \prod_{i=1}^{M}\prod_{j=i}^{N_{i}} p_{ij}\, f_{W_{i}}(w_{i}) \, \pi_{i}(\boldsymbol{\theta}) \\
+&= p_{11} \, p_{12} \, f_{W_{1}}(w_{1}) \, \pi_{1}(\boldsymbol{\theta}),
+\intertext{ahora, multiplicamos por $C$ -la constante de normalización- para escribir la igualdad y tomamos la suma sobre $y_{12}$}
+\sum_{y_{12}\in\{0,\, 1\}} p(\boldsymbol{\theta} \mid \boldsymbol{y},\, \boldsymbol{z},\, \boldsymbol{w}) &= \sum_{y_{12}\in\{0,\, 1\}} p_{11}\, p_{12}\, f_{W_{1}}(w_{1}) \, \pi_{1}(\boldsymbol{\theta}) \\
+&= C\,p_{11}\, f_{W_{1}}(w_{1}) \, \pi_{1}(\boldsymbol{\theta}) \sum_{y_{12}\in\{0,\, 1\}} p_{12} \\
+&= C\,p_{11}\, f_{W_{1}}(w_{1}) \, \pi_{1}(\boldsymbol{\theta}) \sum_{y_{12}\in\{0,\, 1,\, \ldots,\, c\}} \left[\sum_{c=0}^{K} 1(y_{ij} = c)\, 1(z_{12} \in(\delta_{c-1},\, \delta_{c}])\right] \\
+& \quad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\qquad\times\phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12},\, \sigma^{2}_{1}) \\
+&=\,p_{11}\, f_{W_{1}}(w_{1}) \, \pi_{1}(\boldsymbol{\theta}) \\
+&\times \left[1(z_{12} \in(-\infty,\, \delta_{0}]) + 1(z_{12} \in(\delta_{0},\, \delta_{1}]) + \ldots + 1(z_{12} \in(\delta_{K-1},\, \infty))\right] \\
+&\times \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12},\, \sigma^{2}_{1}) \\
+&= C\,p_{11}\, f_{W_{1}}(w_{1}) \, \pi_{1}(\boldsymbol{\theta}) \phi_{Z_{12} \mid W_{1}}(z_{12} \mid \eta_{12},\, \sigma^{2}_{1}),
+\end{align*}
+
+
+Cuando tenemos más hogares muestreados y faltantes, el razonamiento es el mismo: dado que podemos separar cada término de la verosimilitud, cada suma sobre las observaciones perdidas se hace de forma separada, es decir tratamos el resto de términos -perdidos y observados- como una constante. Aunque podemos plantear el caso general, es razonamiento es análogo al desarrollado en la sección previa y en el Anexo C.1.
+
+\end{comment}
+
+\section{Distribución \textit{a priori} de referencia}
+\label{sec:prior-rho}
+
+En la \autoref{sec:bayes-mcmc} se inició la discusión introduciendo el paradigma Bayesiano de la estadística y el matiz derivado de los enfoques subjetivo y objetivo, ambos determinados a través de la distribución \textit{a priori}. Algunas ventajas del paradigma Bayesiano es que permite generar resultados más ricos en contenido que el tratamiento frecuentista o clásico, ya que entre otras cosas, es posible estimar facilmente funciones de interés a partir de la muestra \textit{a posteriori}, de igual modo, los intervalos de credibilidad miden la certeza con que cierto parámetro esté contenido en algún subconjunto de $\mathbb{R}$. Sin embargo, usualmente el costo de oportunidad es la complejidad computacional, en contraste con los métodos frecuentistas que son más simples en su aplicación, y la necesidad de especificar distribuciones \textit{a priori}.\footnote{No obstante, no siempre es el caso, por ejemplo, con modelos conjugados o simples en los que la inferencia se realiza de forma cerrada.}
+
+Dentro del contexto de modelos en áreas pequeñas, se busca hacer más robusta la inferencia sobre estimaciones y pronósticos al tomar información prestada de otros dominios, en este sentido, el enfoque Bayesiano subjetivo brinda una método formal para inyectar en el modelo información previa o relevante, especialmente cuando los datos disponibles son escasos, y de este modo, contribuir al estudio. Sin embargo, también es posible que la influencia de la distribución \textit{a priori} domine a la verosimilitud, es decir, a la muestra observada del modelo paramétrico asumido, provocando que no sea posible aprender acerca de los datos. En los tres modelos propuestos, se plantea seguir un enfoque objetivo
+%motivado por el propósito de
+para generar resultados reproducibles e imparciales, además de que no se cuenta con el conocimiento experto para introducir información previa.
+
+A pesar de que la teoría señala que no existe densidad \textit{a priori} que no aporte ninguna información al modelo, \textcite{objetive-priors} señalan que la elección de esta a partir de reglas formales o principios que reflejan nulo estado de conocimiento (como el de Laplace o razón insuficiente) y no en información previa o creencias, es quién las considera objetivas.
+% Quizas mover esto a estadistica Bayesiana
+% En inferencia Bayesiana decimos que una distribución \textit{a-priori} es \textit{no informativa} si expresa información general, vaga o poca, sobre una variable aleatoria. También, podemos denominar a este tipo de densidades como \textit{a-priori} \textit{objetiva}, es decir, que se obtiene mediante reglas formales y no de forma subjetiva \textcite{objetive-priors, handbook-of-statistics}.
+De igual modo, estos autores describen varios métodos para obtener distribuciones \textit{a priori} objetivas, algunos de estos son:
+\begin{itemize}
+\item El método de Jeffrey, el cuál propone usar:
+\begin{align}
+\begin{aligned}
+p(\boldsymbol{\theta}) &\propto \sqrt{\det(I(\boldsymbol{\theta}))}, \\
+I(\boldsymbol{\theta}) &= \E\left\{\frac{\partial\theta_{i}}{\partial\theta_{j}\partial\theta_{i}}\, \log\, p(\boldsymbol{\theta} \mid \boldsymbol{y})\right\},
+\end{aligned}
+\end{align}
+donde $I(\boldsymbol{\theta})$ es la matriz de información esperada o de Fisher. Cuando $\boldsymbol{\theta}$ es multivariado, se hace un ajuste a este método. %¡para que se hace?
+
+
+\item El método de Laplace o principio de razón insuficiente:
+\begin{align}
+p(\boldsymbol{\theta}) &\propto 1,
+\end{align}
+es decir, se asume que cada entrada $\theta_{i}$ puede asumir, con igual probabilidad, cualquiera de los valores dentro de su soporte.
+
+\item El método de Bernardo, cuya distribución se define como la \textit{a priori} mínimamente informativa, en el sentido que maximiza la información faltante al calcular la divergencia Kullback-Leibler entre los datos observados y el modelo paramétrico asumido.
+\end{itemize}
+Continuamos este apartado explorando esta última alternativa, la cuál llamaremos distribución \textit{a priori} de referencia\footnote{Como se mencionó en la \autoref{sec:bayes-mcmc}, el adjetivo `de referencia' puede emplearse como sinónimo de objetivo o no informativo, pero aquí lo reservamos para nombrar a este método}. De acuerdo con \textcite{objetive-priors}, el método de Bernardo presenta dos innovaciones: (1) define el concepto de información faltante y (2) desarrolla un procedimiento secuencial para abordar los parámetros de ruido. De forma adicional, cuando no hay tales parámetros de ruido y se satisfacen ciertas condiciones de regularidad, la \textit{a priori} de referencia coincide con la \textit{a priori} de Jeffrey. No obstante, en general se generan densidades distintas a las de Jeffrey.
+
+A grandes rasgos, la distribución de referencia considera el escenario donde se desea realizar inferencia sobre el vector de parámetros $\boldsymbol{\theta} = (\psi,\, \omega)$, donde $\psi$ puede ser considerado como los parámetros de interés y $\omega$ como parámetros de ruido, es decir, no constituyen el interés principal. Por lo tanto, la \textit{a priori} resultante no solo depende del modelo muestral -es decir la verosimilitud del modelo-, si no que también del problema en cuestión \parencite[]{bayesian-choice}.
+% Sección 3.5.4
+
+En términos simples, la \textit{a priori} de referencia $\pi(\boldsymbol{\theta})$ será aquella que maximice la información sobre $\boldsymbol{\theta}$ con respecto a la densidad \textit{a posteriori}, la cuál se puede calcular a través de la divergencia Kullback-Leibler. En general, para obtener la distribución \textit{a priori} de referencia involucra trabajo analítico, además de que la notación que emplea es bastante compleja \parencite{bernardo:1992}.
+
+% Debería incluir el algoritmo?, no creo
+
+Ahora, el vector de parámetros de interés en el modelo log-normal sesgado está dado por
+\begin{equation}
+\boldsymbol{\theta} = \big(\rho_{1},\, \ldots, \, \rho_{M},\, \sigma^{2},\, \mu_{1},\, \ldots,\, \mu_{M},\, \boldsymbol{\beta}\big),
+\end{equation}
+y es de dimensión $2M+p+1$. Dado que la novedad principal del modelo planteado radica en la estimación de los parámetros de forma/correlación $\rho_{i}$ de cada región, podemos ordenar los elementos del vector $\boldsymbol{\theta}$ de acuerdo a su relevancia de estudio, por ejemplo
+\begin{align}
+\rho_{1} \succeq \rho_{2} \succeq \ldots \succeq \rho_{M} \succ \sigma^{2} \succ \mu_{1} \succeq \mu_{2} \succeq \ldots \succeq \mu_{M} \succeq \boldsymbol{\beta},
+\end{align}
+así, esto motiva aplicar el algoritmo de referencia para un grupo de parámetros ordenados \parencite{bernardo:1992}. \textcite{Araceli} obtuvo la distribución \textit{a priori} de referencia para este modelo, y encontró que es proporcional a
+\begin{align}
+\label{eq:reference-prior-rho}
+p(\rho_{1},\, \ldots,\, \rho_{M},\, \sigma^{2},\, \mu_{1},\, \ldots,\, \mu_{M},\, \boldsymbol{\beta}) &\propto \frac{1}{\sigma^{2}} \prod_{i=1}^{M}\frac{\sqrt{1+\rho^{2}_{i}}}{1-\rho^{2}_{i}},
+\end{align}
+alternativamente, para la transformación $\lambda_{i}={\rho}/{\sqrt{1+\rho_{i}^{2}}}$ la distribución \textit{a priori} está dada por
+\begin{align}
+\label{eq:reference-prior-lambda}
+p(\boldsymbol{\theta}) &= \frac{1}{\sigma^{2}}\left(\frac{1}{\sqrt{2}+\cosh^{-1}(\sqrt{2})}\right)^{M}\prod_{i=1}^{M} \frac{\sqrt{1-2\lambda_{i}^{2}}}{(1-\lambda^{2}_{i})^{2}},
+\end{align}
+es decir, $\rho_{1:M}$, $\sigma^{2}$, $\boldsymbol{\mu}_{1:M}$ y $\boldsymbol{\beta}$ son independientes \textit{a priori}, además de que la distribución es uniforme o plana en $\boldsymbol{\mu}_{1:M}$ y $\boldsymbol{\beta}$, análogo al principio de razón insuficiente. Motivados por esto último, es posible emplear una densidad en estos parámetros que nos resulte de mayor utilidad. En la siguiente sección, se presenta una \textit{a priori} que permite realizar búsqueda estocástica de variables, es decir, seleccionar a los elementos \textit{a posteriori} más relevantes de $\boldsymbol{\beta}$.
+
+Por otro lado, como una alternativa a la \textit{a priori} de referencia, \textcite{jeffrey-prior-sn:2007} propone una aproximación a de la regla de Jeffrey para el parámetro de forma $\lambda$ en el contexto del modelo normal sesgado, la cuál está dada por
+\begin{align}
+p(\lambda) \simeq \sqrt{\frac{2}{\pi}\left(1 + \frac{2\lambda^{2}}{\pi^{2}/4}\right)^{-3/4}},
+\end{align}
+la expresión dentro de la raíz cuadrada corresponde a la densidad de una variable aleatoria $t(a,\, b,\, d)$, donde $a=0$ es el parámetro de no centralidad, $b=\pi^{2}/4$ es el parámetro de escala y $d=1/2$ son los grados de libertad. En este mismo sentido, si empleamos como distribución \textit{a priori} $\pi(\rho) = I_{(-1,\, 1)}(\rho)$, resulta que la densidad \textit{a priori} para el parámetro de forma, es decir la transformación $\lambda = \rho/\sqrt{1-\rho^{2}}$, $\pi(\lambda)$ tiene distribución $t(0,\, 1/2,\, 2)$.\footnote{Como señalan los autores, esto ilustra como una distribución uniforme no es invariante ante transformaciones invertibles del parámetro de interés.} Sin embargo, surge un aspecto interesante a partir de la representación de la distribución $t(a,\, b,\, d)$ como una mezcla de escala normal gamma, es decir, si escribimos
+\begin{align}
+p(\lambda) &= \int N\left(\lambda \mid 0,\, \frac{b}{w}\right)\, \text{Gamma}\left(w \mid \frac{b}{2},\, \frac{b}{2}\right) \, dw,
+\end{align}
+y además, si se considera la reparametrización $\gamma = \sigma\rho$, $\alpha = \sigma\sqrt{1-\rho^{2}}$ y usamos como densidad \textit{a priori} para $(\mu,\, \sigma^{2})$ la densidad usual de Jeffrey, es decir $p(\mu,\, \sigma^{2}) \propto 1/\sigma^{2}$, entonces juntando estas partes se tiene que
+\begin{align}
+p(\mu,\, \sigma^{2},\, \lambda) &\propto \frac{1}{\alpha^{2}}\exp\left(-\frac{1}{2}\frac{\gamma^{2}w}{\alpha^{2}b}\right)\, w^{(d+1)/2} \, \exp\left(-\frac{d}{2}w\right),
+\end{align}
+lo cuál resulta en que el modelo sea conjugado y sea posible obtener las densidades condicionales completas para aplicar el método del muestreador de Gibbs, por tanto, en teoría se dispone de una alternativa para implementar un método Bayesiano variacional basado en la restricción campo medio, ya que de acuerdo con la discusión en la \autoref{subsec:mean-field}, las densidades óptimas $q^{\star}$ pueden deducirse a partir de las densidades condicionales completas.
+%\footnote{Teniendo en cuenta que distintas elecciones de $b$ y $d$ resultan en la \textit{a priori} de Jeffrey o en la transformación de la \textit{a priori} de Laplace (uniforme).}
+
+Además de esto, \textcite{elaborate-mean-field} proponen un algoritmo para realizar inferencia sobre los parámetros de la normal asimétrica univariada empleando el método campo medio para `modelos elaborados'; de acuerdo con \textcite{practical-VI, elaborate-mean-field}, se dice que un modelo es elaborado si admite una expresión jerárquica como
+\begin{align}
+\begin{aligned}
+\boldsymbol{y} \mid \boldsymbol{\theta},\, \eta &\sim p(\boldsymbol{y} \mid \boldsymbol{\theta},\, \eta) \\
+\eta\mid\boldsymbol{\theta} &\sim p(\eta\mid\boldsymbol{\theta}) \\
+\theta &\sim p(\boldsymbol{\theta}),
+\end{aligned}
+\end{align}
+no obstante, la propuesta de \textcite{elaborate-mean-field} no genera una solución analítica o cerrada, sino que depende aún de aproximaciones numéricas, específicamente integrales.
+
+
+\section{Distribución \textit{a priori} para la búsqueda estocástica de variables}
+\label{sec:prior-ssvs}
+
+% Tal vez esto al final
+%De acuerdo a la discusión en la sección previa, proponemos escribir la distribución \textit{a priori} para los parámetros del modelo como un producto de dos densidades, una que corresponde a la distribución de referencia, y otra a la técnica SVSS en los coeficientes de regresión $\boldsymbol{\beta}$, es decir
+%\begin{align*}
+%\pi(\rho_{1:M}, \sigma^{2}, \mu_{1:M}, \boldsymbol{\beta}) \equiv \pi(\rho_{1:M}, \sigma^{2}) \, \pi(\mu_{1:M}) \pi(\boldsymbol{\beta}).
+%\end{align*}
+
+
+\textcite{ssvs:1993} presentaron un método para realizar selección de variables en el contexto de regresión lineal Bayesiana, empleando el muestreador de Gibbs y se nombró selección de variables con búsqueda estocástica, \textit{stochastic search variable seleccion}, (SSVS). Como señalan los autores, esta técnica es similar al enfoque de aplicar distribuciones \textit{a priori} del tipo \textit{spike and slab} propuestas originalmente por \textcite{spike-slab}.
+
+De acuerdo con \textcite[][Capítulo 12]{mcmc-in-practice}, a diferencia de otros métodos usuales para la selección de modelos con herramientas como el AIC, $C_{p}$ de Mallow y BIC a través de los $2^p$ modelos posibles, la técnica SSVS busca estocasticamente aquellos subconjuntos `prometedores' de predictores. Este procedimiento asigna una densidad de probabilidad al conjunto de todos los modelos de regresión posibles, de forma que los modelos prominentes reciben la probabilidad más alta, y luego utiliza el muestreador de Gibbs para simular una muestra correlacionada a partir de esta distribución. De esta manera, los modelos más probables aparecen con mayor frecuencia en la muestra.
+
+De forma concreta, la metodología SSVS considera la siguiente distribución \textit{a priori} para los parámetros de regresión $\boldsymbol{\beta}$
+\begin{align}
+\beta_{k} \mid \gamma_{k} \sim (1-\gamma_{k})N(0, \tau_{k}^{2}) + \gamma_{k}N(0, c_{k}^{2}\tau_{k}^{2}),
+\end{align}
+donde $\gamma_{i}\sim \text{Bernoulli}(p_{i})$, $c_{k}$ y $\tau_{k}$ son hiperparámetros. Este método genera realizaciones de $\beta_{k}$ de acuerdo a las densidades en la \autoref{fig:ch-v-ssvs-prior}. En una realización de la distribución \textit{a posteriori}, los parámetros se estiman como cero si son generados por la densidad más concentrada, y se estiman como uno en caso contrario. En general, el uso de distribuciones \textit{a priori} en $\boldsymbol{\beta}$ tiene un efecto de encogimiento, por ejemplo, una distribución normal conduce a una regularización Ridge, una mezcla de escala normal exponencial, conduce a una regularización tipo lasso, una mezcla de escala normal gamma-inversa, al método de determinación automática de relevancia, \textit{automatic relevance determination} (ARD) entre otros.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.5\linewidth]{Figuras/c-v/SSVS-prior.pdf}
+\caption[Distribución \textit{a priori} SSVS.]{Distribución \textit{a priori} SSVS. Fuente: elaboración propia.}
+%Densidades involucradas en la densidad \textit{a priori} de SSVS con los dos valores de la intersección $\delta_{i}$.
+\label{fig:ch-v-ssvs-prior}
+\end{figure}
+
+%Capítulo 12
+Ahora, aunque es posible aprender $\tau_{i}^{2}$ y $c_{i}^{2}$ por medio de los datos, se opta por fijarlos para no agregar otro nivel o jerarquía en el análisis; por ejemplo, si consideramos que las covariables están estandarizadas, entonces están en escalas similares y podemos tomar $\tau_{i}^{2}=\tau^{2}$ y $c_{i}^{2}=c^{2}$. Por su parte, en \textcite[][]{mcmc-in-practice} mencionan que el enfoque SSVS permite seleccionar variables de acuerdo con su `significancia práctica' en lugar de significancia estadística, regresando a la idea anterior, en la \autoref{fig:ch-v-ssvs-prior} se grafícan las densidades $p(\beta_{i} \mid \gamma_{i}=0) = N(\beta_{i} \mid 0,\, \tau_{i}^{2})$ y $p(\beta_{i} \mid \gamma_{i}=1) = N(\beta_{i} \mid 0,\, \tau_{i}^{2}c_{i}^{2})$, además, no es difícil ver que estas distribuciones se interceptan en el punto $\delta_{i} = \tau_{i}\sqrt{{2c_{i}^{2}\log(c_{i})}/{(c_{i}^{2}-1)}}$. Así, $\mid \beta_{i} \mid \leq \delta_{i}$ corresponde a la región donde $N(\beta_{i} \mid 0,\, \tau_{i}^{2})$ cubre a $N(\beta_{i} \mid 0,\, \tau_{i}^{2}c_{i}^{2})$ y viceversa. 
+% Esto sugiere que $\mid\beta_{i}\mid\leq\delta_{i}$ ($\mid\beta_{i}\mid>\delta_{i}$) corresponde a $\gamma_{i} = 0$ ($\gamma_{i}=1$).
+De este modo, $\tau_{i}$ y $c_{i}$ deberían ser seleccionados de tal manera que si $\mid\beta_{i}\mid\leq\delta_{i}$, entonces preferimos establecer $\beta_{i}=0$, es decir, excluir la covariable $i$. Procediendo de esta manera, podemos fijar el valor de significancia práctica $\delta_{i}$ y proponer otro valor para $c_{i}^{2}$, que sabemos debe ser chico -para emular un pico como en \textit{spike and slab}-, de ahí podemos despejar $\tau_{i}$. En resumen, esto se interpreta como seleccionar aquellos coeficientes cuya magnitud sea mayor al umbral $\delta_{i}$. 
+
+Más adelante se implementará esta distribución \textit{a priori} en el lenguaje {Stan}, no obstante, dado que el programa no soporta variables aleatorias discretas, no es posible incluir directamente a los parámetros $\gamma_{i}$ cuya distribución es Bernoulli. La alternativa usual es integrar la densidad $p(\beta_{k}\mid\gamma_{k})$ con respecto a $\gamma_{i}$, en este caso, reemplazamos la integral por una suma, procediendo así, se obtiene que
+\begin{align}
+\begin{aligned}
+p(\beta_{k}) &= \sum\limits_{\gamma_{k}\in\{0,\, 1\}} p(\beta_{k},\, \gamma_{k}) \\ 
+&= \sum\limits_{\gamma_{k}\in\{0,\, 1\}} p(\beta_{k}\, \mid\,  \gamma_{k})\, p(\gamma_{k}) \\
+&= \sum\limits_{\gamma_{k}\in\{0,\, 1\}}\left[(1-\gamma_{k})N(\beta_{k}\,\mid\, 0,\, \tau^{2}) + \gamma_{k}N(\beta_{k}\,\mid\, 0,\, c^{2}\tau^{2})\right] p_{k}^{\gamma_{k}}(1-p_{k})^{\gamma_{k}} \\
+&= N(\beta_{k}\,\mid\, 0,\, \tau^{2})\sum\limits_{\gamma_{k}\in\{0,\, 1\}}(1-\gamma_{k})\,p_{k}^{\gamma_{k}}(1-p_{k})^{\gamma_{k}}  \\
+&+ N(\beta_{k}\,\mid\, 0,\, c^{2}\tau^{2})\sum\limits_{\gamma_{k}\in\{0,\, 1\}}\gamma_{k}\,p_{k}^{\gamma_{k}}(1-p_{k})^{\gamma_{k}} \\
+&= (1-p_{k})N(\beta_{k}\,\mid\, 0,\, \tau^{2}) + p_{k}N(\beta_{k}\,\mid\, 0,\, c^{2}\tau^{2}) \\
+&= \text{MixN}(\beta_{k} \mid 0,\, \tau^{2},\, 0,\, \tau^{2}c^{2},\, p_{k}),
+\end{aligned}
+\end{align}
+donde $\text{MixN}(x \mid \mu_{1},\, \sigma^{2}_{1},\, \mu_{2},\, \sigma^{2}_{2},\, p)$ $=$ $p N(x \mid \mu_{1}, \sigma^{2}_{1}) + (1-p) N(x \mid \mu_{2}, \sigma^{2}_{2})$. 
+Podemos identificar la última expresión como la función de densidad asociada a un modelo de mezclas gaussiano con dos componentes. Note que cada término corresponde a la mezcla de normales que se muestra en la \autoref{fig:ch-v-ssvs-prior-mix}. Este método es análogo al uso de una \textit{a priori} del tipo \textit{spike-slab}, donde se ha reemplazado el pico o la delta de Dirac por una densidad continua.
+
+Dado que hemos integrado sobre $\gamma_{k}$, la incertidumbre de esta variable está contenida en el parámetro $p_{k}$. Para completar la especificación de la \textit{a priori} SSVS, es necesario asignar una densidad para las probabilidades de inclusión $p_{1:p}$. Con el propósito de mantener la objetividad en el análisis, asignamos la siguiente distribución no informativa
+\begin{align}
+\pi(p_{1:p}) &\equiv \prod_{k=1}^{p} \text{Be}(p_{k} \mid 1/2,\, 1/2),
+\end{align}
+por simplicidad se asume que $p_{k}$ y $p_{k'}$ son independientes \textit{a priori}, de ahí que la densidad conjunta sea igual al producto de las densidades marginales. Aunque en la práctica la inclusión de $\beta_{k}$ pueda tener influencia en la inclusión de $\beta_{k'}$, por simplicidad se omite este hecho. Tal elección de distribución \textit{a priori} corresponde al método de Jeffrey para el parámetro de probabilidad en la distribución Bernoulli y en general para la distribución Binomial. A partir de la muestra \textit{a posteriori} de $p_{k}$, se genera una muestra de las covariables seleccionadas, digamos, mediante la simulación de una variable aleatoria indicadora o Bernoulli. Así, los modelos `más prominentes' tendrán mayor frecuencia de aparición.
+
+%Otra alternativa objetiva, basada en el principio de razón insuficiente, es asignar igual probabilidad para todos los valores de $p_{k}$, es decir, la siguiente densidad uniforme
+%\begin{align}
+%\pi(p_{1:p}) &\equiv \prod_{k=1}^{p} \text{Be}(p_{k} \mid 1,\, 1).
+%\end{align}
+%No obstante, en este caso se opta seguir la regla de Jeffrey.
+
+En resumen, se asigna la siguiente \textit{a priori} para $\boldsymbol{\beta}$ y $p_{1:p}$
+\begin{align}
+\begin{aligned}
+\pi(\boldsymbol{\beta},\, p_{1:p} \vert c_{1:p},\, \tau_{1:p}) &\equiv \pi(\boldsymbol{\beta} \mid p_{1:p}, c_{1:p}, \tau_{1:p}) \, \pi(p_{1:p})  \\
+&=  \prod_{k=1}^{p} \text{MixN}(\beta_{k} \mid 0,\, \tau^{2}_{k},\, 0,\, \tau^{2}_{k}c^{2}_{k},\, p_{k}) \, \text{Be}(p_{k} \mid 1/2, 1/2) \\
+&= \prod_{k=1}^{p} \big[ p_{k}\, N(\beta_{k} \vert c^{2}_{k} \tau^{2}_{k}) + (1-p_{k})\, N(\beta_{k} \vert \tau_{k}^{2}) \big] \, \frac{p_{k}^{-1/2}(1-p_{k})^{-1/2}}{\text{Beta}(1/2, 1/2)}.
+\end{aligned}
+\end{align}
+
+Como ya se mencionó, la \textit{a priori} SSVS también depende de los hiperparámetros $c_{k}$ y $\tau_{k}$ que de acuerdo con \textcite{ssvs:1993}, pueden obtenerse a partir de significancia práctica, a continuación se comenta otra alternativa para especificarlos: la estimación $\beta_{k}=0$ tiene alta probabilidad de estar en el intervalo $(-3\tau_{k},\, 3\tau_{k})$, por lo que $\tau_{k}$ puede fijarse estableciendo el valor de $\tau_{k}$ en el cuál se decide considerar la estimación $\beta_{k}$ como diferente de cero; en el caso del modelo continuo, dado que la variable objetivo se encuentra en escala logaritmo, la interpretación de $\beta_{k}$ es en términos de porcentajes, así, desde un punto de vista práctico, fijamos este umbral como $3\tau_{k} = 1\%$, por lo que $\tau_{k} = 1/300$. Se estandarizan las covariables para que estén en escalas similares, de modo que únicamente se requiere una tupla $(\tau, c)$, la cuál se fija como $(1/300,\, \sqrt{10\times 300^2})$, es decir, las estimaciones diferentes de cero serán generadas por la densidad $N(0,\, \tau^{2}c^{2}=10)$. En los modelos binario y ordinal, se asignan los mismos valores para esta tupla, pero se toma el valor de significancia práctica como $0.1$. Finalmente, es posible observar que no se asigna este tipo de \textit{a priori} en los parámetros $\mu_{1:M}$ ya que siempre se desea incluirnos en el modelo.
+
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{Figuras/c-v/ssvs-prior-prob.pdf}
+\caption[Distribución \textit{a priori} SSVS con distintas proporciones de mezcla.]{Distribución \textit{a priori} SSVS con distintas proporciones de mezcla. Fuente: elaboración propia.}
+\label{fig:ch-v-ssvs-prior-mix}
+\end{figure}
+
+
+
+\section{Distribución \textit{a posteriori}}
+
+Usando el teorema de Bayes con la verosimilitud de los modelos en la \autoref{eq:modelo-logsn}, \autoref{eq:modelo-logsn} y \autoref{eq:modelo-logsn}, junto a la distribución \textit{a priori} compuesta por la densidad de referencia y la densidad SVSS, se obtiene el kernel de la distribución \textit{a posteriori} -es decir, salvo una constante-. 
+El tratamiento para obtener la \textit{a posteriori} es identico en los tres modelos, y podemos señalar que cada uno de estos casos no admite una forma estándar, así que la alternativa usual es emplear algún método de cadenas de Márkov Monte Carlo, \textit{Markov chain Monte Carlo} (MCMC). 
+
+Sea $\boldsymbol{\theta}$ el vector de parámetros de interés en las $M$ regiones, dada la discusión previa, se tiene que
+\begin{equation}
+\begin{aligned}
+\pi(\boldsymbol{\theta}) &\equiv p(\rho_{1:M}, \sigma^{2}) \times p(\boldsymbol{\beta} \mid p_{1:p}) \\
+&= \frac{1}{\sigma^{2}}\prod_{i=1}^{M}\frac{\sqrt{1+\rho_{i}^{2}}}{1-\rho_{i}^{2}} \times \big[ p_{k}\, N(\beta_{k} \vert c^{2}_{k} \tau^{2}_{k}) + (1-p_{k})\, N(\beta_{k} \vert \tau_{k}^{2}) \big] \, \frac{p_{k}^{-1/2}(1-p_{k})^{-1/2}}{\text{Beta}(1/2, 1/2)},
+%\prod_{k=1}^{p}\operatorname{MixN}(\beta_{k} \mid 0,\, \tau^{2},\, 0,\, \tau^{2}c^{2},\, p_{k}) \, \operatorname{Be}(p_{k} \mid 1/2,\, 1/2),
+\end{aligned}
+\end{equation}
+a continuación escribimos las distribuciones \textit{a posteriori}, salvo una constante, para cada modelo
+\begin{itemize}
+\item Modelo log-normal sesgado: sea $w_{1:M}$ la colección de variables latentes que generan a cada $y_{ij}$, originadas a partir del proceso de truncamiento oculto, esta densidad tiene dimensión $2M+2p+1$, los parámetros son $\boldsymbol{\theta}=(\rho_{1:M}, \sigma^{2}, \mu_{1:M}, \boldsymbol{\beta}, p_{1:M})$:
+\begin{align}
+\begin{aligned}
+\pi(\boldsymbol{\theta}, w_{1:M} \mid \boldsymbol{y}) &\propto p(\boldsymbol{y}, w_{1:M} \mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}) \equiv p(\boldsymbol{y} \mid \boldsymbol{\theta}, w_{1:M}) \, p(w_{1:M} \mid \boldsymbol{\theta}) \, \pi(\boldsymbol{\theta}) \\
+&= \prod_{i=1}^{M}\Big[\prod_{j=1}^{N_{i}}N(y_{ij} \mid \eta_{ij}, \sigma^{2}_{i}) \Big] \, 2N(w_{i} \mid 0, \sigma^{2\star}_{i})\, 1_{(0, \infty)}(w_{i})\,\times\pi(\boldsymbol{\theta}).
+\end{aligned}
+\end{align}
+
+\item Modelo probit sesgado latente: sea $z_{ij}$ las variables latentes que permiten generar a los $y_{ij}$ binarios y sea $w_{1:M}$ la colección de variables latentes que generan a cada $z_{ij}$, originadas a partir del proceso de truncamiento oculto, esta densidad tiene dimensión $2M+2p$, los parámetros son $\boldsymbol{\theta}=(\rho_{1:M}, \mu_{1:M}, \boldsymbol{\beta}, p_{1:M})$:
+\begin{align}
+\begin{aligned}
+\pi(\boldsymbol{\theta}, w_{1:M}, \boldsymbol{z} \mid \boldsymbol{y}) &\propto p(\boldsymbol{y},\, \boldsymbol{z},\, w_{1:M} \mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}) \equiv p(\boldsymbol{y} \mid \boldsymbol{z}) \, p(\boldsymbol{z} \mid \boldsymbol{\theta}, w_{1:M}) \, p(w_{1:M} \mid \boldsymbol{\theta}) \, \pi(\boldsymbol{\theta}) \\
+&= \prod_{i=1}^{M}\Big[\prod_{j=1}^{N_{i}}1(y_{ij}, z_{ij})\,N(z_{ij} \mid \eta_{ij}, \sigma^{2}_{i}) \Big] \, 2N(w_{i} \mid 0, \sigma^{2\star}_{i})\, 1_{(0, \infty)}(w_{i})\,\times\pi(\boldsymbol{\theta}).
+\end{aligned}
+\end{align}
+
+\item Modelo probit ordenado sesgado latente: sea $z_{ij}$ las variables latentes que permiten generar a los $y_{ij}$ binarios y sea $w_{1:M}$ la colección de variables latentes que generan a cada $z_{ij}$, originadas a partir del proceso de truncamiento oculto, esta densidad tiene dimensión $2M+2p+k-1$, los parámetros son $\boldsymbol{\theta}=(\rho_{1:M}, \mu_{1:M}, \delta_{1:k}, \boldsymbol{\beta}, p_{1:M})$:
+\begin{align}
+\begin{aligned}
+\pi(\boldsymbol{\theta}, w_{1:M}, \boldsymbol{z} \mid \boldsymbol{y}) &\propto p(\boldsymbol{y},\, \boldsymbol{z}, w_{1:M} \mid \boldsymbol{\theta}) \pi(\boldsymbol{\theta}) \equiv p(\boldsymbol{y} \mid \boldsymbol{z})\,p(\boldsymbol{z} \mid \boldsymbol{\theta}, w_{1:M}) \, p(w_{1:M} \mid \boldsymbol{\theta}) \, \pi(\boldsymbol{\theta}) \\
+&= \prod_{i=1}^{M}\Big[\prod_{j=1}^{N_{i}}1(y_{ij}, z_{ij}, \delta_{1:k})\, N(y_{ij} \mid \eta_{ij}, \sigma^{2}_{i}) \Big] \, 2N(w_{i} \mid 0, \sigma^{2\star}_{i})\, 1_{(0, \infty)}(w_{i})\,\times\pi(\boldsymbol{\theta}).
+\end{aligned}
+\end{align}
+En este escenario, es relevante notar que los parámetros $\delta_{1:k}$ están ordenados, es decir, el soporte de $\delta_{c}$ está acotado entre $(\delta_{c-1}, \delta_{c+1}]$. El lenguaje {Stan} puede manejar este tipo de restricciones de forma automática. Por otra parte, para realizar un tratamiento Bayesiano completo, se asigna una \textit{a priori} para los puntos de corte $\delta_{1:k}$, y con el objetivo de continuar dentro del enfoque objetivo, se asigna la siguiente distribución no informativa basada en el principio de razón insuficiente
+\begin{equation}
+p(\delta_{c}) \propto 1(\delta_{c}\in (\delta_{c-1}, \delta_{c+1}))
+% N(\delta_{c} \mid 0, 10^{2}) 1(\delta_{c}\in (\delta_{c-1}, \delta_{c+1}]),
+\end{equation}
+es decir, uniforme para cada punto dentro de su soporte. Otra alternativa práctica, es asignar una densidad plana, por ejemplo $p(\delta_{c}) = NT(\delta_{c} \mid 0,\, 100^{2}; \delta_{c-1}, \delta_{c+1})$.
+\end{itemize}
+% Creo que es redundante:
+%Así, dado un conjunto de valores iniciales para las cantidades de interés, el método variacional basado en el supuesto de campo medio encuentra la colección de parámetros óptima mediante el método de ascenso del gradiente.
+
+% Modelo jerárquico
+
+Por otro lado, la \autoref{eq:log-normal-jerarquico} muestra el planteamiento jerárquico del modelo log-normal sesgado, y en la \autoref{fig:ch-v-dag} se muestran los grafos dirigidos acíclicos, \textit{directed acyclic graph} (DAG), que corresponden tanto a esta representación jerárquica como a la del modelo probit sesgado con variable latente. Las líneas punteadas relacionan parámetros y sus hiperparámetros. Los símbolos redondos indican parámetros y variables latentes, mientras que los símbolos cuadrados representan a los datos observados.
+
+\begin{equation}
+\label{eq:log-normal-jerarquico}
+\begin{aligned}
+y_{ij} \mid \rho_{i},\, \sigma^{2},\, w_{i},\, \mu_{i},\, \boldsymbol{\beta} &\sim N\big(\mu_{i} - \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} - w\rho_{i} + \frac{\sigma\sqrt{\frac{2}{\pi}\rho_{i}^{2}}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}},\, \frac{\sigma^{2}(1-\rho_{i}^{2})}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}}\big) \\
+w_{i} \mid \rho_{i},\, \sigma^{2} &\sim NT\big(0,\, \frac{\sigma^{2}}{\sqrt{1-\frac{2}{\pi}\rho_{i}^{2}}}\big) \\
+p(\sigma^{2},\, \rho_{1},\, \ldots,\, \rho_{M}) &\propto \frac{1}{\sigma^{2}} \prod_{i=1}^{M}\frac{\sqrt{1+\rho_{i}^{2}}}{1-\rho_{i}^{2}} \\
+p(\mu_{1},\, \ldots,\, \mu_{M}) &= N_{M}(\mu_{0}\boldsymbol{1}_{M},\, \sigma^{2}_{\mu}I_{M}) \\
+\mu_{0} &\sim N(0,\, 100^{2}) \\
+\sigma_{\mu}^{2} &\sim \text{InvGamma}(0.001,\, 0.001) \\
+p(\boldsymbol{\beta} \mid p_{1:p}) &\propto\prod_{k=1}^{p}\text{MixNorm}(\beta_{k} \mid 0,\, \tau^{2}c^{2},\, 0,\, c^{2},\, \gamma_{k}) \\
+p(p_{1:p}) &= \prod_{k=1}^{p} \text{Be}(\gamma_{k} \mid 1/2,\, 1/2) ,
+\end{aligned}
+\end{equation}
+
+En la siguiente sección, se sugiere usar esta \textit{a priori} jerárquica en $\mu_{1:M}$ que permite que sus elementos compartan información entre sí, lo cuál es útil cuando los tamaños de muestra son pequeños o incluso cero. A menos que se indique lo contrario, se fija $\mu_{0}\equiv 0$ y $\sigma^{2}_{\mu}=100^2$.
+
+\begin{figure}[H]
+\centering
+\caption[Grafo dirigido acíclico del que corresponde a la representación jerárquica de los modelos log-normal y probit sesgados con parámetros centrados.]{Grafo dirigido acíclico del que corresponde a la representación jerárquica del modelo log-normal sesgado con parámetros centrados. Fuente: elboración propia}
+\label{fig:ch-v-dag}
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[scale=1]{Figuras/c-v/dag-log-normal-sesgado.pdf}
+\caption{}
+\end{subfigure} \hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[scale=1]{Figuras/c-v/dag-probit-sesgado.pdf}
+\caption{}
+\end{subfigure}
+\end{figure}
+
+\section{Predicción de nuevas observaciones ($n_{i}>0$ y $n_{i}=0$)}
+
+En las secciones previas, para mantener simple la notación de los modelos, se sugiere que se conocen todos los pares $(i, j)$, es decir, $i=1, 2,\ldots, M$ y $j=1, 2, \ldots, N_{i}$. No obstante, de forma general en el contexto de áreas pequeñas no se cumple esto. Por tanto, es posible hacer la distinción entre la colección de $\boldsymbol{y}^{s}$ (observados) y $\boldsymbol{y}^{r}$ (faltantes), considerando a este último como variables latentes, así, se escribe
+\begin{equation}
+\pi(\boldsymbol{\theta}, z_{1:M}, \boldsymbol{y}^{r} \mid y^{s}) \propto p(\boldsymbol{y}^{s} \mid z_{1:M}, \boldsymbol{\theta}, y^{r}) \times p(z_{1:M}, \boldsymbol{y}^{r} \mid \boldsymbol{\theta}) \times \pi(\boldsymbol{\theta}).
+\end{equation}
+Dada la independencia condicional $y_{ij}\mid z_{i} \perp y_{ij'}\mid z_{u}$, entonces $\boldsymbol{y}^{s}\mid z_{1:M} \perp \boldsymbol{y}^{r} \mid z_{1:M}$, lo cuál permite remover la dependencia de $\boldsymbol{y}^{s}$ en $\boldsymbol{y}^{r}$, y además, desarrollando
+\begin{equation}
+p(z_{1:M} , \boldsymbol{y}^{r} \mid \boldsymbol{\theta}) = p(z_{1:M} \mid y^{r},\boldsymbol{\theta}) \times p(\boldsymbol{y}^{r} \mid \boldsymbol{\theta}) = p(z_{1:M} \mid \boldsymbol{\theta}) \times p(\boldsymbol{y}^{r} \mid \boldsymbol{\theta}),
+\end{equation}
+es posible escribir la expresión previa como
+\begin{equation}
+\pi(\boldsymbol{\theta}, z_{1:M}, \boldsymbol{y}^{r} \mid \boldsymbol{y}^{s}) \propto p(\boldsymbol{y}^{s} \mid z_{1:M}, \boldsymbol{\theta}) \times p(z_{1:M} \mid \boldsymbol{\theta}) \times p(y^{r} \mid \boldsymbol{\theta}) \times \pi(\boldsymbol{\theta}).
+\end{equation}
+No obstante, de aquí parece que es posible integrar $\boldsymbol{y}^{r}$ de forma sencilla:
+\begin{align}
+\notag \int \pi(\boldsymbol{\theta}, z_{1:M}, \boldsymbol{y}^{r} \mid \boldsymbol{y}^{s}) \, d\boldsymbol{y}^{r} &\propto \int  p(\boldsymbol{y}^{s} \mid z_{1:M}, \boldsymbol{\theta}) \times p(z_{1:M} \mid \boldsymbol{\theta}) \times p(\boldsymbol{y}^{r} \mid \boldsymbol{\theta}) \times \pi(\theta) \\
+&= p(\boldsymbol{y}^{s} \mid z_{1:M}, \boldsymbol{\theta}) \times p(z_{1:M} \mid \boldsymbol{\theta}) \times \pi(\boldsymbol{\theta}) \notag \cancelto{1}{\int p(\boldsymbol{y}^{r} \mid \theta) \, d\boldsymbol{y}^{r}} \\
+&= p(\boldsymbol{y}^{s} \mid z_{1:M}, \boldsymbol{\theta}) \times p(z_{1:M} \mid \boldsymbol{\theta}) \times \pi(\boldsymbol{\theta}),
+\end{align}
+ya que $p(\boldsymbol{y}^{r} \mid \theta)$ es una densidad propia. Esto significa que si $\boldsymbol{y}^{s} \mid z_{1:M} \perp \boldsymbol{y}^{r} \mid z_{1:M}$, entonces $\boldsymbol{y}^{r}$ no aporta información al modelo. Ahora bien, en el escenario cuando $0<n_{i}< N_{i}$, esto es, existen observaciones en la región $i$, el pronóstico de $y_{ij}^{\star}$ se genera a partir de la muestra \textit{a posteriori} e integración Monte Carlo:
+\begin{align}
+p(y_{ij}^{\star} \mid \boldsymbol{y}^{s}) &= \int p(y_{ij}^{\star} \mid \boldsymbol{\theta}, z_{1:M}) \, p(\boldsymbol{\theta}, z_{1:M} \mid \boldsymbol{y}^{s}) \, d\boldsymbol{\theta} \approx \frac{1}{S} \sum_{k=1}^{S} p(y_{ij}^{\star} \mid \boldsymbol{\theta}^{(k)}, z_{1:M}^{(k)}),
+\end{align}
+donde $p(y_{ij}^{\star} \mid \boldsymbol{\theta}, z_{1:M})$ es el modelo muestral, es decir, el mismo mecanismo estocástico propuesto para generar a los datos $\boldsymbol{y}^{s}$, y $S$ denota el número de muestras \textit{a posteriori}.
+
+Con frecuencia, los modelos de áreas pequeñas necesitan generar pronósticos aún en los dominios donde $n_{i}=0$. Este caso presenta un desafío mayor, ya que si bien $\sigma^{2}$, y $\boldsymbol{\beta}$ toman información directamente de otras áreas pequeñas, los efectos a nivel de área $\rho_{i}$ y $\mu_{i}$ únicamente son informados de manera indirecta, lo cuál puede ocasionar que los parámetros se encojan o bien colapsen hacia los límites de su soporte.
+% (incluir el parrafo que me guste mas)
+%Cuando no hay información disponible en estas regiones, no es posible aprender directamente estos parámetros. En esta situación, el parámetro de correlación/forma $\rho_{i}$ tiende a encogerse, ocasionando pronósticos más simétricos.
+En este escenario, la alternativa usual es realizar agrupamiento o \textit{pooling} por medio de una estructura jerárquica en los parámetros, especificamente aquellos que son propios de cada región. Por ejemplo, puede proponerse
+\begin{align}
+\begin{aligned}
+\lambda_{1:M} &\sim N_{M}(\mu_{0}, \sigma^{2}_{\lambda}) & \mu_{1:M} &\sim N_{M}(\mu_{0}\boldsymbol{1}_{M}, \sigma^{2}_{\mu}I_{M}) \\
+\mu_{0}&\equiv 0 &
+\mu_{0} &\sim N(0, 100^2) \\
+\sigma^{2}_{\lambda} &\sim \text{InvGamma}(0.001, 0.001) & \sigma^{2}_{\mu} &\sim \text{InvGamma}(0.001, 0.001).
+\end{aligned}
+\end{align}
+Esta estructura jerárquica \textit{a priori} intenta ser objetiva al asignar distribuciones planas de acuerdo a la regla de Laplace. Se fija la media del parámetro de forma en cero para no incrementar otro nivel adicional la complejidad, es decir, otra capa jerárquica, en el modelo. De igual modo, fuera del panorama Bayesiano objetivo, puede incluirse información de áreas vecinas en ambos parámetros.
+
+
+\section{Implementación con métodos \texorpdfstring{\textit{Markov Chain Monte Carlo}}{}}
+
+De acuerdo a la discusión en la \autoref{sec:bayes-mcmc}, podemos tratar de identificar las distribuciones condicionales completas en cada una de las densidades \textit{a posteriori} en la sección previa para aplicar el algoritmo muestreador de Gibbs, y para aquellas variables que no se pueda identificar una densidad condicional completa, podemos usar el algoritmo Metrópolis-Hastings e implementar un método híbrido. Para el modelo log-normal sesgado, este es precisamente el enfoque de MCMC que fue aplicado por \textcite{Araceli}. No obstante, el interés principal es sobre el estudio de los métodos Bayesianos variacionales, y con el fin de contrastarlos contra los métodos de MCMC usuales, se usará el algoritmo Hamiltoniano Monte Carlo (HMC) con la variante automática \textit{No-U-Turn sampler} (NUTS), esto significa que no se requiere trabajo adicional de programacion o desarrollo analitico, por tal motivo, no se replica el análisis y tampoco es necesario obtener las densidades condicionales completas. Para los modelos probit sesgado y probit ordenado sesgado, ambos siguiendo el enfoque de variable latente, el tratamiento es análogo pero novedoso.
+
+
+\section{Implementación en \texorpdfstring{{Stan}}{Stan}}
+
+% Sección 1.3
+
+{Stan} es un lenguaje de programación probabilística (PP) en el sentido de que una variable aleatoria es genuinamente un objeto básico \parencite[][]{stan-ref:2025}. La PP es un paradigma de programación que se sitúa en la intersección de los campos del aprendizaje automático o \textit{machine learning} (ML), la estadística y los lenguajes de programación en general. Este método aprovecha la semántica formal, los compiladores y otras herramientas de los lenguajes de programación para crear evaluadores de inferencia eficientes para modelos y aplicaciones de aprendizaje automático, utilizando los algoritmos de inferencia y la teoría de la estadística. \parencite[][]{introduction-pp}.
+% Sección 1.2
+
+De acuerdo con \textcite{introduction-pp, another-pp}, una enfoque de la PP consiste en automatizar la inferencia Bayesiana mediante herramientas de las ciencias de la computación, permitiendo al usuario escribir modelos Bayesiano en un formato simple. Por ejemplo, los lenguajes BUGS, \textit{Bayesian inference using Gibbs sampling} y JAGS, \textit{just another Gibbs sampling} fueron pioneros en esta tarea.
+
+% programar lenguajes que denoten modelos y algoritmos de inferencia estadística para calcular la distribución condicional de las entradas del programa que podrían haber dado lugar a la salida del programa.
+
+% more on PP: https://adriansampson.net/doc/ppl.html
+
+% https://arxiv.org/pdf/2101.03391 . Paradoxes of PP, another PP paper
+
+%%
+
+%Un lenguaje imperativo es aquel en el que se le da a la computadora una secuencia de instrucciones para que las ejecute: se le dice cómo hacer algo.
+
+
+%al igual que los lenguajes {C} o {Fortran}
+
+{Stan} es un lenguaje imperativo, es decir, declara una secuencia de instrucciones que especifican como debe ejecutarse algo. Además, está basado en asignaciones, \textit{loops}, condicionales, variables locales, funciones y estructuras de datos tipo \textit{array} \parencite{stan-ref:2025}.
+%Un programa de {Stan} define imperativamente una función de log-verosimilitud sobre los parámetros, condicional a los datos y restricciones de estos \parencite{introducing-stan}. 
+Para su ejecución, un código {Stan} se traduce a un programa {C++} mediante el compilador stanc de {Stan} \parencite{introducing-stan}.
+
+Un programa de {Stan} se compone de seis bloques, de los cuáles, ninguno es obligatorio. En el \autoref{tab:ch-v-stan-blocks} describimos cada uno de estos. A su vez, cada bloque de Stan hace distinción entre \textit{declarations} o declaraciones y \textit{statements} o instrucciones. En general, primero declaramos las variables y después indicamos la secuencia de instrucciones que la definen. 
+
+%\begin{table}[H]
+\begin{xltabular}{\textwidth}{lXX}
+%% begin first head
+\caption[Bloques de un programa {Stan}.]{Bloques de un programa {Stan}. Fuente: elaboración propia, basado en \textcite{stan-ref:2025, introducing-stan}.}
+\label{tab:ch-v-stan-blocks} \\
+\hline
+Bloque & Descripción \\
+\hline
+\endfirsthead
+%% end first head
+%% begin head
+\caption[]{Bloques de un programa {Stan}. Fuente: elaboración propia, basado en \parencite{stan-sug:2025, stan-ref:2025, introducing-stan}. (Continuación)} \\
+\hline
+Bloque & Descripción \\
+\hline
+\endhead
+%% end head
+%% begin foot
+\hline
+\endfoot
+%% end foot
+\code{data \{...\}} & Se declaran los datos requeridos para ajustar el modelo. \\
+\code{transformed data\{...\}} & Aquí se declaran y definen nuevas variables calculadas a partir del bloque anterior. También se definen constates. \\
+\code{parameters\{...\}} & Se ejecuta cada vez que la log probabilidad es evaluada (lo que puede ocurrir varias veces por iteración). Todas las variables declaradas con soporte restringido se transforman a un espacio sin restricciones.\footnotemark Este bloque \code{parameters} define los paramétros y variables latentes involucrados en el modelo. Es en este apartado donde se establecen las restricciones sobre los párámetros, por ejemplo, para que sean no negativas, o estén acotados en algún intervalo de $\mathbb{R}$. \\
+\code{transformed parameters\{...\}} & Como su nombre sugiere, permite transformar parámetros dentro de un modelo. Cualquier variable declarada aquí forma parte de la salida generada.
+
+Cualquier variable definida totalmente en términos de los datos o de alguna transformación de estos, por eficiencia debe declararse y definirse en el bloque previo.
+
+Es relevante mencionar que dentro de este bloque es posible realizar tanto transformación en los parámetros como cambios de variable. La distinción clave es que una transformación muestrea u optimiza un parámetro y después lo transforma para emplearlo donde se requiera, mientras que un cambio de variables primero transforma el parámetro y después genera muestras de el. Sólo el cambio de variables requiere añadir el ajuste del log Jacobiano de forma manual en el bloque siguiente. Una regla de pulgar es la siguiente: si se asigna una distribución a los parámetros transformados, es necesario agregar el log Jacobiano adecuado. \\
+\code{model\{...\}} & El propósito de este bloque es definir la función de log-probabilidad, esto es, la verosimilitud y \textit{a priori}, en el espacio de parámetros restringido. Sólo aquí se permiten las declaraciones de probabilidad, ya sea por medio de la notación de distribución \code{$\sim$} o incrementeando la log-verosimilitud \code{target += }.
+
+Este bloque se ejecuta después del bloque \code{transformed parameters} cada vez que se evalúa la función de log-probabilidad.
+
+En caso de no especificarse una \textit{a priori} para algún grupo de parámetros, se les asigna por defecto una distribución uniforme en su soporte. Si está acotada, entonces resulta ser una distribución propia.
+
+
+ \\
+\code{generated quantities\{...\}} & Este bloque permite definir de manera eficiente valores que dependen de parámetros y datos, pero que no afectan a la estimación. Nada declarado aquí afecta a los valores de los parámetros generados.
+
+Este bloque solo se llama una vez por muestra o iteración, no por cada evaluación de la función de log-probabilidad. Se puede utilizar para realizar inferencia \textit{a posteriori}. Además, los valores de todas las demás variables declaradas en bloques previos (excepto variables locales), pueden ser utilizadas.
+ \\
+\hline
+\end{xltabular}
+%\end{table}
+
+\footnotetext{Se pretende que la densidad de probabilidad definida por un programa de \code{Stan} tenga soporte sin restricciones, es decir, sin regiones de probabilidad cero, lo que simplifica enormemente la tarea de desarrollar muestreadores u optimizadores.}
+
+Desde el punto de vista práctico, el lenguaje Stan es atractivo en el sentido de que que permite implementar una amplía variedad de modelos Bayesianos de forma sencilla, sin embargo, existen dos restricciones principales al momento de definirlos y construirlos: 
+\begin{enumerate}
+\item No se se pueden optimizar o incluir parámetros discretos. Con respecto a este punto, después de marginalizar la variable aleatoria Bernoulli en la distribución SSVS de la \autoref{sec:prior-ssvs}, podemos ignorar esta restricción, ya que además, el enfoque de variable latente en los modelos de clasificación remueve la presencia de las variables binarias $y_{ij}$, más allá de las funciones indicadoras $1(y_{ij}, z_{ij})$ y $1(y_{ij}, z_{ij}, \delta_{1:c})$ que numéricamente evalúan uno.
+
+\item El modelo debe ser diferenciable. Para esta observación, una extensa gama de modelos en ML son diferenciables, entre ellos, los modelos de regresión que consideramos aquí.
+\end{enumerate} 
+
+A continuación, se describen los bloques de código {Stan} empleados para realizar inferencia sobre los modelos de regresión propuestos, se inicia describiendo al modelo log-normal sesgado, posteriormente, al modelo probit ordenado con variable latente, ya que al simplificar este último, se obtiene el código Stan para el modelo restante.
+
+
+%\setcolumnwidth{0.3\linewidth}
+%\setlength{\columnsep}{1.5cm}
+%\begin{paracol}{2}
+%
+%Hola
+%
+%\switchcolumn[1]
+%
+%Adiós
+%
+%\end{paracol}
+
+
+\subsection{Modelo log-normal sesgado centrado}
+
+A continuación se describe la implementación del modelo de regresión normal-sesgado. En virtud de que este se obtiene al tomar el logaritmo de la variable objetivo, no es necesario que el programa distinga entre cuando la respuesta está en escala original y cuando está transformada.
+
+\begin{itemize}
+\item En las líneas 1-16 se define el bloque \stan{data}, el cuál contiene información sobre la identificación del modelo: número de observaciones, valores faltantes, covariables, región de las observaciones; así como el vector con la variable respuesta (\code{y\_obs}) y la matriz diseño asociada a los datos observados y no observados (\code{X\_obs}, \code{X\_mis}). Además, se pase información acerca de los hiperparámetros $c$, $\tau$ y el umbral $\varepsilon$ para la técnica SSVS.
+
+\inputminted[firstline=1, lastline=16, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/LogSN-rho01-SSVS-genq.txt}
+
+\item Aquí se programan los parámetros del modelo y sus respectivas restricciones. Por ejemplo, $\sigma$ y $\tilde{z}$ se declaran entre $(0, \infty)$, además, se restringe la correlación de cada área pequeña al intervalo $(0, 1)$, al igual que las probabilidades de inclusión.
+
+\inputminted[firstline=17, lastline=28, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/LogSN-rho01-SSVS-genq.txt}
+
+\item Luego, en el bloque \stan{model} se declarada la log-verosimilitud del modelo paramétrico asumido, junto a sus distribuciones \textit{a priori}. Para hacer esto, se dispone de dos alternativas, la primera emplea el símbolo reservado \code{$\sim$}, que relaciona un parámetro en el lado izquierdo con una densidad de probabilidad en el lado derecho, la segunda alternativa consiste en aumentar la log-verosimilitud a través de la asignación \mintinline{stan}{target+=}, donde el kernel de una densidad de probabilidad en el lado derecho. Por ejemplo, si \mintinline{stan}{y} es un parámetro cuya distribución es normal estándar, entonces ambas declaraciones tienen el mismo efecto:
+\begin{minted}{stan}
+y ~ normal(0, 1);
+target+=normal_lupdf(y|0, 1)
+\end{minted}
+En general, {Stan} trabaja con el kernel de las densidades, por lo que la segunda declaración es ligeramente más eficiente. Así mismo, en caso de no especificar una \textit{a priori} para algún parámetro, {Stan} le asignará una distribución uniforme, y por tanto, impropia.
+
+De igual modo, se emplea una parametrización no centrada en \code{z} y \code{z\_tilde}, es decir, si $Z\sim NT(0, \sigma^2, (0, \infty))$, entonces $Z = \sigma\tilde{Z}$, donde $\tilde{Z}\sim NT(0, 1, (0, \infty))$. Esto permite mejorar la geometría \textit{a posteriori}, y con ello la eficiencia del muestreo \parencite{stan-sug:2025}.
+
+\inputminted[firstline=29, lastline=50, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/LogSN-rho01-SSVS-genq.txt}
+
+
+\item Finalmente, el bloque \mintinline{stan}{generated quantities} se ejecuta después de cada iteración si se usa el método HMC/NUTS, y después de terminar el proceso de optimización en el caso BV/ADVI. En general, este fragmento de código permite realizar inferencia \textit{a posteriori}. De acuerdo con la guía del usuario de {Stan} \parencite{stan-sug:2025}, es más eficiente generar una variable en este bloque en lugar del bloque \mintinline{stan}{transformed parameters}, por lo tanto, si alguna cantidad no desempeña ningún rol en el modelo, debe ser definida en este apartado. Para generar valores ajustados y pronósticos se sigue el mecanismo de truncamiento oculto: dado que $p(y_{ij}, z_{i} \mid \boldsymbol{\theta}) = p(y_{ij} \mid \boldsymbol{\theta}, z_{i})\, p(z_{i} \mid \boldsymbol{\theta})$, dada una realización de la \textit{a posteriori} $\boldsymbol{\theta}^{(t)}$ y $z_{i}^{(t)}$, se genera $y_{ij} \sim p(y_{ij} \mid \boldsymbol{\theta}^{(t)}, z_{i}^{(t)})$.
+
+
+\inputminted[firstline=51, lastline=72, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/LogSN-rho01-SSVS-genq.txt}
+
+
+\end{itemize}
+
+
+
+\subsection{Modelo probit ordenado sesgado latente centrado}
+
+La diferencia principal para desarrollar las implementaciones tipo probit (es decir, binarias u ordinales), es la incorporación de restricciones en las variables aleatorias normales. Esta implementación se basa en la guía del usuario de {Stan} \parencite{stan-sug:2025}, la cuál está basada en el enfoque de variable latente desarrollado por \textcite{albert-chib:1993}. En esta misma guía, se muestran otras formas de definir el modelo probit ordenado, sin embargo, este enfoque aprovecha el uso de variables latentes. Para la ejecución de este modelo, es posible utilizar de nuevo partes del código previo incorporando estas adecuaciones. Enseguida se describen las modificaciones realizadas a la implementación anterior, el símbolo\code{...} significa que utilizamos las mismas instrucciones dentro de este bloque que en el modelo log-normal sesgado.
+
+\begin{itemize}
+\item En el bloque \code{data} se pasa información sobre el número de valores en cada categoría \code{Ni}, digamos, el número de valores cero, uno y dos, y las posiciones \code{ni} que ocupan en el vector respuesta observado $\boldsymbol{y}^{s}$. Por ejemplo, si $\boldsymbol{y}^{s}=(0, 1, 2, 2, 1, 0)$, entonces $\mathtt{N0}=\mathtt{N1}=\mathtt{N2}=2$ y $\mathtt{n0}=(1, 6)$, $\mathtt{n1}=(2, 5)$ y $\mathtt{n2}=(3, 4)$.
+
+\inputminted[firstline=1, lastline=10, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/OrdProbitSN-rho01-SSVS-genq.txt}
+
+\item En el bloque \code{transformed data} se fijan las cantidades $\sigma^{2}\equiv 1$ y $\delta_{0} \equiv 0$ por identificación del modelo. Al hacer esto, no entran a la parte de muestreo u optimización. Aunque es posible sustituir directamente estas cantidades por estos valores en los bloques siguientes, mantenerlo así permite reutilizar fragmentos de código.
+
+\inputminted[firstline=11, lastline=14, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/OrdProbitSN-rho01-SSVS-genq.txt}
+
+\item En la definición del umbral $\delta_{1}$ se acota su soporte al intervalo $(\delta_{0}, \infty)$. Dado el uso de variables latentes, los parámetros \code{z\_tilde} y \code{z}, que representan a la densidad normal truncada a la izquierda en cero, se reemplazan por \code{w\_tilde} y \code{w}. La parte latente son los parámetros \code{zi}, para las cuáles se establecen restricciones de acuerdo con los puntos de corte $\delta_{0}$ y $\delta_{1}$.
+
+\inputminted[firstline=15, lastline=22, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/OrdProbitSN-rho01-SSVS-genq.txt}
+
+\item En el bloque \code{transformed parameters} se crea el vector \code{z\_obs}, en cuyas posiciones \code{Ni} se les asigna el parámetro \code{zi} con las restricciones adecuadas
+
+\inputminted[firstline=23, lastline=35, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/OrdProbitSN-rho01-SSVS-genq.txt}
+
+\item Se asigna una \textit{a priori} plana dentro de su soporte al umbral $\delta_{1}$. Aunado a esto, se agrega el mismo término de log-verosimilitud en la variable \code{z\_obs}, es decir, $\log\,p(\boldsymbol{z}^{s} \mid \boldsymbol{\theta}, w_{1:M})$. El resto de términos del modelo permanece igual.
+
+\inputminted[firstline=36, lastline=42, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/OrdProbitSN-rho01-SSVS-genq.txt}
+
+\item Finalmente, se generan valores ajustados y predicciones para los $z_{ij}$ mediante el mismo proceso de truncamiento oculto, sólo que ahora se generan un vector \code{z\_all}. De manera análoga, la selección de variables con SSVS permanece igual.
+
+\inputminted[firstline=43, lastline=56, fontsize=\small,
+linenos, breaklines]{Stan}{Codigos/OrdProbitSN-rho01-SSVS-genq.txt}
+
+
+\end{itemize}
+
+
+
+
+\subsection{Modelo probit sesgado latente centrado}
+
+La implementación de este modelo es totalmente análoga al modelo probit ordenado, salvo que se omite las restricciones inducidas por el segundo umbral $\delta_{1}$, así como los datos \code{N2} y \code{n2}.
+
+\section{Simulación y cantidades de interés}
+\label{sec:metodologia-xi}
+
+
+A continuación mostramos las cantidades que consideramos los experimentos siguientes, y que permanecen constantes a lo largo de todas las simulaciones a menos que se indique lo contrario.
+
+
+%\begin{table}[H]
+\begin{xltabular}{\textwidth}{XX}
+%% begin first head
+\caption[Cantidades fijadas para los experimentos de simulación.]{Cantidades fijadas para los experimentos de simulación. La implementación se realizó en el lenguaje \code{R}.}
+\label{tab:ch-v-simulacion-tabla} \\
+\hline
+Cantidades & Definición \\
+\hline
+\endfirsthead
+%% end first head
+%% begin head
+\caption[]{Cantidades fijadas para los experimentos de simulación. La implementación se realizó en el lenguaje \code{R}. (Continuación)} \\
+\hline
+Cantidades & Definición \\
+\hline
+\endhead
+%% end head
+%% begin foot
+\hline
+\endfoot
+%% end foot
+$M\gets 4$ & Número de áreas pequeñas. \\
+$N_{1:M} \gets (1500, 2000, 1500, 2000)$ &  Tamaño de cada subregión. \\
+$\rho_{1:M}\gets(0.5, 0.75, 0.85, 0.95)$ & Parámetro de forma en cada región. \\
+\makecell[l]{$\sigma^{2} \gets 1.5$ (log-normal sesgado) \\ $\sigma^{2} \gets 1.0$ (probit ordenado sesgado)} & Parámetro de varianza de todas las regiones.\\
+$\boldsymbol{\beta}\gets (1.9, -0.5, -1.4, 0.0, 0.0)$ & Coeficientes de regresión de todas las regiones. \\
+${\mu}_{1:4}\gets (7.0, 6.5, 6.5, 5.0)$ (log-normal sesgado, varios y único int.) \newline ${\mu}_{1:4}\gets (0.6, 0.7, 0.65, 0.95)$ (probit ordenado sesgado, varios y único int.) \newline ${\mu}_{1:4}\gets (0.0, 0.0, 0.0, 0.0)$ (sin int.) & Término constante en cada región. \\
+Porcentaje $\in\{5, 25\}$ & Porcentaje de muestreo en todas las regiones. \\
+Iteraciones $\gets 75,000$ (para el método BV) \newline Iteraciones $\gets 6,000$ (para el método HMC) & Número de interacciones para los algoritmos ADVI de BV y NUTS de HMC. Para este último, las primeras $5,000$ son iteraciones \textit{burn-in} y las $1,000$ restantes son de muestreo, se toma \textit{thin} de uno. \\
+\hline
+\end{xltabular}
+%\end{table}
+
+
+Cuando se menciona probit ordenado sesgado, también se hace referencia al modelo binario, ya que este se obtiene al considerar cualesquiera dos categorías. Es importante ahondar sobre varios aspectos de las cantidades que se acaban de declarar
+
+\begin{itemize}
+\item El número de iteraciones no son equivalentes para ambos métodos estudiados, ya que una iteración de HMC realiza exploración o muestreo de la distribución \textit{a posteriori}, mientras que una iteración VB se optimiza el límite inferior de le evidencia y se actualiza los parámetros con ascenso del gradiente. En general, este último procedimiento es más rápido que generar una muestra de HMC, por lo que podríamos sesgar el tiempo y desempeño de la ejecución al fijar el mismo número de muestras.
+
+\item La calidad y velocidad de la implementación VB está influida por tres cantidades, el factor de escala del tamaño de paso $\eta$, el número de muestras Monte Carlo $M$ para estimar el gradiente y el número de muestras Monte Carlo para estimar el ELBO. Aunque \textcite{advi:2017, stan-sug:2025} sugieren valores plausibles para estas cantidades, \code{grad\_samples = 1}, \code{elbo\_samples = 100} y una búsqueda automática de $\eta\in\{0.01, 0.1, 1, 10, 100\}$ que obtiene la convergencia más rápida, cada aplicación puede tener potencialmente un mejor desempeño al calibrar estos hiperparámetros, no obstante, sólo donde se indica lo contrario se modificaron.
+
+\item Otro aspecto relevante es que solo se consideran dos porcentajes de muestreo: 5\% y 25\%, ya que en un escenario real, como en el conjunto de datos estudiado, los tamaños de muestra son usualmente pequeños. Esta decisión también permite hacer más breves y concisos los resultados reportados que enseguida se describen.
+\end{itemize}
+
+%los métodos HMC con el algoritmo NUTS y variacional Bayesiano con el algoritmo ADVI
+
+Para cada método de estimación, se ajustaron los tres tipos de modelos de regresión propuestos. También, se consideró un escenario de validación, es decir, se dividió la muestra de forma aleatoria en un conjunto de entrenamiento y prueba, con la proporción de 80\%-20\% respectivamente, esto con el fin de evaluar los pronósticos cuándo $n_{i}>0$. En el \autoref{tab:ch-v-metricas} se muestran las métricas básicas que se calcularon a partir de este ajuste. Las primeras cuatro métricas se calculan para el modelo log-normal sesgado, las métricas cinco a ocho se calculan para el modelo probit sesgado con variable latente, ya que se basan en la construcción de una tabla de valores observados contra ajustados (matriz de confusión), finalmente, para el modelo probit ordenado sesgado con variable latente, se calculan las métricas cinco y nueve.
+
+Enseguida se describe cada uno de los resultados básicos obtenidos mediante estimación.
+
+\begin{itemize}
+
+\item Cuando se usa toda la información disponible, se reportaron las medias \textit{a posteriori} de cada parámetro, así como los intervalos de credibilidad empíricos construidos con los cuantiles 2.5\% y 97.5\%. De acuerdo con la \autoref{sec:bayes-mcmc}, implicitamente se asume la función de pérdida error cuadrado medio, lo cuál es adecuado con respuesta continua. Para los modelos de clasificación, la elección usual es la pérdida 0-1, lo que conduce a que el estimador de Bayes sea la moda \textit{a posteriori}, sin embargo, por simplicidad aún empleamos las medias \textit{a posteriori}.
+
+\item De manera adicional, se reportan los modelos seleccionados con el método SSVS y la probabilidad asociada a tal realización. Con el fin de facilitar la comparación, estos se acomodan en gráficos de mosaico.
+%que representan esta técnica.
+
+%\item Se construye un cuadro comparativo de las estimaciones \textit{a posteriori} de los parámetros para los dos métodos, ambos implementados en {Stan}. Los estimadores Bayesianos se toman como las medias \textit{a posteriori}, y que de acuerdo con la \autoref{sec:bayes-mcmc}, implicitamente se asume la función de pérdida error cuadrado medio, lo cuál es adecuado con respuesta continua. Para los modelos de clasificación, la elección usual es la pérdida 0-1, lo que conduce a que el estimador de Bayes sea la moda \textit{a posteriori}, sin embargo, por simplicidad aún empleamos las medias \textit{a posteriori}.
+
+%Además, el objetivo que modela {Stan} son variables latentes continuas $z_{ij}$, por lo que argumentablemente esta elección también es la apropiada
+% (No estoy seguro, ¿es mi desición \delta(y_{ij}) = 1(z_{ij}>0)?)
+
+\item Se realiza nuevamente este ajuste pero considerando el caso de entrenamiento-prueba. A partir de aqui, se genera un cuadro comparativo con las métricas descritas previamente, donde se evalúan las predicciones de las observaciones $y_{ij}^{\star}$ en el conjunto de prueba.
+
+\item A partir de los resultados obtenidos con la validación, se dibujan gráficos o tablas de aciertos y errores según el modelo que corresponda, a fin de comparar los ajustes.
+\end{itemize}
+
+
+%\begin{table}[H]
+\begin{xltabular}{\textwidth}{llX}
+%% begin first head
+\caption[Métricas básicas del ajuste.]{Métricas básicas del ajuste. Fuente: elaboración propia. Aquí, las cantidades $VP$, $VN$, $FP$ y $FN$ denotan verdaderos positivos, verdaderos negativos, falsos positivos y falsos negativos.}
+\label{tab:ch-v-metricas} \\
+\hline
+Métrica & Definición & Interpretación \\ 
+\hline
+\endfirsthead
+%% end first head
+%% begin head
+\caption[]{Métricas básicas del ajuste. Fuente: elaboración propia. Aquí, las cantidades $VP$, $VN$, $FP$ y $FN$ denotan verdaderos positivos, verdaderos negativos, falsos positivos y falsos negativos. (Continuación)} \\
+\hline
+Métrica & Definición & Interpretación \\ 
+\hline
+\endhead
+%% end head
+%% begin foot
+\hline
+\endfoot
+%% end foot
+Corr. & $\dfrac{\sum_{i,\, j}(y_{ij}-\bar{y_{ij}})\,(\tilde{y}_{ij}-\bar{\tilde{y}}_{ij})}{\sqrt{\sum_{i,\, j}(y_{ij}-\bar{y_{ij}})^{2}\,\sum_{i,\, j}(\tilde{y}_{ij}-\bar{\tilde{y}}_{ij})^{2}}}$ & Mide la asociación entre la colección de pares $(y_{ij}, \tilde{y}_{ij})$. Util para datos continuos. \\
+MAE & \(\displaystyle\sum_{i=1}^{M}\sum_{j=1}^{N_{i}}\mid{y}_{ij}-\tilde{y}_{ij}\mid \) & Mide el promedio de las desviaciones absolutas, está en las mismas unidades que los datos y es más robusto a \textit{outliers} que la raíz del error cuadrado medio (RMSE), ya que trata a los errores de forma lineal. \\
+RMSE & \(\displaystyle\big(\sum_{i=1}^{M}\sum_{j=1}^{N_{i}}({y}_{ij}-\tilde{y}_{ij})^{2}\big)^{1/2} \) & Mide la magnitud promedio del error de predicción, está en las mismas unidades que los datos. Además, penaliza más a los errores grandes, misma razón por la cuál es sensible a \textit{outliers}. \\
+MAPE & \(\displaystyle\frac{1}{\sum_{i} N_{i}}\sum \limits_{i=1}^{M}\sum_{j=1}^{N_{i}}\frac{\vert y_{ij}-\tilde{y}_{ij} \vert}{y_{ij}}\) & Mide el promedio de las desviaciones absolutas expresadas como porcentaje del valor real, por tal motivo no tiene escala. \\
+Exactitud & $\dfrac{VP+VN}{VP+VN+FP+FN}$ & El número de predicciones correctas. Puede resultar inapropiado si las clases están desbalanceadas. \\
+\makecell[l]{Verdaderos \\ positivos \\ (Recuperación)} & $\dfrac{VP}{VP+FN}$ & Proporción de verdaderos positivos detectados del total de positivos. \\
+\makecell[l]{Verdaderos \\ negativos \\ (Especificidad) } & $\dfrac{VN}{VN+FP}$ & Análogo a la recuperación. \\
+F1-Score & $\dfrac{2TP}{2TP+FP+FN}$ & Media armónica entre la precisión y la recuperación.\footnotemark Apropiado para clases desbalanceadas. \\
+$\tau$ de Kendall\footnotemark & \(\dfrac{\sum\limits_{(i, j) \preceq (i', j')}\text{sgn}(y_{ij}-y_{i'j'})\text{sgn}(\tilde{y}_{ij}-\tilde{y}_{i'j'})}{\binom{n}{2}}\) & Mide la asociación entre la colección de pares $(y_{ij}, \tilde{y}_{ij'})$. Útil para datos ordinales. \\
+\hline
+\end{xltabular}
+%\end{table}
+
+\footnotetext[\number\numexpr\value{footnote}-1\relax]{Se define la relación de orden $(i, j) \preceq (i', j')$ si y solo si $i<i'$ o bien $i=i'$ y $j<j'$. Por ejemplo, $(1, 2) \preceq (1, 3)$, $(2, 1) \preceq (3, 1)$.}
+
+
+\footnotetext{Se define a la precisión como $VP/(VP+FP)$.}
+
+% agregar los de los pronosticos: ¿como se ba a ajusdar?, ie, 80%-20%, pronostico relacionarlo con este cuadrito
+
+Para el modelo de regresión con respuesta continua, se consideraron los siguientes valores iniciales para el muestreador HMC y el proceso de optimización BV.
+
+\begin{table}[H]
+\caption{Valores iniciales para la simulación.}
+\begin{tabularx}{\textwidth}{llX}
+\hline
+Parámetro (s) & Valor inicial & Descripción \\
+\hline
+$\mu_{i}$, $\sigma^{2}$, $\lambda$ & $\hat{\lambda}\boldsymbol{1}_{M}$, $\hat{\mu}\boldsymbol{1}_{M}$, $\sigma^{2}$ & $\hat{\lambda}$, $\hat{\sigma}^{2}$ y $\hat{\mu}$ se obtuvieron mediante máxima verosimilitud al ajustar el modelo $y_{ij} = \mu + e_{ij}$, con $e_{ij}\sim SN(0, \sigma^2, \lambda)$. Se empleó la función \code{selm} de la librería \code{sn} de R. \\
+$\boldsymbol{\beta}$ & $\hat{\boldsymbol{\beta}}$ & Se obtiene a partir del ajuste del modelo de regresión  $y_{ij}=\mu + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij}$, con $e_{ij}\sim N(0, \sigma^{2})$. \\
+\hline
+\end{tabularx}
+\end{table}
+
+Por razones que se verán más adelante, para los dos modelos de clasificación propuestos, se consideran tres submodelos: uno que incluye interceptos o términos independientes para cada región, otro con un único intercepto en todas la regiones y uno más que no incluye interceptos. En el modelo log-normal sesgado se hace una excepción y únicamente se considera el caso con interceptos en cada área. De igual modo, es relevante mencionar que se trabaja con covariables estandarizadas en todos los modelos.
+
+
+\section{Caso de estudio: medición de la pobreza}
+
+En este apartado, se describe una aplicación real para los tres modelos de regresión en áreas pequeñas propuestos. En síntesis, se estima el ingreso corriente total per cápita (ICTPC) en los hogares de la Ciudad de México, a nivel municipal o alcaldía. Este estudio forma parte de uno de los rubros considerados para construir la medición multidimensional de la pobreza (MMP) en México.
+
+La medición de la pobreza adquiere relevancia porque permite identificar con mayor precisión las carencias que enfrentan los grupos afectados y orientar intervenciones públicas más efectivas. En México, esta medición estuvo durante años a cargo del Consejo Nacional de Evaluación de la Política de Desarrollo Social (Coneval), cuya metodología retomaba elementos del enfoque propuesto por Alkire y Foster; actualmente, la responsabilidad recae en el Instituto Nacional de Estadística y Geografía (INEGI). Desde una perspectiva integral, la pobreza se relaciona con condiciones de vida que vulneran la dignidad humana, restringen el ejercicio de derechos y obstaculizan la satisfacción de necesidades básicas, dificultando así la plena participación social de las personas \textcite{coneval:2023}.
+
+Durante décadas, el producto interno bruto per cápita fue utilizado como indicador principal del bienestar económico de la población; sin embargo, su capacidad explicativa resulta limitada para capturar la complejidad de las condiciones de vida contemporáneas. La evaluación del bienestar requiere enfoques más amplios que reconozcan que la pobreza no puede reducirse únicamente al nivel de ingresos, pues intervienen dimensiones que no se reflejan de manera directa en la capacidad monetaria de los hogares. Desde esta perspectiva multidimensional, surge la necesidad de integrar indicadores que permitan comprender de manera más completa las privaciones que experimentan los individuos. Contar con mediciones adecuadas no solo mejora el diagnóstico social, sino que constituye un elemento clave para diseñar políticas públicas que respondan de manera efectiva a las distintas manifestaciones de la pobreza \textcite{saenz:2020}.
+
+\subsection{Antecedentes}
+
+El Consejo Nacional de Evaluación de la Política de Desarrollo Social (Coneval) fue un organismo autónomo y descentralizado cuya tarea principal consistía en la generación e implementación de diversas técnicas estadísticas para cuantificar la pobreza desde varios ámbitos, abordando así la medición multidimensional de la pobreza (MMP) en México. La última edición sobre la MMP que realizó el Coneval fue en 2022, siendo ahora el Instituto Nacional de Estadística y Geografía (INEGI) el organismo encargado de darle continuidad a esta medición. En 2024 el INEGI publicó su primera edición de la MMP tomando como base los mismos  lineamientos propuestos por el Coneval. Estos lineamientos tienen sustento en los artículos 36 y 37 de la Ley General de Desarrollo Social (LGDS) y determinan que la MMP se construye a partir de dos fuentes de datos oficiales y productos generados de estas: (1) el Censo de Población y Vivienda (CPV) y (2) la Encuesta Nacional de Ingresos y Gastos en los Hogares (ENIGH). 
+
+Los lineamientos establecen que la MMP debe tener una periodicidad mínima bienal en los niveles estatal y nacional, y quinquenal a nivel municipal. Para este último caso resulta complejo realizar la MMP dado que la ENIGH solo es representativa a nivel estatal y nacional, y por tanto, se hace uso de otros métodos de estimación. En 2020, Coneval construyó la MMP a nivel municipal a partir del ajuste de modelos en áreas pequeñas para realizar predicciones sobre atributos de interés, entre ellos, el ingreso corriente total per cápita, mediante la técnica del mejor predictor heterocedástico empírico, \textit{empirical best predictor heterokedastic} (EBPH), la cual está basada en la teoría de modelos lineales mixtos y es equivalente al planteamiento en la \autoref{eq:modelo-lineal-mixto}, pero permitiendo que la varianza de los hogares sea distinta entre sí, de ahí su nombre.
+
+El objetivo principal de la MMP es estimar el número y porcentaje de la población en situación de pobreza. Para realizar esta estimación, se establece que la pobreza se compone de dos espacios analíticos principales: la dimensión de derechos sociales o carencias, que consta de seis indicadores dicotómicos: rezago educativo, acceso a los servicios de salud, acceso a la seguridad social, calidad y espacios de la vivienda, acceso a los servicios básicos en la vivienda y acceso a la alimentación; y el espacio de bienestar económico, cuyo indicador es el ICTPC. Al incorporar estos dos rubros, se clasifica a la población en uno de cuatro cuadrantes de pobreza \parencite{inegi-reporte:2025, coneval:2023}:
+\begin{itemize}
+\item[I.] Población en situación de pobreza multidimensional: población con ingreso inferior al
+valor monetario de las líneas de pobreza por ingresos\footnote{Valor monetario de la canasta alimentaria más el valor monetario de la canasta no alimentaria: 3296.92 y 4564.97 pesos mexicanos para los ámbitos rural y urbano.} (LPI) respectivas y con al menos una carencia social, en este cuadrante, la población se desagrega en dos grupos:
+\begin{itemize}
+\item [I'.] Población en situación de pobreza extrema: su ingreso es inferior al valor monetario de las líneas de pobreza extrema por ingresos\footnote{Valor de la canasta alimentaria: 1800.55 y 2354.65 pesos mexicanos para los ámbitos rural y urbano.} (LPEI) y presenta tres o más carencias sociales.
+\item[I''.] Población en situación de pobreza moderada: percibe un ingreso inferior a las LPI y presenta entre una y dos carencias.
+\end{itemize}
+\item[II.] Población vulnerable por carencias sociales: población con una o más carencias
+sociales, pero cuyo ingreso es igual o superior a las LPI respectivas, 
+\item [III.] Población vulnerable por ingresos: población sin carencias sociales y con ingreso
+inferior a las LPI respectivas,
+\item[IV.] Población no pobre multidimensional y no vulnerable: población con ingreso igual o
+superior a las LPI respectivas y sin ninguna carencia social.
+\end{itemize}
+% Conectar la medicion municipal de la pobreza con el CPV, ¿por que lo necesitamos para estimar el numero de personas y su porcentaje usando el CPV?; quizás sea útil recordar los factores de expansión para esta tarea.
+Es relevante señalar que los indicadores de seguridad social, alimentación e ingreso no pueden obtenerse directamente a partir de información del CPV, por lo que necesitan ser estimados a través de modelos de regresión en áreas pequeñas \parencite{coneval:2020}. En este sentido, el modelo propuesto permite abordar la dimensión de la pobreza que corresponde a la vulnerabilidad por ingresos.
+% , y este indicador se construye a partir de las líneas de pobreza por ingresos y extrema. 
+Así, el objetivo es realizar predicciones del ICTPC para todos los hogares no muestreados de los cuáles se tiene información auxiliar proveniente del CPV 2020, y para tal propósito, se emplean y procesan los datos siguiendo los criterios establecidos por el Coneval. De este modo, se explorar una alternativa para desarrollar esta parte de la MMP municipal para el año 2025, el siguiente periodo quinquenal con respecto a la medición previa.
+
+\subsection{Fuentes de información y procesamiento}
+\label{ch-v-subsec:datos}
+
+Las estimaciones con modelos de regresión en áreas pequeñas se realizaron empleando datos oficiales: el CPV 2020 y la ENIGH 2025. Esta última consta de diecisiete productos o tablas: viviendas, hogares, población, gastos monetarios y no monetarios en los hogares, entre otras. Así mismo, la desagregación más pequeña en estas tablas es a nivel vivienda, seguido por los hogares y finalmente se encuentra la población. Por su parte, se dispone de datos del CPV hasta nivel de hogar.
+
+Para actualizar el conjunto de datos de hogares con la información proveniente de la ENIGH 2024, fue necesario realizar ligeros ajustes al código Stata que general las tablas para realizar la MMP municipal de la pobreza\footnote{Pobreza a nivel municipal: \url{https://www.coneval.org.mx/Medicion/Paginas/Pobreza-municipio-2010-2020.aspx}}\footnote{MMP estatal 2020 (Coneval): \url{https://www.coneval.org.mx/Medicion/MP/Paginas/Pobreza_2022.aspx}}\footnote{MMP 2024 estatal (INEGI): \url{https://www.inegi.org.mx/desarrollosocial/pm/}}. De este modo, el conjunto de datos conformado por la variable objetivo e información de covariables auxiliares (conteos, indicadores, categorías) fue generado de acuerdo a los mismos criterios que el Coneval usó en el año 2020 para la medición municipal de la pobreza. 
+
+Tras integrar las fuentes de información, el conjunto de datos para la Ciudad de México se compone de 79,881 observaciones a nivel hogar, de las cuáles únicamente se tiene registro del ICTPC en 2,329 hogares adicionales. A su vez, la base de datos consta de 52 covariables continuas (conteos, porcentajes, categorías ordenadas), 81 covariables binarias (indicadores de carencias) y 7 covariables categóricas (más de dos niveles no ordenados). Un análisis de componentes principales sobre las 52 covariables continuas -no reportado aquí- señala que es posible reducir la dimensión a 26 componentes recuperando hasta el 95.27\% de la estructura de covarianzas. Se empleará esta técnica para reducir la dimensionalidad, no obstante, esto implica que se pierde la interpretación de las covariables continuas, en cambio, aún se dispone de los indicadores binarios. En el \hyperlink{anexo3}{Anexo 3} se muestra una lista con las covariables incluidas.
+%En este mismo sentido, se encontró que el indicador binario \textit{jefe con posición de subordinado} genera  dependencias lineales perfectas,
+Aunque el planteamiento del modelo propuesto en la \autoref{eq:log-normal-jerarquico} no requiere que la matriz diseño sea de rango completo, se optó por remover los indicadores binarios que generan dependencias lineales perfectas.
+
+El ICTPC se obtiene a partir de la medición multidimensional de la pobreza 2024 elaborada por el INEGI, para su construcción, se considera el cociente entre ingreso corriente total (ICT) del hogar y el tamaño del hogar ajustado. El ingreso corriente se compone del ingreso monetario: salarios, transferencias, rentas, entre otros; y el ingreso no monetario: pagos y regalos en especie. La ENIGH levanta registro de los ingresos percibidos por los individuos encuestados hasta seis meses previos a la entrevista.  El ICT se obtiene sumando los ingresos monetarios y no monetarios promedio percibidos durante este periodo de tiempo por cada integrante del hogar, analizados a precios constantes del 2018. 
+% deflactados
+% en el hogar se llevan a cabo dos procesos: deflactación de los ingresos monetarios y promedio de acuerdo al tamaño del hogar. Para la primera tarea, se consideran los deflactores del año 2024, es decir, el periodo Diciembre/2023 a Diciembre/2024
+Luego, para obtener el ICTPC, se re-escala el ICT de acuerdo al tamaño del hogar ajustado, esto es, a cada integrante del hogar se le asigna un peso entre (0, 1) de acuerdo al grupo etario al que pertenece, estos pesos están distribuidos como se indica en el Cuadro \ref{tab:tamaño_ajustado}
+\begin{table}[H]
+\centering
+\caption[Tamaño del hogar ajustado.]{Tamaño del hogar ajustado. Fuente: elaboración propia con información del programa de cómputo de la MMP 2024.}
+\label{tab:tamaño_ajustado}
+\begin{tabular}{ll}
+\hline
+Tamaño ajustado & Condición \\
+\hline
+0.7031 & Menor de seis años \\
+0.7382 & Mayor de seis y menor de trece años \\
+0.7057 & Mayor de trece años y menor de diecinueve años \\
+0.9945 & Mayor de veinte años y datos perdidos \\
+1.000 & Único integrante del hogar \\ 
+\hline
+\end{tabular}
+\end{table}
+
+%Con el prósito de discretizar la respuesta
+
+De igual modo, cuando se trabaja con los modelos probit y probit ordenado, se discretiza la variable ICTPC de acuerdo a la LPI y LPEI que corresponde al tipo de entorno: rural o urbano.
+
+\begin{itemize}
+\item En el caso binario, definimos la presencia de carencias como el caso de interés, es decir, $y_{ij} = 1$; por tanto, se define
+\begin{equation}
+y_{ij} =
+\begin{cases}
+1 & \text{ si } \text{el contexto } (i, j) \text{ es urbano y } \tilde{y_{ij}} < \text{LPI urbana} \\
+1 & \text{ si } \text{el contexto } (i, j) \text{ es rural y } \tilde{y_{ij}} < \text{LPI rural} \\
+0 & \text{ de otro modo }
+\end{cases}
+\end{equation}
+
+\item En el caso ordinal, de forma natural se obtienen tres categorías de acuerdo a los umbrales de ingresos: por debajo de la línea de pobreza extrema, por debajo de la línea de pobreza y sin esta carencia. De forma análoga al caso binario, se define
+\begin{equation}
+y_{ij} =
+\begin{cases}
+0 & \text{ si } \text{el contexto } (i, j) \text{ es urbano y } \tilde{y_{ij}} < \text{LPEI urbana} \\
+0 & \text{ si } \text{el contexto } (i, j) \text{ es rural y } \tilde{y_{ij}} < \text{LPEI rural} \\
+1 & \text{ si } \text{el contexto } (i, j) \text{ es urbano y } \tilde{y_{ij}} < \text{LPI urbana} \\
+1 & \text{ si } \text{el contexto } (i, j) \text{ es rural y } \tilde{y_{ij}} < \text{LPI rural} \\
+2 & \text{ de otro modo }
+\end{cases},
+\end{equation}
+\end{itemize}
+donde $\tilde{y}_{ij}$ es el ICTPC para la observación $(i, j)$. Como nota general, en el modelo probit ordenado, es posible distinguir cuando una respuesta es mayor o menor que otra, en este caso, la categoría cero se considera más pequeña, y conforme la respuesta latente crece, se obtiene la categoría uno y dos, por su lado, el modelo binario no tiene orden en la respuesta, sino, una cualidad de interés. 
+
+\subsection{Ruta de trabajo}
+% este nombre es provicional
+
+Como se mencionó previamente, el objetivo de los modelos en áreas pequeñas es generar pronósticos para aquellas regiones con tamaños de muestra insuficientes para realizar estimación directa, e incluso donde no se dispone de observaciones sobre la variable objetivo ($n_{i}=0$). No obstante, en este caso se tienen observaciones para todos los $M=16$ dominios. Por tanto, en este escenario se propuso la siguiente ruta de trabajo:
+\begin{itemize}
+\item Entrenar al modelo log-normal sesgado con información de catorce regiones y predecir las dos restantes. De forma concreta, se propone predecir el log-ICTPC para las alcaldías Miguel Hidalgo y Milpa Alta,
+%De acuerdo con el \autoref{tab:descripcion_alcaldia}
+ya que en estas dos demarcaciones se registra el ICTPC promedio más grande y pequeño, de esta manera, es posible comparar los pronósticos con valores reales bien diferenciados a fin de evaluar su desempeño.
+
+\item Repetir el paso anterior con el método Hamiltoniano Monte Carlo (HMC) a fin de comparar las métricas de ajuste y el tiempo de ejecución promedio.
+
+\item Ajustar los tres modelos propuestos con todas las observaciones disponibles y empleando ámbos métodos de inferencia, a fin de calcular y reportar estimaciones \textit{a posteriori}; además, con esta muestra aproximada es posible estimar del porcentaje de la población con ICTPC por debajo de la línea de pobreza. En este caso, como se dispone de información en todas las regiones ($n_{i}>0$), fijamos $\mu_{0}=0$ y $\sigma^{2}_{\mu}=100^{2}$ en la Ecuación \ref{eq:log-normal-jerarquico}, es decir, no se emplea la estrategia de agrupamiento.
+
+\item Repetir el paso anterior, pero únicamente realizar el ajuste con la muestra observada dividida aleatoriamente en un conjunto de 80\% entrenamiento y 20\% prueba. En este contexto, únicamente se consideran las métricas de ajuste, el tiempo de ejecución y los gráficos de dispersión o tablas de aciertos y errores entre los valores observados y los ajustados.
+
+\end{itemize}
+
+Para el ajuste HMC se emplea una única cadena, en este caso, {Stan} calcula una versión del estadístico de Gelman-Rubin $\hat{R}$ que divide $m$ cadenas paralelas en $2m$ cadenas para evaluar la convergencia. De este modo, es posible estimar esta cantidad incluso cuando se usa una única trayectoria de muestreo HMC. Con respecto al tercer punto, para calcular los porcentajes de la población, primero se identifica a los hogares con ingresos inferiores a las líneas de pobreza, de acuerdo al ámbito, urbano o rural, y a continuación se multiplica el tamaño del hogar por su factor de expansión asociado, finalmente, se agrupa el número de personas con estas carencias. De este modo, se obtiene una estimación del total poblacional con vulnerabilidad por ingresos, con la particularidad de que esta medición está a nivel municipal. Para calcular estos porcentajes de la población, sólo se tomó en cuenta los pronósticos generados a partir de la información del CPV 2020, es decir que se excluyó a los valores del ICTPC que brinda la MMP 2024 ya que los factores de expansión de ambas fuentes de información representan a toda la ciudad: en otras palabras, no se duplicó la información.
+
+Cuando no se tiene información en todas las regiones de estudio, es recomendable calibrar o reponderar los factores de expansión para mejorar la precisión estadística, sin embargo, en este caso se contó con información completa de las $M=16$ regiones y esta técnica no se llevó a cabo. Por otro lado, el Coneval realizaba ajustes a los totales poblacionales de cada región a fin de que la MMP a nivel municipal coincidiera con la medición estatal, así mismo, dado que en el CPV 2020 se omitieron algunos registros con datos nulos, la suma de los factores de expansión en esta fuente de datos no suma al total poblacional de la entidad en el año 2020. En este mismo sentido, quizás sería posible calibrar los factores de expansión a fin de incluir la información de la MMP 2024 para calcular el porcentaje de la población bajo alguna línea de pobreza, no obstante, no se exploró esta alternativa.
+
+
+% ♥
+
+
+

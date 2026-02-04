@@ -1,0 +1,350 @@
+\chapter{REVISIÓN DE LITERATURA}
+\label{ch:ii-iv-revision}
+
+Este capítulo consta de tres apartados donde se abordan los conceptos principales de la investigación. En la \autoref{sec:normal-asimetrica} se revisa la distribución normal sesgada en una y varias dimensiones, la parametrización centrada y dos representaciones estocásticas útiles. Luego, en la \autoref{sec:bayes-mcmc} se hace un breve resumen sobre el paradigma Bayesiano de la estadística y sobre la técnica de muestreo con cadenas de Márkov Monte Carlo (MCMC) conocida como Hamiltoniano Monte Carlo (HMC). Finalmente, la \autoref{sec:bayes-variacional} muestra algunos enfoques del método Bayesiano variacional, así como el algoritmo de optimización que se emplea más adelante.
+
+
+%\chapter{Distribución normal asimétrica y truncamiento oculto}
+\section{Distribución normal asimétrica y truncamiento oculto}
+\label{sec:normal-asimetrica}
+
+
+En esta sección presentamos la distribución normal asimétrica, así como su extensión multivariada y su génesis debido al proceso de \textit{truncamiento oculto}. Esta densidad fue formulada como una extensión de la distribución normal por \textcite{azzalini-1985} y posteriormente extendida al caso multivariado por \textcite{azzalini-1996}, sin embargo, es posible trazar su aparición a varias décadas atrás, no como una extensión de la distribución normal pero sí como resultado de manipular estas densidades.\footnote{Una revisión más extensa sobre su historia se encuentra en \url{http://azzalini.stat.unipd.it/SN/faq-h.html}.} No obstante, otros autores también han contribuido al estudio y desarrollo de esta clase de densidades, por ejemplo \textcite{arnold-hidden2:2002, farias-cimat:2007, arellano-azzalini:2008}, entre otros autores. En la \autoref{subsec:normal-asimetrica} presentamos la distribución normal asimétrica o normal sesgada junto a varias de su propiedades, similares a la densidad normal. Luego, en la \autoref{subsec:normal-asimetrica-multivariada} presentamos la extensión multivariada que llamamos distribución normal asimétrica multivariada o normal sesgada multivariada y también listamos algunas propiedades y la relación con la densidad normal multivariada. En la Sección \autoref{subsec:normal-asimetrica-centrada} y \autoref{subsec:normal-asimetrica-multivariada-centrada} se presenta una parametrización alternativa para ambas distribuciones, llamada parametrización centrada o con parámetros centrados, la cuál es conveniente desde el punto de vista práctico para realizar inferencia sobre los parámetros de estas densidades. Posterior a esto, en la \autoref{subsec:truncamiento-oculto} presentamos el mecanismo de \textit{truncamiento oculto} que bajo ciertas especificaciones da lugar a la densidad normal sesgada en una o varias dimensiones. Este fenómeno también es relevante desde el enfoque de inferencia, ya que, como se verá más adelante, la densidad normal sesgada también puede representarse mediante un mecanismo similar a la aumentación de datos. Finalmente, pero no menos importante, en la \autoref{subsec:representacion-alternativa} se muestra otro mecanismo estocástico que da origen a la densidad normal sesgada, en una o varias dimensiones.
+
+
+\subsection{Distribución normal asimétrica}
+\label{subsec:normal-asimetrica}
+
+% Sea $Z$ una variable aleatoria con distribución normal estándar, denotamos su densidad como
+% \begin{equation}
+% f_{Z}(z) = \frac{1}{\sqrt{2\pi}} \exp\{ - z^{2} \},
+% \end{equation}
+% y escribimos que $Z\sim N(0, 1)$. No es difícil ver que $X\triangleq \sigma Z+\mu \sim N(\mu, \sigma^{2})$ y su densidad está dada por
+% \begin{equation}
+% f_{X}(x)= \frac{1}{\sqrt{2\pi\sigma^{2}}} \exp\{-\frac{1}{2\sigma^{2}} (x-\mu)^{2} \}.
+% \end{equation}
+% \begin{tcolorbox}
+% \begin{itemize}
+% \item La distribución normal es una densidad con soporte en todos los reales.
+% \item Es una distribución simétrica y centrada en $\mu$.
+% \end{itemize}
+% \end{tcolorbox}
+
+% Decimos que la variable aleatoria $Z$ tiene distribución normal asimétrica estándar si su densidad está dada por
+% \begin{equation}
+% f_{Z}(z) = 2\phi(z)\Phi(z\lambda), \quad \lambda\in\mathbb{R}
+% \end{equation}
+% y denotamos $Z\sim SN(0, 1, \lambda)$, $\lambda$ se conoce como el parámetro de forma o asimetría. De manera análoga al caso normal, no es difícil ver que $X\triangleq \sigma Z + \mu \sim SN(\mu,\, \sigma,\, \lambda)$.
+
+Se dice que la variable aleatoria $X$ tiene distribución (ley) normal asimétrica o normal sesgada si su función de densidad está dada por
+\begin{align}
+\label{eq:ch-2-pdf-skew-normal}
+f_{X}(x\, | \, \mu,\, \sigma^{2},\, \lambda) &= \frac{2}{\sigma}\phi\left(\frac{x-\mu}{\sigma}\right) \, \Phi\left(\lambda\, \frac{x-\mu}{\sigma}\right)\, I_{(-\infty,\, \infty)}(x),
+\end{align}
+donde $(\mu,\, \sigma^{2},\, \lambda) \in \mathbb{R}\times\mathbb{R}^{+}\times\mathbb{R}$ son los parámetros de localidad, varianza y forma. Las funciones $\phi$ y $\Phi$ denotan la función de densidad y distribución de una variable aleatoria normal estándar. A continuación describimos algunas de sus propiedades. Sea $X\sim SN(\mu, \, \sigma^{2},\, \lambda)$ entonces \parencite[][]{azzalini-2005}:
+\begin{enumerate}
+
+\item La familia de distribuciones normales asimétricas es cerrada bajo la transformación de cambio de localidad y escala, para $(a,\, b)\in\mathbb{R}\times\mathbb{R}^{+}$
+\begin{equation}
+a + b X \sim SN(a+b^{2}\mu,\, b^{2}\sigma^{2},\, \lambda). 
+\end{equation}
+
+\item Si $\lambda=0$, entonces $X\sim N(\mu,\, \sigma^{2})$. Además, $-X\sim SN(\mu,\, \sigma^{2},\, -\lambda)$.
+
+\item $\lim\limits_{\lambda\to\infty} f_{X}(x\, |\, \mu,\, \sigma^{2},\, \lambda) \to NT(x\, |\, \mu,\, \sigma^{2};\, 0,\, \infty)$, es decir, haciendo que el parámetro de forma crecezca (disminuya) sin límite, la densidad normal asimétrica converge a una densidad normal truncada a la izquierda (derecha) en cero.
+
+\item La función generadora de momentos está dada por
+\begin{equation}
+m_{X}(t)=2\exp\left\{\mu t + \frac{\sigma^{2} t^{2}}{2}\right\}\Phi(\sigma \rho t),
+\end{equation}
+donde $\rho\triangleq{\lambda}/{\sqrt{1 + \lambda^{2}}}$. De ahí que:
+
+\item $\mathbb{E}[X] = \mu + \sigma\rho\sqrt{{2}/{\pi}}$. $\mathbb{V}\text{ar}[X]= \sigma^{2}\left(1-{2\rho^{2}}/{\pi}\right)$.
+
+\item El coeficiente de asimetría esta dado por \[
+\frac{\mathbb{E}[(X-\mathbb{E}[X])^{2}]}{(\mathbb{V}\text{ar}[X])^{3/2}} = \sqrt{\frac{2}{\pi}}(4-\pi)\lambda^{3}\big/\pi(1-\frac{2}{\pi}\lambda^{2})^{3/2}.\]
+Usualmente, esta cantidad se denota con $\gamma_{1}$. \textcite{jeffrey-prior-sn:2007} sugieren que como $\gamma_{1}\in(-0.9953,\, 0.9953)$, esta densidad es adecuada solo para modelar sesgo leve o moderado.
+
+\end{enumerate}
+
+
+En la \autoref{ch-ii-SN} se dibuja la densidad $SN(x \mid 0,\, 1,\, \lambda)$ para los valores $\lambda \in\{0,\, \pm 2,\, \pm 5\}$. En este caso, cuando $\mu=0$ y $\sigma^2=1$, decimos que $X$ tiene densidad normal sesgada estándar, y de igual modo al caso normal, es común denotar esta variable aleatoria con $Z$.
+
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-ii/SN_density_neg.pdf}
+\caption{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\linewidth}
+\includegraphics[width=\linewidth]{Figuras/c-ii/SN_density_pos.pdf}
+\caption{}
+\end{subfigure}
+\caption[Densidad normal sesgada estándar para varios valores de $\lambda$.]{Densidad normal sesgada estándar para varios valores de $\lambda$. Fuente: elaboración propia.}
+\label{ch-ii-SN}
+\end{figure}
+
+
+\subsection{Distribución normal asimétrica multivariada}
+\label{subsec:normal-asimetrica-multivariada}
+
+% La principal diferencia entre la densidad normal sesgada multivariada que propone Azzalini, con respecto a Arnold en Hidden Truncation Models 2000, es que Azzalini parte de
+% X = mu + w Z,
+% donde Z es SN(0, \bar{\Sigma}, \lambda), w es una matriz diagonal con errores estándar, mu es un vector. Aquí no usa el truncamiento oculto.... pero debería llegar a lo mismo si parte de que Z tiene dist. SN(0, I, \lambda) y reemplaza w por \Sigma...
+
+% Ahora bien, Arnold parte del truncamiento oculto con 
+% Z = \Sigma^{-1/2} (X - mu),
+% donde X es N(0, I), es decir, normal multivariada estándar
+
+Sea $\boldsymbol{X}_{n}=(X_{1}, \, X_{2},\, \ldots,\, X_{n})^{T}$ un vector aleatorio. De acuerdo con \textcite{arnold-hidden2:2002, azzalini-1996}, entre otros autores, se dice que $\boldsymbol{X}_{n}$ tiene distribución (ley) normal asimétrica o normal sesgada multivariada si su función de densidad está dada por
+\begin{align}
+f_{\boldsymbol{X}_{n}}(\boldsymbol{x}_{n} \mid \boldsymbol{\mu}_{n},\, \Sigma,\, \boldsymbol{\lambda}_{n}) &= 2 \phi_{n}(\boldsymbol{x}_{n} \mid \boldsymbol{\mu}_{n}, \Sigma)\, \Phi(\boldsymbol{\lambda}_{n}^{T}\boldsymbol{\sigma}^{-1}(\boldsymbol{x}_{n}-\boldsymbol{\mu}_{n})),
+\end{align}
+donde $(\boldsymbol{\mu}_{n}, \, \Sigma,\, \boldsymbol{\lambda}_{n})\in\mathbb{R}^{n}\times \mathbb{M}_{n}(\mathbb{R})\times\mathbb{R}^{n}$ son los parámetros de localidad, covarianza y forma.\footnote{Denotamos como $\mathbb{M}_{n}(\mathbb{R})$ al conjunto de matrices cuadradas de dimensión $n$ con entradas en los reales que son simétricas y definidas positivas: en otras palabras, es el conjunto de matrices de covarianza.} $\phi_{n}$ denota la función de densidad normal multivariada de dimensión $n$. Definimos $\boldsymbol{\sigma} \equiv \text{diag}(\Sigma)$ como una matriz diagonal cuyas entradas son la raíz cuadrada de los elementos diagonales de $\Sigma$, de igual modo, definimos $\bar{\Sigma}=\boldsymbol{\sigma}^{-1}\bar{\Sigma}\boldsymbol{\sigma}^{-1}$ como una matriz de correlación obtenida a partir de la matriz de covarianza $\Sigma$.
+
+A continuación describimos algunas de las propiedades básicas de esta distribución, las cuáles podemos ver que son analógas al caso univariado. Sea $\boldsymbol{X}_{n}\sim SN_{n}(\boldsymbol{\mu}_{n}, \Sigma, \boldsymbol{\lambda}_{n})$, entonces \parencite[][]{azzalini-2005}:
+\begin{enumerate}
+\item La familia de distribuciones normales asimétricas multivariadas es cerrada bajo la transformación de cambio de localidad y escala.
+%, para $\boldsymbol{a}_{m}\in\mathbb{R}^{m}$, $B\in\mathbb{R}^{m\times n}$
+%\begin{align}
+%\boldsymbol{a}_{m} + B^{1/2}\boldsymbol{X}_{n} \sim SN_{m}(\boldsymbol{a}_{m}+B^{1/2}\boldsymbol{\mu}_{n},\, B\Sigma B^{T},\, \boldsymbol{\lambda}_{n})
+%\end{align}
+\item Si $\boldsymbol{\lambda}_{n}=\boldsymbol{0}_{n}$, entonces $\boldsymbol{X}_{n}\sim N_{n}(\boldsymbol{\mu}_{n},\, \Sigma)$. Además, $-\boldsymbol{X}_{n}\sim SN_{n}(\boldsymbol{\mu}_{n},\, \Sigma,\, -\boldsymbol{\lambda}_{n})$
+
+\item La función generadora de momentos está dada por
+\begin{equation}
+m_{\boldsymbol{X}}(\boldsymbol{t}) = 
+2\exp\left(
+\boldsymbol{\mu}_{n}^{T}\boldsymbol{t}+\frac{1}{2}\boldsymbol{t}^{T}\Sigma\boldsymbol{t}\right)
+\Phi\left( \big({2}/{\pi}\big)^{-1/2} \boldsymbol{\mu}_{Z}^{T} \boldsymbol{\sigma} \boldsymbol{t}\right),
+\end{equation}
+donde $\boldsymbol{\sigma}\equiv \text{diag}(\Sigma)$, $\boldsymbol{\mu}_{Z} \equiv (1 + \boldsymbol{\lambda}_{n}^{T}\bar{\Sigma}\boldsymbol{\lambda}_{n})^{-1/2}\bar{\Sigma}\boldsymbol{\lambda}_{n}$. De ahí que:
+
+\item $\mathbb{E}[\boldsymbol{X}_{n}] = \boldsymbol{\mu}_{n} + \boldsymbol{\sigma}\boldsymbol{\mu}_{Z}\sqrt{\frac{2}{\pi}}$. $\Var{[\boldsymbol{X}_{n}]} = \Sigma - \boldsymbol{\sigma} \boldsymbol{\mu}_{Z}^{T}\boldsymbol{\mu}_{Z}\boldsymbol{\sigma}$.
+
+% Añadir: Covarianza, Condicionales
+
+\item Suponga que partimos el vector $\boldsymbol{X}_{n}$ y sus parámetros como $\boldsymbol{X}_{n}=(\boldsymbol{X}_{1}, \boldsymbol{X}_{2})^{T}$, $\boldsymbol{\mu}_{n}=(\boldsymbol{\mu}_{1}, \boldsymbol{\mu}_{2})^{T}$, $\boldsymbol{\lambda}_{n}=(\boldsymbol{\lambda}_{1}, \boldsymbol{\lambda}_{2})^{T}$ y $\Sigma = \{\Sigma_{ij}\}_{(i, j)\in\{1, 2\}}$ (una matriz en bloques). Si $\boldsymbol{X}_{1}$ es de dimensión $n_{1}$, entonces su distribución marginal es $\boldsymbol{X}_{1}\sim SN_{n_{1}}(\boldsymbol{\mu}_{1}, \Sigma_{11}, \boldsymbol{\lambda}_{1 \mid 2})$, donde
+\begin{equation}
+\begin{aligned}
+\boldsymbol{\lambda}_{1 \mid 2} &\equiv \frac{\lambda_{1} + \bar{\Sigma}_{11}^{-1}\bar{\Sigma}_{12}\boldsymbol{\lambda}_{2}}{\sqrt{1 + \boldsymbol{\lambda}_{2}^{T}\bar{\Sigma}_{22 \mid 1}\boldsymbol{\lambda}_{2}}} \\
+\bar{\Sigma}_{22 \mid 1} &\equiv \bar{\Sigma}_{22} - \bar{\Sigma}_{21}\bar{\Sigma}_{11}^{-1}\bar{\Sigma}_{12}.
+\end{aligned}
+\end{equation}
+
+
+% Revisar la propiedad de abajo!
+% \item Existe una matriz $C$ tal que $C\, \Sigma^{-1/2}(\boldsymbol{X}-\boldsymbol{\mu})\sim SN_{n}(\boldsymbol{0},\, I_{n},\, \boldsymbol{\lambda}^{\star})$, donde $\boldsymbol{\lambda}^{\star}$ tiene un único elemento distinto de cero, este elemento está dado por
+% \begin{align*}}
+% \lambda_{k} &= \frac{1}{\sqrt{\boldsymbol{\lambda}^{T}\Sigma}\boldsymbol{\lambda}}.
+% \end{align*}
+% Es decir, $C$ transforma el vector $\boldsymbol{X}$ a un tipo de `forma canónica', donde toda la asimetría se concentra en un único valor $\lambda_{k}$.
+\end{enumerate}
+% Me gustaría agregar esto:
+
+El estado del arte sobre la distribución normal asimétrica multivariada consiste en la clase de densidades llamada normal asimétrica unificada, \textit{skew unified normal} (SUN), la cuál extiende la clase descrita arriba modificando el término de asimetría en dos aspectos \parencite{durante:2019, arellano-azzalini:2020}:
+\begin{itemize}
+\item Añade un parámetro adicional dentro de la función $\Phi$, lo que permite una mayor regulación de la forma, lo que conduce a la distribución normal sesgada extendida multivariada, \textit{extended
+skew-normal} (ESN). Esto es análogo al desarrollo de \textcite{arnold-hidden2:2002}.
+
+\item Permite que el mecanismo que induce la asimetría sea multivariado, es decir, generaliza al vector de forma $\boldsymbol{\lambda}_{n}$ a una matriz $\Lambda$. Esta modificación genera la familia normal sesgada cerrada, \textit{closed skew-normal} (CSN) de \textcite{farias-cimat:2007}.
+\end{itemize}
+
+Además de incrementar la flexibilidad, estas extensiones confieren propiedades de cerradura para marginales, condicionales y distribuciones conjuntas, produciendo así una clase general \parencite{durante:2019}. Concretamente, la densidad está dada por
+\begin{align}
+%f_{\boldsymbol{X}_{n}}(\boldsymbol{x}_{n} \mid \boldsymbol{\mu}_{n},\, \boldsymbol{\Sigma},\, \boldsymbol{\Lambda}_{n},\, \boldsymbol{\gamma}) &=
+\phi_{p}(\boldsymbol{x}_{n} \mid \boldsymbol{\mu}_{n}, \Sigma)\,
+\frac{\Phi_{p}(\boldsymbol{\gamma} + \Lambda^{T}\bar{\Sigma}^{-1}\boldsymbol{\sigma}^{-1}(\boldsymbol{x}_{n}-\boldsymbol{\mu}_{n}); \boldsymbol{0}_{n}\, , \Gamma - \Lambda^{T}\bar{\Sigma}^{-1}\Lambda)}
+{\Phi_{n}(\boldsymbol{\gamma}; \boldsymbol{0}_{n}\, , \Gamma)},
+\end{align}
+y escribimos $\boldsymbol{X}_{n}\sim \text{SUN}_{n, p}(\boldsymbol{\mu}_{n}, \Sigma_{n\times n}, \Lambda_{n\times p}, \boldsymbol{\gamma}_{n}, \Gamma_{p\times p})$. Note que con la elección adecuada de estos parámetros es posible recuperar la densidad normal asimétrica que describimos previamente e incluso la densidad normal multivarada.
+
+\textcite{durante:2019} muestra que la elección de la familia SUN como \textit{a priori} para los parámetros $\boldsymbol{\beta}$ en un modelo de regresión logística resulta ser conjugada, más aún, \textcite{psun:2025} propone la famila \textit{perturbed unified skew-normal} (pSUN), cuya utilidad es ser la distribución conjugada para los coeficientes $\boldsymbol{\beta}$ en cualquier modelo de regresión binaria, siempre que la función liga pueda ser expresada como una mezcla de escala de funciones de distribución gaussianas.
+
+No obstante, en la discusión posterior no es necesario emplear directamente la forma de la densidad normal asimétrica, y por tanto, ninguna de estas generalizaciones, por lo que únicamente consideramos el caso más simple, es decir, aquel que describimos al inicio de esta sección. En la \autoref{fig:ch-ii-MSN-contour} se dibujan los contornos de la densidad $SN_{2}(\boldsymbol{x} \vert \boldsymbol{0},\, I,\, \boldsymbol{\lambda})$ para los valores $\boldsymbol{\lambda} = \pm[2,\, 2]^{T}$.
+% Así mismo, en la \autoref{fig:ch-ii-MSN-surface} se muestra la superficie en tres dimensiones de esta densidad.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-ii/SN2D-contour.pdf}
+\caption[]{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-ii/SN2D-contour2.pdf}
+\caption[]{}
+\end{subfigure}
+\caption[Contornos analíticos y estimados de la densidad normal sesgada en dos dimensiones.]{Las líneas continuas representan los contornos analíticos de la densidad, mientras que las líneas discontinuas muestran los contornos estimados a partir de la generación de muestras aleatorias de esta densidad en dos dimensiones. Fuente: elaboración propia.}
+\label{fig:ch-ii-MSN-contour}
+\end{figure}
+
+%\begin{figure}[H]
+%\centering
+%\includegraphics[width=0.9\linewidth]{Figuras/c-ii/SN2D-surface.pdf}
+%\caption[Superficie de la densidad normal sesgada en dos dimensiones.]{Superficie de la densidad normal sesgada en dos dimensiones. Fuente: elaboración propia.}
+%\label{fig:ch-ii-MSN-surface}
+%\end{figure}
+
+\subsection{Distribución normal asimétrica: parametrización centrada}
+\label{subsec:normal-asimetrica-centrada}
+
+Vale la pena notar que, a diferencia del caso normal, la media y varianza no coinciden con los parámetros de localidad y escala, específicamente, la media está desplazada hacia el signo de $\rho$ o $\lambda$ y la varianza está re-escalada en función del parámetro de correlación o forma. Por otro lado, la inferencia sobre estos parámetros presenta dificultades prácticas, por ejemplo \parencite{arellano-azzalini:2008, jeffrey-prior-sn:2007, azzalini-1985}:
+\begin{itemize}
+\item El estimador de máxima verosimilitud para el parámetro de asimetría puede ser infinito.
+\item La matriz de información de Fisher se vuelve singular a medida que $\lambda\to 0$, esto implica que los estimadores de máxima verosimilitud no sean asintóticamente normales.
+\item Existen máximos locales en la función de (log-)verosimilitud.
+\end{itemize}
+De manera adicional, \textcite{arellano-azzalini:2008} señala que estos problemas se deben completamente a que la parametrización directa no adecuada para la estimación, ya que los parámetros son identificables. En el \hyperlink{anexo:1}{Anexo 1} se cubre brevemente este concepto estadístico.
+
+Motivado por estas razones, \textcite{azzalini-1985} propone una parametrización que remedia el problema de singularidad en la matriz de información\footnote{\textcite[][Sección 5.2]{azzalini-1999} comenta que mediante cálculos analíticos detallados, la parametrización centrada remueve la singularidad en la matriz de información de Fisher cuando $\lambda=0$.} y la llama distribución normal asimétrica con parámetros centrados, la idea general es simple: remover tanto el desplazamiento en el parámetro de localidad como el encogimiento en el parámetro de escala. Así, sea la variable aleatoria $X$ definida como
+\begin{equation}
+X=\mu + \sigma\left(\mathbb{V}\text{ar}[Z]^{-1/2}\left(Z - \mathbb{E}[Z]\right) \right),
+\end{equation}
+si además se reparametriza el parámetro de forma $\lambda$ en términos del coeficiente de asimetría $\gamma_{1}$, entonces se dice que $X$ tiene distribución normal asimétrica con parámetros centrados, y lo denotamos como $X\sim SN^{C}(\mu,\, \sigma^{2},\, \gamma_{1})$, donde $\gamma_{1}$ es igual a como se define previamente. La densidad de probabilidad de $X$ está dada por la siguiente expresión \parencite{g3-skew-normal:2018, azevedo:2011}, donde es posible notar la similitud con la densidad en la \autoref{eq:ch-2-pdf-skew-normal}, sin embargo, tiene una expresión más extensa
+\begin{equation}
+\label{eq:ch-2-pdf-skew-normal-c}
+f_{X}(x \, \mid \, \mu,\, \sigma^{2},\, \gamma_{1}) = \frac{2}{\sigma^{\star}} \phi\left( \frac{x-\mu^{\star}}{\sigma^{\star}} \right) \, \Phi\left( \lambda^{\star}\big(\frac{x-\mu^{\star}}{\sigma^{\star}}\big) \right)\, I_{(-\infty,\, \infty)}(x),
+\end{equation}
+donde $\mu^\star = \mu - s\gamma_1^{1/3}$, $\sigma^{2\,\star} = \sigma^2 \times (1 + s^2 \gamma_1^{2/3})$, $\lambda^\star = s\gamma_1^{1/3}/{\sqrt{r^2 + s^2 \gamma_1^{2/3}(r^2 - 1)}}$, $r = \sqrt{{2}/{\pi}}$ y $s = \left( {2}/({4-\pi}) \right)^{1/3}$. Así mismo, es posible invertir ambas parametrizaciones para obtener los parámetros directos o los parámetros centrados. En la discusión posterior, únicamente centramos la media y varianza, dejando el parámetro de forma sin modificación. De este modo, es posible mantener sólo un tipo de notación. Por ejemplo, a partir de las propiedades previas, la variable aleatoria $X$ con distribución
+\begin{equation}
+X\sim SN\left(\mu-\sigma\sqrt{\frac{2}{\pi}\rho^{2}},\, \sigma^{2}\big/\sqrt{1-\frac{2}{\pi}\rho^{2}},\, \lambda\right),
+\end{equation}
+cumple que $\mathbb{E}[X]=\mu$ y $\mathbb{V}\text{ar}[X]=\sigma^{2}$. En la \autoref{fig:ch-ii-sn-c} se muestra la densidad normal sesgada con parámetros centrados, es decir $SN^{c}(x\mid 0,\, 1,\, \lambda)$, para los valores $\lambda\in\{0,\, \pm 2,\, \pm 5\}$.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-ii/CSN_density_neg.pdf}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\textwidth]{Figuras/c-ii/CSN_density_pos.pdf}
+\end{subfigure}
+\caption[Densidad normal sesgada estándar con parámetros centrados para varios valores de $\lambda$.]{Densidad normal sesgada estándar con parámetros centrados para varios valores de $\lambda$. Fuente: elaboración propia.}
+\label{fig:ch-ii-sn-c}
+\end{figure}
+
+% No es necesario que vaya, de hecho, aún no es el momento de la aparición
+% claro, esto no le quita lo interesante
+%
+%De igual modo, en la \autoref{ch-ii-gamma-lambda-rho} se muestra la relación entre el coeficiente de asimetría y los parámetros de forma y correlación en la parametrización directa.
+%\begin{figure}[H]
+%\centering
+%\includegraphics[width=0.45\linewidth]{example-image-duck}
+%\caption[]{}
+%\label{ch-ii-gamma-lambda-rho}
+%\end{figure}
+
+%\subsection[Distribución normal asimétrica multivariada: parametrización centrada]{Distribución normal asimétrica multivariada: \\ parametrización centrada}
+\subsection[Distribución normal asimétrica multivariada: parametrización centrada]{Distribución normal asimétrica multivariada: parametrización centrada}
+\label{subsec:normal-asimetrica-multivariada-centrada}
+
+Por otro lado, \textcite[][]{arellano-azzalini:2008} presentan una propuesta sobre como aplicar la parametrización centrada cuando se trabaja con la densidad normal asimétrica multivariada: la invitación es centrar cada entrada del vector $\boldsymbol{X}_{n}$ y multiplicar por una matriz diagonal a fin de escalar cada entrada. En la \autoref{fig:ch-ii-MCSN-contour} se muestran los contornos de la densidad $SN_{2}^{c}(\boldsymbol{x} \vert \boldsymbol{0},\, I,\, \boldsymbol{\lambda})$, con $\boldsymbol{\lambda}=\pm[2,\, 2]^{T}$: es decir, la misma densidad que se muestra en la \autoref{fig:ch-ii-MSN-contour} pero con parámetros centrados: podemos notar que ahora la densidad tiene un comportamiento más `regular'.
+%Así mismo, en la \autoref{fig:ch-ii-MCSN-surface} se muestra la superficie asociada a la densidad normal sesgada bivariada con parámetros centrados, nuevamente, si comparamos con la parametrización directa en \autoref{fig:ch-ii-MSN-surface}, la densidad se ve menos dispersa en su soporte.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-ii/SN2C-contour.pdf}
+\caption[]{}
+\end{subfigure}\hfill
+\begin{subfigure}{0.45\textwidth}
+\includegraphics[width=\linewidth]{Figuras/c-ii/SN2C-contour2.pdf}
+\caption[]{}
+\end{subfigure}
+\caption[Superficie de la densidad normal sesgada con parámetros centrados en dos dimensiones.]{Superficie de la densidad normal sesgada con parámetros centrados en dos dimensiones. Fuente: elaboración propia.}
+\label{fig:ch-ii-MCSN-contour}
+\end{figure}
+
+%\begin{figure}[H]
+%\centering
+%\includegraphics[width=0.9\linewidth]{Figuras/c-ii/SN2C-surface.pdf}
+%\caption[Superficies de las densidades normal sesgada con parámetros centrados en dos dimensiones.]{Superficies de las densidades normal sesgada con parámetros centrados en dos dimensiones. Fuente: elaboración propia.}
+%\label{fig:ch-ii-MCSN-surface}
+%\end{figure}
+
+
+\subsection{Proceso de truncamiento oculto}
+\label{subsec:truncamiento-oculto}
+
+
+Una representación estocástica de la densidad normal asimétrica que es útil para la exposición siguiente es mediante el proceso de \textit{truncamiento oculto}, ya que ofrece una forma simple de generar variables aleatorias de esta distribución. Este proceso puede surgir en diversos contextos, quizás incluso de forma inconsciente: suponga que se observan dos variables aleatorias normales correlacionadas, digamos $V_{1}$ y $V_{2}$. Ahora, si registramos alguna de estas variables siempre que la otra exceda cierto umbral $v$ (es decir $U=V_{1}$ siempre que $V_{2}>v$), entonces inducimos sesgo en las observaciones retenidas ($U$), y este sesgo es proporcional a  su correlación $\rho$, de este modo, las observaciones que filtramos ($U$) de acuerdo a la otra variable ($V_{2}$) tendrán distribución normal asimétrica. Este mecanismo puede extenderse a más dimensiones, si $V_{1}, V_{2}, \ldots, V_{n}, V_{n+1}$ tiene distribución normal multivariada, entonces al filtrar $V_{1}, V_{2}, \ldots, V_{n}$ condicionado a que $V_{n+1}$ exceda cierto umbral, obtenemos una densidad normal asimétrica en $n$ dimensiones. \parencite[][]{azzalini:2013, arnold-hidden1:2000}.
+
+Aunque existen varios enfoques para esta aplicación en particular, nos concentramos en el caso que nos ocupa, así, el caso más sencillo es considerando una distribución normal bivariada:
+\begin{align*}
+\begin{bmatrix}
+V \\ W
+\end{bmatrix}\sim N_{2}
+\left(
+\begin{bmatrix}
+\mu \\ 0
+\end{bmatrix},\, 
+\sigma^{2}\begin{bmatrix}
+1 & \rho \\
+\rho & 1
+\end{bmatrix}
+\right)
+\end{align*}
+si definimos $U=V$ siempre que $W>0$, entonces $U\sim SN(\mu,\, \sigma^{2},\, \lambda)$, con $\lambda = \rho/\sqrt{1-\rho^{2}}$. Vale la pena notar que $\rho\in(-1,\, 1)$, mientras que $\lambda\in(-\infty,\, \infty)$, así, conforme $\rho\to\pm 1$ ocurre que $\lambda\to\pm\infty$, es decir que cerca del borde de este rango de valores, $\lambda$ se comporta de forma asintótica. Note que podemos invertir la expresión que define $\rho$ y escribirla en términos de $\lambda$. En la \autoref{fig:ch-ii-rho-vs-lambda} se dibujan ambas funciones. Podemos notar que la relación de $\lambda$ para valores de $\rho$ pequeños, digamos menores a 0.5, es similar a un comportamiento lineal, no obstante, el comportamiento de $\lambda$ cerca de $\pm 1$ puede resultar contraintuitivo: en el escenario descrito arriba, podemos pensar que no existe gran diferencia si tomamos $\rho_{1}=\Cov[V,\, W]=0.995$ comparado con $\rho_{2}=\Cov[V,\, W]=0.999$, no obstante, estos valores de correlación tienen asociado los valores de forma $\lambda_{1}=9.96$ y $\lambda_{2}=22.34$. 
+
+Un resultado principal que es relevante para esta exposición, es escribir la densidad conjunta de $(U,\, W)$ como
+\begin{equation}
+f_{U,\, V}(u,\, w) \equiv f_{U \mid W}(u \mid w)\, f_{W}(w) = N(u \mid \mu  + w\rho,\, \sigma^{2}(1-\rho^{2})) \, N(w \mid 0,\, \sigma^{2})I_{(0,\, \infty)}(w),
+\end{equation}
+donde $f_{W}(w)$ es la densidad de una normal truncada a la derecha en cero. En el \hyperlink{anexo1}{Anexo 1} se prueba como obtener estas densidades. La utilidad práctica de esta representación es evitar usar explícitamente la densidad normal asimétrica, ya que se expresa como el producto de una densidad normal por una densidad normal truncada, así, el proceso de truncamiento oculto junto a la parametrización centrada descrita en la \autoref{subsec:normal-asimetrica-centrada} hacen la inferencia de sobre los parámetros de la distribución normal sesgada más estable desde el punto de vista analítico.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.45\textwidth]{Figuras/c-ii/rho-lambda.pdf}
+\caption[Gráfico de $\rho$ y $\lambda$.]{Observe la naturaleza dual entre el parámetro de correlación en la densidad normal original y el parámetro de sesgo en la densidad normal asimétrica resultante, además, el mapeo $\lambda(\rho)$ es invertible. Se agregó la función identidad identidad en el intervalo $(-1/2, 1/2)$, cuando ambos parámetros se acercan a cero, estos se comportan de manera lineal. Fuente: elaboración propia.}
+\label{fig:ch-ii-rho-vs-lambda}
+\end{figure}
+
+De igual forma, también es posible generalizar esta situación para el caso donde $V$ tiene una distribución normal multivariada:
+\begin{equation}
+\begin{bmatrix}
+\boldsymbol{V} \\ W
+\end{bmatrix} \sim
+N_{n+1}
+\left(
+\begin{bmatrix}
+\boldsymbol{\mu} \\ 0 
+\end{bmatrix}
+,\,
+\sigma^{2}
+\begin{bmatrix}
+\bar{\Sigma}_{V} & \boldsymbol{1}_{n}\rho \\
+\boldsymbol{1}_{n}^{T}\rho & 1
+\end{bmatrix}
+\right),
+\end{equation}
+donde
+\begin{equation}
+\bar{\Sigma}_{V} \equiv (1-\rho_{i}^{2})I_{n} + \rho^{2}J_{n} = (1(i=j) + \rho^{2}1(i\neq j))_{ij},
+%\begin{cases}
+%1 & \text{ si } i=j \\
+%\rho^{2} & \text{ si } i\neq j
+%\end{cases},
+\end{equation}
+esta elección de matriz de covarianza induce correlación entre las observaciones $V_{1}, V_{2} \ldots, V_{n}$ que son filtradas por $W$, además de que permite la generalización correcta del proceso de truncamiento oculto a más de una dimensión. En el \hyperlink{anexo1}{Anexo 1} se discuten las implicaciones de esta matriz de covarianzas.
+%luego, la densidad de $\boldsymbol{V}|(W=w)$ es $N_{n}(\boldsymbol{u}\, |\, \boldsymbol{\mu} + w\rho\,\boldsymbol{1}_{n},\, \sigma^{2}(1-\rho^{2})I_{n})$, note que $U_{i}\, |\, W \perp U_{i'}\, |\, W$, es decir, $U_{i}$ y $U_{i'}$ son condicionalmente independientes dado $W$ ya que la matriz de correlaciones es diagonal.
+Ahora bien, si definimos $\boldsymbol{U}=\boldsymbol{V}$ siempre que $W>0$, entonces, usando un argumento análogo al caso univariado, no es difícil ver que
+\begin{equation}
+f_{\boldsymbol{U},\, W}(\boldsymbol{u},\, w) = \prod_{i=1}^{n} 2N(u_{i}\, |\, \mu_{i} + w\rho,\, \sigma^{2}(1-\rho^{2}))\, N(w\, |\, 0,\, \sigma^{2}) \, I_{(0,\, \infty)}(w),
+% \prod_{i=1}^{n}\frac{2}{\sigma} \phi\left(\frac{y_{i}-\mu_{i}}{\sigma}\right)\, \Phi\left(\lambda_{i}\frac{y_{i}-\mu_{i}}{\sigma}\right),
+\end{equation}
+además, la densidad marginal de $\boldsymbol{U}$ corresponde a una normal asimétrica multivariada, como la definida por \textcite{azzalini-1999}. Este enunciado se demuestra en el \hyperlink{anexo1}{Anexo 1}; no obstante, para nuestra exposición no es necesario emplear este hecho, y como mencionamos previamente, el objetivo principal es eludir el uso explícito de la densidad normal asimétrica.
+
+% en realidad no creo que sea necesario demostrar que Y = U si W>0 tiene distribución normal asimétrica multivariada, ya que solo necesitamos la densidad conjunta de [Y_{i}, W_{i}] [...] ya que para i fijo, la densidad de [Ui, Wi]^T se obtiene como el producto de N_{n}(u_{i} | \mu_{i}1_{N_{i}}, \sigma^{2}(1-\rho_{i}^{2})I_{N_{i}}) x N(w_{i} | 0, \sigma^{2}) 1(w_{i}>0)
+
+
+\subsection{Representación alternativa}
+\label{subsec:representacion-alternativa}
+
+Existen otras representaciones estocásticas de la densidad normal sesgada, por ejemplo, una combinación lineal convexa entre una variable aleatoria normal y una normal truncada en $(0,\, \infty)$: sea $V ~ \sim N(0,\, 1)$ y $W\sim NT(0,\, 1;\, 0,\, \infty)$, además, si $U$ y $W$ son independientes, entonces
+\begin{equation}
+\label{eq:representacion-alternativa}
+X = \mu + \sigma\big(\sqrt{1-\rho^{2}}V + \rho W \big) \sim SN(\mu,\, \sigma^{2},\, \lambda).
+\end{equation}
+Nuevamente, se define $\rho \triangleq \lambda/\sqrt{1+\lambda^{2}}$. Si $\boldsymbol{V}_{n}$ es normal multivariada, al aplicar la \autoref{eq:representacion-alternativa} a cada entrada $V_{i}$ y asignarlo a $X_{i}$, se obtiene la generalización para más dimensiones, es decir $\boldsymbol{X}_{n}$ tendrá distribución normal sesgada multivariada. Esta representación se emplea en el \autoref{ch:v-metodologia} para obtener la estructura de covarianzas de los modelos propuestos. Además, tambien es posible centrar los parámetros de localidad y escala en cada entrada del vector. \textcite{jeffrey-prior-sn:2007, arnold-hidden2:2002, azzalini-1999, azzalini-1985} discuten esta representación alternativa.
+

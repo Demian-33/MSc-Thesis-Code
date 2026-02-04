@@ -1,0 +1,277 @@
+\usepackage{amsmath, amssymb, mathtools, tcolorbox, algorithm2e, xcolor, geometry, hyperref, float, caption, subcaption, cancel, tabularx, multirow, makecell, rotating, xltabular, siunitx, lipsum, paracol, titlesec, fontspec, tocloft, minted, fancyhdr, emptypage, pdfpages, setspace, titlesec, enumitem}
+
+%% Quebrar formulas
+\allowdisplaybreaks
+
+%% Interlineado
+%\renewcommand{\baselinestretch}{1.5} % de forma global
+\setstretch{1.5} % solo al texto
+\setlength{\parskip}{10pt} % distancia de 10pt entre párrafos
+\setlength{\parindent}{0pt}
+%% En listas (o usando enumitem)
+%\setlength{\parsep}{0pt}
+%\setlength{\topsep}{0pt}
+%\setlength{\partopsep}{0pt}
+\setlist{itemsep=-6pt, topsep=0pt} % \setlist[itemize]{...}
+
+\captionsetup{labelfont={bf,small}, textfont=small, singlelinecheck=false, justification=centering}
+
+\titleformat{\chapter}[block]% 
+{\normalfont\bfseries\centering}{CAPÍTULO \thechapter. }{0pt}{}
+\titleformat{\section}%
+{\normalfont\bfseries}{\thesection}{10pt}{}{}
+\titleformat{\subsection}%
+{\normalfont\bfseries}{\thesubsection}{10pt}{}{}
+
+\titlespacing{\chapter}{0pt}{10pt}{10pt}
+\titlespacing{\section}{0pt}{10pt}{10pt}
+\titlespacing{\subsection}{0pt}{10pt}{10pt}
+\titlespacing{\subsubsection}{0pt}{10pt}{10pt}
+
+%% Redefinir figura para añadir 10pt antes y después
+%\BeforeBeginEnvironment{figure}{\vspace{10pt}}
+%\AfterEndEnvironment{figure}{\vspace{10pt}}
+
+% Redefinir tabla para añadir 10pt antes y después
+%\BeforeBeginEnvironment{table}{\vspace{10pt}}
+%\AfterEndEnvironment{table}{\vspace{10pt}}
+
+% Redefinir algoritmo para añadir 10pt antes y después
+\BeforeBeginEnvironment{algorithm}{\vspace{10pt}}
+\AfterEndEnvironment{algorithm}{\vspace{10pt}}
+
+\usepackage[font=small]{caption}
+
+%% Nombre de capitulos, secciones, subsecciones
+\renewcommand{\chaptername}{CAPÍTULO}
+\renewcommand{\chapterautorefname}{Capítulo}
+\renewcommand{\subsectionautorefname}{Sección}
+\renewcommand{\subsectionautorefname}{Sección}
+\renewcommand{\subsubsectionautorefname}{Sección}
+\renewcommand{\sectionautorefname}{Sección}
+\renewcommand{\subsectionautorefname}{Sección}
+\renewcommand{\equationautorefname}{Ecuación}
+\renewcommand{\figureautorefname}{Figura}
+\renewcommand{\tableautorefname}{Cuadro}
+
+
+\renewcommand{\figurename}{Figura}
+\renewcommand{\tablename}{Cuadro}
+
+\renewcommand{\listfigurename}{\normalsize\bfseries \hfill LISTA DE FIGURAS \hfill}
+\renewcommand{\listtablename}{\normalsize\bfseries \hfill LISTA DE CUADROS \hfill}
+
+\renewcommand{\contentsname}{CONTENIDO}
+\renewcommand{\cfttoctitlefont}{\normalsize\bfseries\hfill}
+\renewcommand{\cftaftertoctitle}{\hfill\hfill} 
+
+%% negritas en lista de figuras y cuadros
+\renewcommand{\cftfignumwidth}{7em}
+\renewcommand{\cftfigpresnum}{\bfseries Figura }
+\renewcommand{\cfttabnumwidth}{7em}
+\renewcommand{\cfttabpresnum}{\bfseries Cuadro }
+
+%% Espacio despues de Contenidos
+\setlength{\cftbeforetoctitleskip}{-14pt}  % Antes de "CONTENIDO"
+\setlength{\cftaftertoctitleskip}{10pt}    % Después de "CONTENIDO"
+\setlength{\cftbeforechapskip}{0pt} % espacio entre capitulos?
+
+\setlength{\cftbeforeloftitleskip}{-14pt}  % Antes de "LISTA DE FIGURAS"
+\setlength{\cftafterloftitleskip}{10pt}    % Después de "LISTA DE FIGURAS"
+
+\setlength{\cftbeforelottitleskip}{-14pt}  % Antes de "LISTA DE CUADROS"
+\setlength{\cftafterlottitleskip}{10pt}    % Después de "LISTA DE CUADROS"
+
+% Agrega puntos de relleno (líneas punteadas) a las entradas manuales del TOC
+\renewcommand{\cftdotsep}{1}                % Puntos más juntos
+\renewcommand{\cftchapleader}{\cftdotfill{\cftdotsep}} % Líneas punteadas en capítulos y similares
+% Elimina la sangría de los capítulos en el TOC
+\renewcommand{\cftchapindent}{0pt}
+\renewcommand{\cftchapnumwidth}{0pt}
+
+
+%% minted
+% \usepackage[outputdir=./]{minted}
+% \usepackage[cache=false]{minted}
+
+%https://github.com/gpoore/minted/issues/162
+% default mintinline no funciona dentro de tabularx o xltabular, ahi se propone usar myinline definido asi:
+% nota: usar XeLaTeX, por el comando de abajo supongo...
+\RequireXeTeX
+\makeatletter
+\def\myinline#1#2{%
+\ifx\@footnotetext\TX@trial@ftn
+\detokenize{#2}%
+\else
+\mintinline{#1}{#2}%
+\fi}
+\makeatother
+
+\newcommand{\stan}[1]{\mintinline{stan}{#1}}
+
+\tcbuselibrary{most}
+\tcbset{
+ breakable = true,
+}
+
+%\usepackage{marginnote}
+% \geometry{
+%     paper = letterpaper,
+%     % textwidth=22.5cm, %toma todo el espacio que resta
+%     right=3.9cm,
+%     left=3.9cm,
+%     % margin = 2cm,
+%     marginparwidth=90pt,
+%     top=20mm,
+%     bottom=15mm,
+%     % showframe
+% }
+
+\geometry{
+    paper = letterpaper,
+    margin = 2.54cm,
+    % textwidth=22.5cm, %toma todo el espacio que resta
+    %showframe
+}
+
+
+\DeclareMathOperator{\supp}{supp}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\diag}{diag}
+\DeclareMathOperator*{\tr}{tr}
+
+% The * in \DeclareMathOperator* places the underscored argument underneath the word rather than to the bottom right of it.
+
+% \def\bcancelto#1#2{\let\canto@vector\cantox@vector\cancelto{#1}{#2}}
+
+\newcommand{\KL}[2]{\operatorname{KL}\left(#1\Vert#2\right)}
+\newcommand{\ELBO}[1]{\operatorname{ELBO}\left(#1\right)}
+\newcommand{\E}{\operatorname{\mathbb{E}}}
+\newcommand{\Var}{\operatorname{\mathbb{V}ar}}
+\newcommand{\Cov}{\operatorname{\mathbb{C}ov}}
+
+\definecolor{mygray}{gray}{0.95}
+
+\newcommand{\code}[2][mygray]{\texttt{\colorbox{#1}{#2}}}
+
+\newcommand{\enfasis}[2][mygray]{\colorbox{#1}{#2}}
+
+\newcommand{\Dir}[2]{\operatorname{Dir}\left(#1\vert#2\right)}
+
+\newcommand{\siunitxcolnames}[0]{{Par.} & {Valor real} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%}}
+
+\newcommand{\siunitxcolnamess}[0]{{Par.} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%}}
+
+\newcommand{\siunitxcolnamesss}[0]{{Par.} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%}}
+
+\newcommand{\siunitxcolnamesi}[0]{{Par.} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%} & {$\hat{R}$}}
+
+\newcommand{\siunitxcolnamesii}[0]{{$\boldsymbol{\beta}$} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%} & {Media p.} & {I.C. 2.5\%} & {I.C. 97.5\%} & {$\hat{R}$}}
+
+\newcolumntype{O}{>{}S[table-format=2.1, round-mode=places, detect-weight, round-precision=1]}
+
+\newcolumntype{Q}{>{}S[table-format=1.3, round-mode=places, detect-weight, round-precision=3]}
+
+\newcolumntype{T}{>{}S[table-format=6.3]}
+
+\newcolumntype{R}{>{}S[table-format=3.3, detect-weight]}
+
+\newcolumntype{V}{>{}S[table-format=5.3, detect-weight]}
+
+\newcolumntype{I}{>{}S[table-format=3.0, detect-weight]}
+
+
+% https://tex.stackexchange.com/questions/318372/align-numbers-by-decimal-point-using-siunitx-and-bfseries
+
+
+\newcommand{\colnames}[0]{Par. & Valor real & Media p. & I.C. 2.5\% & I.C. 97.5\% & Media p. & I.C. 2.5\% & I.C. 97.5\%}
+
+
+%% Algoritmos
+\renewcommand{\algorithmcfname}{Algoritmo}
+\renewcommand{\algorithmautorefname}{Algoritmo}
+\newcommand\mycommfont[1]{\normalsize\ttfamily\textcolor{blue}{#1}}
+\SetCommentSty{mycommfont}
+\RestyleAlgo{ruled}
+\SetKwInput{kwInit}{Initialize}
+%\renewcommand\listoflistingscaption{Lista de códigos fuente}
+%\listoflistings
+
+%% Fuentes
+% \usepackage{fontspec}
+% \setmainfont{Times New Roman}
+
+%% Modificar capítulos
+%\titleformat{\chapter}{\centering\Large\bfseries\scshape}{\thechapter}{1em}{}
+
+%https://www.reddit.com/r/LaTeX/comments/vnn7uu/help_sans_bf_sc_fonts/
+
+%% hypersetup
+\hypersetup{
+  pdftitle=Estimación de los modelos de regresión log-normal sesgado y probit sesgado latente en áreas pequeñas mediante inferencia Bayesiana variacional,
+  pdfauthor=Saul Arturo Ortiz Muñoz,
+  pdfsubject=Tesis de maestría,
+  colorlinks=true,
+  citecolor=blue,
+  filecolor=blue,
+  linkcolor=blue,
+  urlcolor=blue}
+
+%% Modificar TOC
+%% 1. INTRODUCCIÓN a CAPITULO 1. INTRODUCCIÓN
+
+\makeatletter
+\def\@chapter[#1]#2{%
+  \phantomsection %
+  \ifnum \c@secnumdepth >\m@ne
+    \refstepcounter{chapter}%
+    \typeout{\@chapapp\space\thechapter.}%
+   \addcontentsline{toc}{chapter}{\texorpdfstring{\MakeUppercase{CAPÍTULO \thechapter.} \ #1}{CAPÍTULO \thechapter. \ #1}}%
+  \else
+    \addcontentsline{toc}{chapter}{#1}%
+  \fi
+  \chaptermark{#1}%
+  \if@twocolumn
+    \@topnewpage[\@makechapterhead{#2}]%
+  \else
+    \cleardoublepage
+    \@makechapterhead{#2}%
+    \@afterheading
+  \fi}
+\makeatother
+
+%% Encabezados
+
+%\fancypagestyle{plain}{
+%  \fancyhf{} % clear all header and footer fields
+%  \fancyfoot[C]{\thepage} % except the center page number
+%  \renewcommand{\headrulewidth}{0pt}
+%  \renewcommand{\footrulewidth}{0pt}
+%}
+\pagestyle{fancy}
+\fancyhf{}
+%\nouppercase{foo}
+%\MakeUppercase{foo}
+%% use with twoside
+%\fancyhead[LE]{{\leftmark}} % left header on even pages
+%\fancyhead[RO]{\nouppercase{\rightmark}} % right header on odd pages
+%% use with oneside
+%% esta chisyoso, en oneside, chapter puede iniciar en par o impar, entonces los encabezados no son consistentes
+%\fancyhead[R]{\MakeUppercase{\ifodd\value{page}\else\leftmark\fi}}
+%\fancyhead[L]{\MakeUppercase{\ifodd\value{page}\rightmark\else\fi}}
+% \fancyhead[L]{O}
+\fancyhead[C]{}
+% \fancyhead[R]{}
+% \renewcommand{\headrulewidth}{0.4pt}
+% \renewcommand{\footrulewidth}{0.4pt}
+\fancyfoot[L]{}
+\fancyfoot[C]{\thepage}
+\fancyfoot[R]{}
+
+%% Evitar hypenation?
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\exhyphenpenalty=10000
+\hbadness=10000

@@ -1,0 +1,12 @@
+n <- 20
+k <- 0 
+cat('k vale', k, '\n')
+for(i in 1:n){
+  k <- k + n
+}
+
+stop('solo necesito eso')
+
+cat('k vale', k, '\n')
+
+k * 0

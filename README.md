@@ -14,3 +14,5 @@ en lugar de
 
 `\includegraphics{Figuras/c-ii/SN_density_pos.pdf}`
 
+Así mismo, se dispone de la versión más reciente del documento de tesis de maestría en formato `.pdf`, de acuerdo a los lineamientos de presentación del Colegio de Postgraduados.
+

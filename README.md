@@ -8,9 +8,9 @@ Dentro de `Codigos`, también se encuentran scripts para reproducir diagramas y 
 
 Por ejemplo, reemplazar
 
-`\\includegraphics{../Figuras/c-ii/SN\_density\_pos.pdf}`
+`\includegraphics{../Figuras/c-ii/SN_density_pos.pdf}`
 
 en lugar de
 
-`\\includegraphics{Figuras/c-ii/SN\_density\_pos.pdf}`
+`\includegraphics{Figuras/c-ii/SN_density_pos.pdf}`
 

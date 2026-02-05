@@ -132,7 +132,7 @@ Al inicio de este capítulo, se comentó la propuesta de estimación para tres m
 \label{ch-v-nombres}
 \begin{tabular}{lll}
 \hline
-Modelo de regresión & Respuesta & Definición \\
+\bfseries Modelo de regresión & \bfseries Respuesta & \bfseries Definición \\
 \hline
 Log-normal sesgado & Continua en $\mathbb{R}$ & $p(y_{ij}) = SN(y_{ij} \mid \eta_{ij},\, \sigma^{2},\, \lambda_{i} )$, $y_{ij}\equiv \log\,\tilde{y}_{ij}$ \\
 \makecell[l]{Probit sesgado \\ con variable latente} & \makecell[l]{Binaria: \\ $\{0,\, 1\}$} & $\mathbb{P}(y_{ij}=1) = 1 - \Phi_{SN}(-\eta_{ij};\, \lambda_{i})$  \\
@@ -846,7 +846,6 @@ En la siguiente sección, se sugiere usar esta \textit{a priori} jerárquica en 
 
 \begin{figure}[H]
 \centering
-\caption[Grafo dirigido acíclico del que corresponde a la representación jerárquica de los modelos log-normal y probit sesgados con parámetros centrados.]{Grafo dirigido acíclico del que corresponde a la representación jerárquica del modelo log-normal sesgado con parámetros centrados. Fuente: elboración propia}
 \label{fig:ch-v-dag}
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[scale=1]{Figuras/c-v/dag-log-normal-sesgado.pdf}
@@ -856,6 +855,7 @@ En la siguiente sección, se sugiere usar esta \textit{a priori} jerárquica en 
 \includegraphics[scale=1]{Figuras/c-v/dag-probit-sesgado.pdf}
 \caption{}
 \end{subfigure}
+\caption[Grafo dirigido acíclico que corresponde a la representación jerárquica de los modelos log-normal y probit sesgados con parámetros centrados.]{Grafo dirigido acíclico que corresponde a la representación jerárquica del modelo log-normal sesgado con parámetros centrados. Fuente: elboración propia}
 \end{figure}
 
 \section{Predicción de nuevas observaciones ($n_{i}>0$ y $n_{i}=0$)}
@@ -938,7 +938,7 @@ Un programa de {Stan} se compone de seis bloques, de los cuáles, ninguno es obl
 \caption[Bloques de un programa {Stan}.]{Bloques de un programa {Stan}. Fuente: elaboración propia, basado en \textcite{stan-ref:2025, introducing-stan}.}
 \label{tab:ch-v-stan-blocks} \\
 \hline
-Bloque & Descripción \\
+\bfseries Bloque & \bfseries Descripción \\
 \hline
 \endfirsthead
 %% end first head
@@ -1099,7 +1099,7 @@ A continuación mostramos las cantidades que consideramos los experimentos sigui
 \caption[Cantidades fijadas para los experimentos de simulación.]{Cantidades fijadas para los experimentos de simulación. La implementación se realizó en el lenguaje \code{R}.}
 \label{tab:ch-v-simulacion-tabla} \\
 \hline
-Cantidades & Definición \\
+\bfseries Cantidades & \bfseries Definición \\
 \hline
 \endfirsthead
 %% end first head
@@ -1167,7 +1167,7 @@ Enseguida se describe cada uno de los resultados básicos obtenidos mediante est
 \caption[Métricas básicas del ajuste.]{Métricas básicas del ajuste. Fuente: elaboración propia. Aquí, las cantidades $VP$, $VN$, $FP$ y $FN$ denotan verdaderos positivos, verdaderos negativos, falsos positivos y falsos negativos.}
 \label{tab:ch-v-metricas} \\
 \hline
-Métrica & Definición & Interpretación \\ 
+\bfseries Métrica & \bfseries Definición & \bfseries Interpretación \\ 
 \hline
 \endfirsthead
 %% end first head
@@ -1208,7 +1208,7 @@ Para el modelo de regresión con respuesta continua, se consideraron los siguien
 \caption{Valores iniciales para la simulación.}
 \begin{tabularx}{\textwidth}{llX}
 \hline
-Parámetro (s) & Valor inicial & Descripción \\
+\bfseries Parámetro (s) & \bfseries Valor inicial & \bfseries Descripción \\
 \hline
 $\mu_{i}$, $\sigma^{2}$, $\lambda$ & $\hat{\lambda}\boldsymbol{1}_{M}$, $\hat{\mu}\boldsymbol{1}_{M}$, $\sigma^{2}$ & $\hat{\lambda}$, $\hat{\sigma}^{2}$ y $\hat{\mu}$ se obtuvieron mediante máxima verosimilitud al ajustar el modelo $y_{ij} = \mu + e_{ij}$, con $e_{ij}\sim SN(0, \sigma^2, \lambda)$. Se empleó la función \code{selm} de la librería \code{sn} de R. \\
 $\boldsymbol{\beta}$ & $\hat{\boldsymbol{\beta}}$ & Se obtiene a partir del ajuste del modelo de regresión  $y_{ij}=\mu + \boldsymbol{x}_{ij}^{T}\boldsymbol{\beta} + e_{ij}$, con $e_{ij}\sim N(0, \sigma^{2})$. \\
@@ -1274,7 +1274,7 @@ Luego, para obtener el ICTPC, se re-escala el ICT de acuerdo al tamaño del hoga
 \label{tab:tamaño_ajustado}
 \begin{tabular}{ll}
 \hline
-Tamaño ajustado & Condición \\
+\bfseries Tamaño ajustado & \bfseries Condición \\
 \hline
 0.7031 & Menor de seis años \\
 0.7382 & Mayor de seis y menor de trece años \\

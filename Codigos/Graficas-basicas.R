@@ -2,19 +2,17 @@
 library(dplyr)
 library(ggplot2)
 library(tidyr)
+library(rlang) # rep_along
 
 setwd(r'(C:\Maestría_CP\Tesis\Documento-Tesis-SAOM\Documento-Tesis\Figuras)')
 
 source(r'(../Codigos/Simulacion-Modelos/funciones.R)')
 
-#En mi documento, \textwidth es 469.7553 pt
-# Una figura tiene 0.45\textwidth, igual a 211.3899
-# Una figura en subfigura tiene 0.95*0.45*\textwidth, igual a 200.8204
-# quizas las dejamos todas a 0.95*0.45*\textwidth
-# 1 cm = 28.35 points
-# x    = 200pt
-# x    = 200.8204/28.35 = 7.08
-200.8204 / 28.35
+# setwd(r'(C:\Maestria\Articulo-GitHub\Figuras)') # guardar en articulo
+
+# una figura de 20 x 20 cm tendrá size = 26, para un buen escalado
+
+# Cap 2. Revisión de literatura ====
 
 # Figura 2.1 normal sesgada ====
 
@@ -43,7 +41,7 @@ g1 <- ggplot(data=graphs1 %>% filter(Lambda%in%c(3, 1, 0)),
   # scale_linetype_manual(values = setNames(1:3,  c(0, 1, 3)), name = "Lambda") +
   geom_hline(yintercept = 0)+
   theme_minimal() + 
-  theme(legend.position = 'top', text = element_text(family = "serif", size=20)) + 
+  theme(legend.position = 'top', text = element_text(family = "serif", size=26)) + 
   labs(x=expression(x), y = '' , color = bquote(Valor~de~lambda~':')) + 
   guides(
     color = guide_legend(override.aes = list(linetype = 1:3, size = 1.2)),
@@ -58,13 +56,17 @@ g2 <- ggplot(data=graphs1 %>% filter(Lambda%in%c(-3, -1, 0)),
   scale_linetype_manual(values=1:3) +
   geom_hline(yintercept = 0)+
   theme_minimal() + 
-  theme(legend.position = 'top', text = element_text(family = "serif", size=20)) + 
+  theme(legend.position = 'top', text = element_text(family = "serif", size=26)) + 
   labs(x=expression(x), y = '' , color = bquote(Valor~de~lambda~':')) + 
   guides(
     color = guide_legend(override.aes = list(linetype = 1:3, size = 1.2)),
     linetype = "none"
   ) 
 x11(); plot(g2)
+
+getwd()
+ggsave(plot=g1, filename='./c-ii/SN_density_pos.pdf', width=20, height = 20, units='cm')
+ggsave(plot=g2, filename='./c-ii/SN_density_neg.pdf', width=20, height = 20, units='cm')
 
 # Figura 2.2 normal sesgada multivariada (contornos) ====
 
@@ -81,6 +83,8 @@ dcsn <- function(x, mu=0, sigma=1, lambda=0){
   gamma1 <- abs(gamma1)
   if(lambda!=0){
     sig <- sign(lambda)
+  } else{
+    sig <- 1
   }
   #
   sigma_star <- sigma**2 * (1 + s**2 * gamma1**(2/3))
@@ -90,7 +94,7 @@ dcsn <- function(x, mu=0, sigma=1, lambda=0){
   return(f)
 }
 
-x0 <- seq(-3, 3, length=250)
+x0 <- seq(-4, 4, length=250)
 y0 <- dcsn(x0, lambda=0)
 y1 <- dcsn(x0, lambda=1)
 y2 <- dcsn(x0, lambda=-1)
@@ -135,6 +139,9 @@ g2 <- ggplot(data=graphs1 %>% filter(Lambda%in%c(-3, -1, 0)),
   ) 
 x11(); plot(g2)
 
+ggsave(plot=g1, filename='./c-ii/CSN_density_pos.pdf', width=20, height = 20, units='cm')
+ggsave(plot=g2, filename='./c-ii/CSN_density_neg.pdf', width=20, height = 20, units='cm')
+
 
 # Figura 2.7: rho y lambda ====
 x0 <- seq(-2.5, 2.5, length=250) 
@@ -161,7 +168,7 @@ g0 <- ggplot(data=graphs0) +
 x11(); print(g0)
 # ggsave(plot=g0, filename='./c-ii/rho-lambda.pdf', width=20, height = 20, units='cm')
 
-
+# Cap 3. Metodología ====
 
 # Figura log-normal sesgada ====
 dlogsn <- function(x0, mu=0, sigma=1, lambda=0){
@@ -215,25 +222,11 @@ g4 <- ggplot(data=graphs2 %>% filter(Lambda%in%c(-3, -1, 0)),
   ) 
 x11(); plot(g4)
 
-# (4) Guardar gráficas ====
-getwd()
-ggsave(plot=g1, filename='./c-ii/SN_density_pos.pdf', width=20, height = 20, units='cm')
-ggsave(plot=g2, filename='./c-ii/SN_density_neg.pdf', width=20, height = 20, units='cm')
-ggsave(plot=g1, filename='./c-ii/CSN_density_pos.pdf', width=20, height = 20, units='cm')
-ggsave(plot=g2, filename='./c-ii/CSN_density_neg.pdf', width=20, height = 20, units='cm')
-
-setwd(r'(C:\Maestria\Articulo-GitHub\Figuras)')
-ggsave(plot=g1, filename='./SN_density_pos.png', width=20, height = 20, units='cm')
-ggsave(plot=g2, filename='./SN_density_neg.png', width=20, height = 20, units='cm')
 ggsave(plot=g3, filename='./logSN_density_pos.png', width=20, height = 20, units='cm')
 ggsave(plot=g4, filename='./logSN_density_neg.png', width=20, height = 20, units='cm')
 
-# (1) SSVS  ===========
-library(rlang)
-library(dplyr)
-library(tidyr)
-library(ggplot2)
 
+# Figura 3.2 SSVS ====
 tau2=0.8
 c2=4
 
@@ -253,30 +246,23 @@ dftmp <- tibble(beta=c(t0, t0), y=c(y0, y1), Densidad=densidad)
 p1 <- delta(tau2, c2)
 p2 <- -delta(tau2, c2)
 
-
 g0 <- ggplot(dftmp, aes(x=beta, y=y, colour = Densidad, linetype = Densidad)) + 
   geom_line(linewidth=1.2) + 
   theme_minimal() + 
-  # scale_x_continuous(labels = function(breaks) {rep_along(breaks, "")}) +
   scale_x_continuous(labels = function(breaks){for(b in seq_along(breaks)){pos <- numeric(); if(breaks[b]==0){pos <- b}else{''}; out <- rep_along(breaks, ''); out[b+2] <- '0.0'; return(out)}}) +
-  # scale_x_continuous(
-  #   breaks = c(-3.5, -2, -delta(tau2, c2), 0, delta(tau2, c2), 2, 3.5),
-  #   labels = c('', '', expression(-delta[i]), expression(0), expression(delta[i]), '', '')
-  # ) +
-  # geom_rug(data = data.frame(x = c(p1, p2)), aes(x = x),
-  #          inherit.aes = FALSE, sides = "b", length = unit(0.02, "npc")) +
-  # annotate("text", x = p1, y = label_y, label = "-delta[i]", parse = TRUE,
-  #          vjust = 1, size = 3.5) +
-  # annotate("text", x = p2, y = label_y, label = "delta[i]", parse = TRUE,
-  #          vjust = 1, size = 3.5) +
-  theme(legend.position = 'top', text = element_text(family = "serif")) + labs(x=expression(beta[k])) + 
+  theme(legend.position = 'top', text = element_text(family = "serif", size=26)) + labs(x=expression(beta[k])) + 
   geom_hline(yintercept = 0, color='gray75')+
   labs(y='') + 
-  geom_text(x=p1, y=dnorm(p1, sd=sqrt(tau2)), label='delta[i]', parse=T, color='gray25', hjust=2, vjust=1) +
-  geom_text(x=p2, y=dnorm(p2, sd=sqrt(tau2)), label='-delta[i]', parse=T, color='gray25', hjust=2, vjust=1) 
+  scale_color_manual(values=c('Spike'='gray75', 'Slab'='gray25')) + 
+  geom_text(x=p1, y=dnorm(p1, sd=sqrt(tau2)), label='delta[i]', parse=T, color='gray25', hjust=2, vjust=1, size = 8) +
+  geom_text(x=p2, y=dnorm(p2, sd=sqrt(tau2)), label='-delta[i]', parse=T, color='gray25', hjust=2, vjust=1, size = 8) 
 
 x11(); print(g0)
 
+getwd()
+ggsave(plot=g0, filename='./c-v/SSVS-prior.pdf', width=20, height = 20, units='cm')
+
+# Figura 3.3 SSVS - Spike Slab ====
 
 spike_slab <- function(x, mu1=0, mu2=0, sd1=1, sd2=1, p=0.5){
   y <- p * dnorm(x, mean=mu1, sd=sd1) + (1-p) * dnorm(x, mean=mu2, sd=sd2)
@@ -305,24 +291,19 @@ dftmp
 
 g1 <- ggplot(dftmp%>%filter(!(prop%in%c('p = 0.05', 'p = 0.95'))),
              aes(x=beta, y=y, colour = prop, linetype = prop)) + 
+# g1 <- ggplot(dftmp, aes(x=beta, y=y, colour = prop, linetype = prop)) + 
   geom_line(linewidth=1.2) + 
   theme_minimal() + 
   # scale_color_manual(values = grey.colors(n=5, end = 0.5)) + 
   scale_x_continuous(labels = function(breaks){for(b in seq_along(breaks)){pos <- numeric(); if(breaks[b]==0){pos <- b}else{''}; out <- rep_along(breaks, ''); out[b+2] <- '0.0'; return(out)}}) +
-  theme(legend.position = 'top', text = element_text(family = "serif")) +
+  scale_color_manual(values=c('p = 0.05'='gray5', 'p = 0.25'='gray25', 'p = 0.50'='gray50','p = 0.75'='gray75','p = 0.95'='gray95'))+
+  theme(legend.position = 'top', text = element_text(family = "serif", size=26)) +
   geom_hline(yintercept = 0, color='gray75')+
   labs(x=expression(beta[k]), y='', color=expression('Proporción' ~~ p[k] ~ ':'), linetype=expression('Proporción' ~~ p[k] ~ ':'))  
 
 x11(); print(g1)
 
-
-# (-) Guardar SSVS ====
-
-path <- r'(C:\Maestría_CP\Tesis\Documento-Tesis-SAOM\Documento-Tesis\Figuras)'
-setwd(path)
-
-ggsave(plot=g0, filename='./c-v/SSVS-prior.pdf', width=15, height = 15, units='cm')
-ggsave(plot=g1, filename='./c-v/SSVS-prior-prob.pdf', width=15, height = 15, units='cm')
+ggsave(plot=g1, filename='./c-v/SSVS-prior-prob.pdf', width=20, height = 20, units='cm')
 
 
 # Resultados ====

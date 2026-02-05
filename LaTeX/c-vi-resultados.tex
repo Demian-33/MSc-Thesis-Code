@@ -47,7 +47,7 @@ En la \autoref{fig:ch-vi-probit-estudio-rho-mu} se muestra la proporción de val
 \label{fig:ch-vi-probit-estudio-rho-mu}
 \end{figure}
 
-De forma adicional, se dibuja la función liga para el modelo probit sesgado latente para los valores $\lambda_{i}\pm\{0, 1, 3\}$. En la \autoref{sec:modelo-probit} se obtiene su expresión, por comodidad, aquí se repite, además, $\eta_{ij}=\mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}$.
+De forma adicional, en la \autoref{fig:ch-vi-probit-liga} se dibuja la función liga para el modelo probit sesgado latente para los valores $\lambda_{i}\pm\{0, 1, 3\}$. En la \autoref{sec:modelo-probit} se obtiene su expresión, por comodidad, aquí se repite, además, $\eta_{ij}=\mu_{i}+\boldsymbol{x}_{ij}^{T}\boldsymbol{\beta}$. La función de enlace está dada por la expresión
 \begin{equation*}
 \mathbb{P}(y_{ij} = 1 \mid p_{ij} ) = 1 - \Phi_{SN}(-\eta_{ij},\, \lambda_{i}).
 \end{equation*}
@@ -63,7 +63,7 @@ De forma adicional, se dibuja la función liga para el modelo probit sesgado lat
 \caption{$\lambda_{i}<0$}
 \end{subfigure}
 \caption{Función liga del modelo probit ordenado sesgado.}
-\label{fig:ch-vi-probit-estudio-rho-mu}
+\label{fig:ch-vi-probit-liga}
 \end{figure}
 
 \section{Ajuste de los modelos de regresión sin reestricción en $\rho_{i}$}
@@ -93,10 +93,10 @@ A continuación, se presenta un caso especial de estimación donde se permite qu
 \end{table}
 
 \begin{figure}[H]
-\caption[]{}
 \centering
 \includegraphics[width=0.9\textwidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-unico-rho11.pdf}
 \label{ch-vi-logsn-i-rho11}
+\caption[Estimaciones de $\rho_{i}$ en el modelo log-normal sesgado con ámbos métodos de estimación.]{Estimaciones de $\rho_{i}$ en el modelo log-normal sesgado con ámbos métodos de estimación. Fuente: elaboración propia.}
 \end{figure}
 
 \subsection{Modelo probit sesgado con variable latente}
@@ -116,10 +116,10 @@ A continuación, se presenta un caso especial de estimación donde se permite qu
 \end{table}
 
 \begin{figure}[H]
-\caption{}
 \centering
 \includegraphics[width=0.9\textwidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico-rho11.pdf}
 \label{ch-vi-logsn-i-rho11}
+\caption[Estimaciones de $\rho_{i}$ en el modelo probit sesgado con ámbos métodos de estimación.]{Estimaciones de $\rho_{i}$ en el modelo probit sesgado con ámbos métodos de estimación. Fuente: elaboración propia.}
 \end{figure}
 
 \subsection{Modelo probit ordenado sesgado con variable latente}
@@ -139,16 +139,14 @@ A continuación, se presenta un caso especial de estimación donde se permite qu
 \end{table}
 
 \begin{figure}[H]
-\caption{}
 \centering
 \includegraphics[width=0.9\textwidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico-rho11.pdf}
 \label{ch-vi-probitord-i-rho11}
+\caption[Estimaciones de $\rho_{i}$ en el modelo probit ordenado sesgado con ámbos métodos de estimación.]{Estimaciones de $\rho_{i}$ en el modelo probit ordenado sesgado con ámbos métodos de estimación. Fuente: elaboración propia.}
 \end{figure}
 
 
-
-
-\section{Ajuste del Modelo log-normal sesgado, datos simulados}
+\section{Ajuste del modelo log-normal sesgado, datos simulados}
 \label{sec:resultados-iii}
 
 \begin{comment}
@@ -173,7 +171,7 @@ A continuación, se presenta un caso especial de estimación donde se permite qu
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-no.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-logsn-ni-5-scatter}
 \end{figure}
 
@@ -217,7 +215,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-no.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-logsn-ni-25-scatter}
 \end{figure}
 
@@ -265,7 +263,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-varios.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-logsn-vi-5-scatter}
 \end{figure}
 
@@ -276,7 +274,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \label{ch-vi-logsn-vi-5-metricas}
 \begin{tabular}{lQQ}
 \hline
-Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\bfseries Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \hline
 \input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-5-interceptos-varios.txt}
 \end{tabular}
@@ -310,7 +308,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-varios.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-logsn-vi-25-scatter}
 \end{figure}
 
@@ -321,7 +319,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \label{ch-vi-logsn-vi-25-metricas}
 \begin{tabular}{lQQ}
 \hline
-Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
+\bfseries Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \hline
 \input{Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-25-interceptos-varios.txt}
 \end{tabular}
@@ -357,7 +355,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-unico.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-logsn-i-5-scatter}
 \end{figure}
 
@@ -399,7 +397,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-unico.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-logsn-i-25-scatter}
 \end{figure}
 
@@ -423,7 +421,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \end{figure}
 \end{comment}
 
-\section{Ajuste del Modelo probit sesgado con variable latente, datos simulados}
+\section{Ajuste del modelo probit sesgado con variable latente, datos simulados}
 \label{sec:resultados-iv}
 
 \subsection{Modelos sin interceptos en cáda área pequeña}
@@ -447,7 +445,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-no.pdf}
-\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probit-ni-5-scatter}
 \end{figure}
 
@@ -490,7 +488,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-no.pdf}
-\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probit-ni-25-scatter}
 \end{figure}
 
@@ -536,7 +534,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-varios.pdf}
-\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probit-vi-5-scatter}
 \end{figure}
 
@@ -578,7 +576,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-varios.pdf}
-\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Matriz de confusión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probit-vi-25-scatter}
 \end{figure}
 
@@ -623,7 +621,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-unico.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probit-i-5-scatter}
 \end{figure}
 
@@ -665,7 +663,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probit-i-25-scatter}
 \end{figure}
 
@@ -690,7 +688,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \end{figure}
 
 
-\section{Ajuste del Modelo probit ordenado sesgado con variable latente, datos simulados}
+\section{Ajuste del modelo probit ordenado sesgado con variable latente, datos simulados}
 \label{sec:resultados-v}
 
 \subsection{Modelos sin interceptos en cáda área pequeña}
@@ -714,7 +712,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-no.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probitord-ni-5-scatter}
 \end{figure}
 
@@ -756,7 +754,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-no.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probitord-ni-25-scatter}
 \end{figure}
 
@@ -801,7 +799,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-varios.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probitord-vi-5-scatter}
 \end{figure}
 
@@ -843,7 +841,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-varios.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probitord-vi-25-scatter}
 \end{figure}
 
@@ -888,7 +886,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probitord-i-5-scatter}
 \end{figure}
 
@@ -930,7 +928,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \includegraphics[width=0.95\linewidth]{Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico.pdf}
-\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC}
+\caption{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-probitord-i-25-scatter}
 \end{figure}
 
@@ -980,11 +978,11 @@ En el \autoref{ch-vi-cdmx-tabla-descripcion} se muestran estadísticos resumen b
 
 % Cuadro grande => nueva página
 \begin{xltabular}{\textwidth}{XX RVVTV I}
-\caption[Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito.]{Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito. Fuente: Elaboración propia a partir de información de la ENIGH 2024.}
+\caption[Estadísticos resumen del ingreso corriente total per cápita por alcaldía y ámbito.]{Estadísticos resumen del ingreso corriente total per cápita por alcaldía y ámbito. Fuente: elaboración propia a partir de información de la ENIGH 2024.}
 \label{ch-vi-cdmx-tabla-descripcion} \\
 %%%%%% for xltabular
 \hline
-{Alcaldia} & {Ámbito} & {Minimo} & {Mediana} & {Media} & {Maximo} & {Desv. est.} & {$n_{i}$}\\
+{\bfseries Alcaldia} & {\bfseries Ámbito} & {\bfseries Mínimo} & {\bfseries Mediana} & {\bfseries Media} & {\bfseries Máximo} & {\bfseries Desv. est.} & {$n_{i}$}\\
 \hline	
 \endhead
 %%%%%%
@@ -1056,12 +1054,12 @@ VnC. & Rural &  &  &  &  &  & 0\\
 
 
 \begin{table}[H]
-\caption{Estadísticos resumen del ingreso corriente total per cápita por \bfseries Alcaldía y ámbito. Fuente: elaboración propia con información de la ENIGH 2024.}
+\caption[Estadísticos resumen del ingreso corriente total per cápita por alcaldía y ámbito.]{Estadísticos resumen del ingreso corriente total per cápita por alcaldía y ámbito. Fuente: elaboración propia con información de la ENIGH 2024.}
 \label{ch-vi-cdmx-tabla-descripcion-ambito}
 \centering
-\begin{tabular}{lrrrrrr}
+\begin{tabular}{lRVVVVI}
 \hline
-Ámbito & Minimo & Mediana & Media & Maximo & Desv. est. & Conteo\\
+{\bfseries Ámbito} & {\bfseries Mínimo} & {\bfseries Mediana} & {\bfseries Media} & {\bfseries Máximo} & {\bfseries Desv. est.} & {\bfseries $n_{i}$} \\
 \hline
 Urbano & 52.668 & 8520.740 & 13769.613 & 313206.74 & 17793.618 & 1984\\
 \hline
@@ -1074,17 +1072,17 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 
 \begin{figure}[H]
 \centering
-\caption{}
-\label{fig:cdmx-dist-probit}
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/dist-probit.pdf}
 \end{subfigure}\hfill
 \begin{subfigure}{0.45\linewidth}
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/dist-probitord.pdf}
 \end{subfigure}
+\caption[En el lado izquierdo (derecho) se indica el número de observaciones binarias (ordinales) de acuerdo a la categoría que pertenecen y al ámbito.]{En el lado izquierdo (derecho) se indica el número de observaciones binarias (ordinales) de acuerdo a la categoría que pertenecen y al ámbito. Fuente: elaboración propia.}
+\label{fig:cdmx-dist-probit}
 \end{figure}
 
-\section{Ajuste del Modelo log-normal asimétrico, datos del ICTPC}
+\section{Ajuste del modelo log-normal asimétrico, datos del ICTPC}
 \label{sec:resultados-vii}
 
 % (1) Porcentaje de personas
@@ -1095,7 +1093,7 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 % Podemos hacer este con HMC también, por el tiempo de ejecución
 
 \begin{xltabular}{\textwidth}{l *{3}{Q} *{4}{Q}}
-\caption{Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\caption{Ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
 \label{ch-vi-cdmx-lognormal-tabla} \\
 %%%%%% for xltabular
 \hline
@@ -1117,7 +1115,7 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 \hline
  & \multicolumn{2}{c}{\bfseries Bayes Variacional} & \multicolumn{2}{c}{\bfseries Hamiltoniano MC} \\
 %\cline{2-5}
-{\bfseries Alcaldía} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} \\
+{\bfseries Alcaldía} & {\makecell{\bfseries Población bajo \\ \bfseries LPI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPEI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPEI (\%)}} \\
 \hline
 \endhead
 %%%%%%
@@ -1139,6 +1137,7 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpei.pdf}
 \caption{}
 \end{subfigure}
+%\caption[Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI.]{Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
 \end{figure}
 
 \begin{figure}[H]
@@ -1160,7 +1159,7 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 %%%%%% for xltabular
 \hline
 &  & \multicolumn{2}{c}{\bfseries Bayes Variacional} & \multicolumn{2}{c}{\bfseries Hamiltoniano MC} \\
-\bfseries Alcaldía \textbackslash Media & {\bfseries ICTPC obs.} & {\bfseries Ajustados} & {\bfseries Dif. abs.} & {\bfseries Ajustados} & {\bfseries Dif. abs} \\
+\bfseries Alcaldía\textbackslash Media & {\bfseries ICTPC obs.} & {\bfseries Ajustados} & {\bfseries Dif. abs.} & {\bfseries Ajustados} & {\bfseries Dif. abs} \\
 \hline
 \endhead
 %%%%%%
@@ -1183,7 +1182,7 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 \includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020HMC.pdf}
 \caption{}
 \end{subfigure}
-\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal)]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC.}
+\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal)]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC.}
 \label{ch-vi-cdmx-lognormal8020-scatter}
 \end{figure}
 
@@ -1210,20 +1209,20 @@ En la \autoref{fig:cdmx-dist-probit} se muestra la distribución de las variable
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoHMC.pdf}
 \end{subfigure}
-\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal).]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC. Fuente: elaboración propia.}
+\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal).]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC. Fuente: elaboración propia.}
 \label{ch-vi-cdmx-lognormalpronostico-scatter}
 \end{figure}
 
 % ¿poner solo las regiones 8 y 15?, parece mas informativo
 
 \begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
-\caption{Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\caption{Ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
 \label{ch-vi-cdmx-lognormalpronostico0-tabla} \\
 %%%%%% for xltabular
 \hline
 & \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
 %\cline{2-8}
-\siunitxcolnamesi \\
+\siunitxcolnameszero \\
 \hline
 \endhead
 %%%%%%
@@ -1254,20 +1253,20 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronostico1HMC.pdf}
 \end{subfigure}
-\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal).]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método Bayes variacional y en el derecho Hamiltoniano MC. Fuente: elaboración propia.}
+\caption[Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal).]{Gráficos de dispersión entre la respuesta observada (eje vertical) y la respuesta ajustada (eje horizontal). En el lado izquierdo se muestra el método BV y en el derecho HMC. Fuente: elaboración propia.}
 \label{ch-vi-cdmx-lognormalpronostico1-scatter}
 \end{figure}
 
 % ¿poner solo las regiones 8 y 15?, parece mas informativo
 
 \begin{xltabular}{\textwidth}{X *{3}{Q} *{4}{Q}}
-\caption{Ajuste del Modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
+\caption{Ajuste del modelo log-normal sesgado con interceptos en cada área pequeña. Se empleó toda la información disponible.}
 \label{ch-vi-cdmx-lognormalpronostico1-tabla} \\
 %%%%%% for xltabular
 \hline
 & \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
 %\cline{2-8}
-\siunitxcolnamesi \\
+\siunitxcolnameszero \\
 \hline
 \endhead
 %%%%%%
@@ -1289,7 +1288,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \end{table}
 
 
-\section{Ajuste del Modelo probit sesgado con variable latente, datos del ICTPC}
+\section{Ajuste del modelo probit sesgado con variable latente, datos del ICTPC}
 \label{sec:resultados-viii}
 
 \begin{xltabular}{\textwidth}{l *{3}{Q} *{4}{Q}}
@@ -1315,7 +1314,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \hline
 & \multicolumn{1}{c}{\bfseries Bayes Variacional} & \multicolumn{1}{c}{\bfseries Hamiltoniano MC} \\
 %\cline{2-3}
-{\bfseries Alcaldía} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPI (\%)}} \\
+{\bfseries Alcaldía} & {\makecell{\bfseries Población bajo \\ \bfseries LPI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPI (\%)}} \\
 \hline
 \endhead
 %%%%%%
@@ -1326,7 +1325,6 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 
 \begin{figure}[H]
 \centering
-\caption{}
 \label{ch-vi-cdmx-probit-mapas}
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-sesgado-mapavb-lpi.pdf}
@@ -1334,6 +1332,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-sesgado-mapahmc-lpi.pdf}
 \end{subfigure}
+\caption[Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI.]{Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
 \end{figure}
 
 
@@ -1342,13 +1341,13 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{figure}[H]
 \centering
 \label{ch-vi-cdmx-probit-scatter}
-\caption[Matriz de confusión entre la respuesta binaria discretizada observada (columnas) y los valores ajustados (renglones).]{Matriz de confusión entre la respuesta binaria discretizada observada (columnas) y los valores ajustados (renglones). Fuente: elaboración propia.}
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/probit-sesgado-scatter8020VB.pdf}
 \end{subfigure}\hfill
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\textwidth]{Figuras/c-vi/CDMX/probit-sesgado-scatter8020HMC.pdf}
 \end{subfigure}
+\caption[Matriz de confusión entre la respuesta binaria discretizada observada (columnas) y los valores ajustados (renglones).]{Matriz de confusión entre la respuesta binaria discretizada observada (columnas) y los valores ajustados (renglones). Fuente: elaboración propia.}
 \end{figure}
 
 \begin{table}[H]
@@ -1364,7 +1363,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \end{tabular}
 \end{table}
 
-\section{Ajuste del Modelo probit ordenado sesgado con variable latente, datos del ICTPC}
+\section{Ajuste del modelo probit ordenado sesgado con variable latente, datos del ICTPC}
 \label{sec:resultados-ix}
 
 
@@ -1375,7 +1374,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \hline
 & \multicolumn{3}{c}{\bfseries Bayes Variacional} & \multicolumn{4}{c}{\bfseries Hamiltoniano MC} \\
 %\cline{2-8}
-\siunitxcolnamesi \\
+\siunitxcolnameszero \\
 \hline
 \endhead
 %%%%%%
@@ -1391,7 +1390,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \hline
 & \multicolumn{2}{c}{\bfseries Bayes Variacional} & \multicolumn{2}{c}{\bfseries Hamiltoniano MC} \\
 %\cline{2-5}
-{\bfseries Alcaldía} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} & {\makecell{Población bajo \\ LPI (\%)}} & {\makecell{Población bajo \\ LPEI (\%)}} \\
+{\bfseries Alcaldía} & {\makecell{\bfseries Población bajo \\ \bfseries LPI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPEI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPI (\%)}} & {\makecell{\bfseries Población bajo \\ \bfseries LPEI (\%)}} \\
 \hline
 \endhead
 %%%%%%
@@ -1402,7 +1401,6 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 
 \begin{figure}[H]
 \centering
-\caption{Estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
 \label{ch-vi-cdmx-probitord-mapas}
 \begin{subfigure}{0.45\textwidth}
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpi.pdf}
@@ -1412,6 +1410,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpei.pdf}
 \caption{}
 \end{subfigure}
+\caption[Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI.]{Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
 \end{figure}
 
 \begin{figure}[H]
@@ -1424,6 +1423,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \includegraphics[width=\linewidth]{Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpei.pdf}
 \caption{}
 \end{subfigure}
+\caption[Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI.]{Mapas con la estimación del porcentaje de la población bajo la LPI y LPEI, en el primer renglón se muestran las estimaciones a partir del método BV y en el segundo renglón a partir del método HMC.}
 \end{figure}
 
 
@@ -1444,7 +1444,7 @@ Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\
 \begin{table}[H]
 \centering
 \caption[Métricas del ajuste entre los valores ordinales observados y pronósticos]{Métricas del ajuste entre los valores ordinales observados y pronósticos. Fuente: elaboración propia.}
-\label{ch-vi-cdmx-probit-metricas}
+\label{ch-vi-cdmx-probitord-metricas}
 \begin{tabular}{lQQ}
 \hline
 \bfseries Métrica & {\bfseries Bayes Variacional} & {\bfseries Hamiltoniano MC} \\

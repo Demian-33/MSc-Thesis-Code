@@ -69,6 +69,7 @@ metrics_cat <- function(fitted, actual, binary=TRUE){
 setwd(r"(C:\Maestría_CP\Tesis\Documento-Tesis-SAOM\Documento-Tesis\Codigos\Simulacion-Modelos)")
 master <- getwd()
 carpetas <- dir()[endsWith(dir(), 'sim')]
+carpetas
 
 # navegar por las carpetas ====
 folder <- carpetas[1]
@@ -277,10 +278,11 @@ if(mod=='log-normal-sesgado'){
     geom_abline(slope=1, intercept = 0, linetype=2, col='gray0', linewidth=0.8) + 
     facet_wrap(~Tipo) +
     theme_minimal() + 
-    theme(legend.position = 'top', text=element_text(family='serif')) + 
+    theme(legend.position = 'top', text=element_text(family='serif', size=18)) + 
+    scale_fill_manual(values=c('VB'='gray25', 'HMC'='gray75')) + 
     labs(fill='Método', x = expression(Valores ~~ y[ij] ~~ observados),
          y=expression(Valores ~~ y[ij] ~~ ajustados))
-  # x11(); print(g0)
+  x11(); print(g0)
   nombre <- paste0(mod, '-muestreo-', per, '-interceptos-', int, '.pdf')
   nombre <- file.path(ruta0, 'Scatter', nombre, fsep = '\\')
   ggsave(plot=g0, filename=nombre, units='cm', width=30, height = 15)
@@ -314,18 +316,18 @@ if(mod=='log-normal-sesgado'){
   g0 <- ggplot(cm, aes(Prediction, Reference, fill = n)) +
     geom_tile(color='gray85', lwd=1.2) +
     scale_x_discrete(limits = rev)+
-    geom_text(aes(label = paste0(Tipo, ':\n', n), family = 'serif')) +
-    scale_fill_gradient(low = "white", high = "steelblue") +
+    geom_text(aes(label = paste0(Tipo, '\n', n), family = 'serif')) +
+    scale_fill_gradient(low = "white", high = "gray75") +
     facet_wrap(~Metodo)+
     theme_minimal() + 
-    theme(text=element_text(family='serif')) + 
+    theme(text=element_text(family='serif', size=18), legend.position = 'none') + 
     labs(x=expression(Valores ~~ y[ij] ~~ ajustados),
          y=expression(Valores ~~ y[ij] ~~ observados),
          fill=expression(n)) + 
     guides(fill = guide_colourbar(barwidth = 0.5,
                                   labels=seq(0, 3000, by=500),
                                   barheight = 20))
-  # x11(); print(g0)
+  x11(); print(g0)
   nombre <- paste0(mod, '-muestreo-', per, '-interceptos-', int, '.pdf')
   nombre <- file.path(ruta0, 'Scatter', nombre, fsep = '\\')
   ggsave(plot=g0, filename=nombre, units='cm', width=30, height = 15)
@@ -378,15 +380,16 @@ tmp <- tmp %>%
   mutate(Método=factor(Método, levels=c('VB', 'HMC')))
 
 g0 <- ggplot(tmp, aes(x = beta, y = Prob, fill = factor(included))) +
-  geom_tile(color = "white", linewidth = 0.4) + 
+  geom_tile(color = "gray50", linewidth = 0.4) + 
   facet_wrap(~Método, scales = 'free_y') + 
   scale_x_discrete(labels=parse(text = paste0("beta[", 1:5, "]"))) + 
   theme_minimal() + 
   labs(fill='Inclusión', y='Prob. a posteriori', x='') + 
-  scale_fill_discrete(labels=c('0'='No', '1'='Sí'))+
+  scale_fill_discrete(labels=c('0'='No', '1'='Sí')) +
+  scale_fill_manual(values=c('1'='gray75', '0'='gray25'))+
   theme(legend.position = 'top', text=element_text(family='serif'),
         plot.margin = margin(0, 0, 0, 0),  axis.ticks.length = unit(0, "pt"))
-  # x11(); print(g0)
+  x11(); print(g0)
   nombre <- paste0(mod, '-muestreo-', per, '-interceptos-', int, '.pdf')
   nombre <- file.path(ruta0, 'SSVS', nombre, fsep = '\\')
   ggsave(plot=g0, filename=nombre, units='cm', width=20, height = 6)
@@ -512,7 +515,7 @@ for(folder in carpetas){
       rho <- tibble(rbind(rho1, rho2), Metodo=factor(rep(c('VB', 'HMC'), each=nrow(rho1)), levels=c('VB', 'HMC')))
       rho <- rho %>% pivot_longer(cols=starts_with('rho'), names_to='Grupo', values_to = 'rho')
       g0 <- ggplot(rho, aes(x=rho, y=after_stat(density))) + 
-        geom_histogram(bins = 30, fill = 'steelblue', color='white',) + 
+        geom_histogram(bins = 30, fill = 'gray75', color='white',) + 
         facet_wrap(Metodo~Grupo, nrow = 2, ncol=4 ,scales = "free", labeller=label_parsed) +
         # facet_grid(Metodo~Grupo, scales = "free", labeller=label_parsed) +
         theme_bw() + theme(text=element_text(family='serif')) + 
@@ -526,11 +529,3 @@ for(folder in carpetas){
   }
 }
 
-# x11()
-# mcmc_hist(
-#   muestra_VB$draws("rho"),
-#   facet_args = list(
-#     labeller = label_parsed
-#   )
-# )
-# 

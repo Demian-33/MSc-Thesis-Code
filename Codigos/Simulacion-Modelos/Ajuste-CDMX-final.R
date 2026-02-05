@@ -28,6 +28,7 @@ myquant <- function(a){
 out_stan[5] <- 'myquant'
 
 # (1) Datos para el modelo ====
+getwd()
 load('./Xyregion-CDMX.Rdata')
 # source('./funciones-final.R')
 source('./funciones-final_.R')
@@ -103,6 +104,7 @@ dim(Xtmp)
 # estimacion (todos los datos): cantidades posteriores
 set.seed(1)
 # T: estimacion, F: 80-20 (establecer prop=0.2) y pronostico
+datos <- get_obs(censo=T)
 datos <- get_obs(censo=F, prop=0.2)
 
 ## (2.1) Cargar el modelo con VB ====
@@ -337,8 +339,8 @@ g1 <- ggplot() +
   scale_fill_gradient(low = "gray100", high = "gray50", limits=c(0, 50), breaks = seq(0, 50, by = 10)) +
   labs(fill ='Población bajo\nLPI (%)', title = "", x='', y='') + 
   theme(
-    plot.margin = margin(0, 0, 0, 0, "cm"),
-    text = element_text(family = "serif", size=20),
+    plot.margin = margin(0, 0, 0, -1, "cm"),
+    text = element_text(family = "serif", size=26),
     legend.position = 'right',
     panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) 
 x11(); print(g1)
@@ -356,8 +358,8 @@ g2 <- ggplot() +
   scale_fill_gradient(low = "gray100", high = "gray50", limits=c(0, 50), breaks = seq(0, 50, by = 10)) +
   labs(fill ='Población bajo\nLPEI (%)', title = "", x='', y='') + 
   theme(
-    plot.margin = margin(0, 0, 0, 0, "cm"),
-    text = element_text(family = "serif", size=20),
+    plot.margin = margin(0, 0, 0, -1, "cm"),
+    text = element_text(family = "serif", size=26),
     legend.position = 'right',
     panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) 
 x11(); print(g2)
@@ -375,8 +377,8 @@ g3 <- ggplot() +
   scale_fill_gradient(low = "gray100", high = "gray50", limits=c(0, 50), breaks = seq(0, 50, by = 10)) +
   labs(fill ='Población bajo\nLPI (%)', title = "", x='', y='') + 
   theme(
-    plot.margin = margin(0, 0, 0, 0, "cm"),
-    text = element_text(family = "serif", size=20),
+    plot.margin = margin(0, 0, 0, -1, "cm"),
+    text = element_text(family = "serif", size=26),
     legend.position = 'right',
     panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) 
 x11(); print(g3)
@@ -394,8 +396,8 @@ g4 <- ggplot() +
   scale_fill_gradient(low = "gray100", high = "gray50", limits=c(0, 50), breaks = seq(0, 50, by = 10)) +
   labs(fill ='Población bajo\nLPEI (%)', title = "", x='', y='') + 
   theme(
-    plot.margin = margin(0, -4, 0, 0, "cm"),
-    text = element_text(family = "serif", size=20),
+    plot.margin = margin(0, 0, 0, -1, "cm"),
+    text = element_text(family = "serif", size=26),
     legend.position = 'right',
     panel.border = element_rect(color = "black", fill = NA, linewidth = 1)) 
 x11(); print(g4)
@@ -403,10 +405,10 @@ x11(); print(g4)
 # 17.53
 nombre <- file.path(fsep='\\', r'(C:\Maestría_CP\Tesis\Documento-Tesis-SAOM\Documento-Tesis\Figuras\c-vi\CDMX)',
                     'log-normal-sesgado-')
-ggsave(plot=g1, filename=paste0(nombre, 'mapavb-lpi.pdf'), width=20, height = 20, units='cm')
-ggsave(plot=g2, filename=paste0(nombre, 'mapavb-lpei.pdf'), width=20, height = 20, units='cm')
-ggsave(plot=g3, filename=paste0(nombre, 'mapahmc-lpi.pdf'), width=20, height = 20, units='cm')
-ggsave(plot=g4, filename=paste0(nombre, 'mapahmc-lpei.pdf'), width=20, height = 20, units='cm')
+ggsave(plot=g1, filename=paste0(nombre, 'mapavb-lpi.pdf'), width=24, height = 20, units='cm')
+ggsave(plot=g2, filename=paste0(nombre, 'mapavb-lpei.pdf'), width=24, height = 20, units='cm')
+ggsave(plot=g3, filename=paste0(nombre, 'mapahmc-lpi.pdf'), width=24, height = 20, units='cm')
+ggsave(plot=g4, filename=paste0(nombre, 'mapahmc-lpei.pdf'), width=24, height = 20, units='cm')
 
 ## (2.9) Sesgo promedio ====
 idx <- which(!is.na(ym))
@@ -1032,9 +1034,9 @@ g0 <- ggplot(cm1, aes(Contexto, Categoria, fill=n)) +
   geom_tile(color='gray85', lwd=1.2) +
   scale_x_discrete(limits = rev) + 
   scale_fill_gradient(low = "white", high = "gray75") +
-  geom_text(aes(label = paste0(n), family = 'serif')) + 
   theme_minimal() +
-  theme(text=element_text(family='serif')) +
+  geom_text(aes(label = paste0(n), family = 'serif'), size=26, size.unit = 'pt') + 
+  theme(text=element_text(family='serif', size=26), legend.position = 'none') +
   labs(x=expression(Contexto),
        y=expression(Clasificación),
        fill=expression(n)) +
@@ -1049,9 +1051,9 @@ g1 <- ggplot(cm2, aes(Contexto, Categoria, fill=n)) +
   geom_tile(color='gray85', lwd=1.2) +
   scale_x_discrete(limits = rev) + 
   scale_fill_gradient(low = "white", high = "gray75") +
-  geom_text(aes(label = paste0(n), family = 'serif')) + 
+  geom_text(aes(label = paste0(n), family = 'serif'), size=26, size.unit = 'pt') + 
   theme_minimal() +
-  theme(text=element_text(family='serif')) +
+  theme(text=element_text(family='serif', size=26), legend.position = 'none') +
   labs(x=expression(Contexto),
        y=expression(Clasificación),
        fill=expression(n)) +

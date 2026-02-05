@@ -58,25 +58,25 @@
 \contentsline {section}{\numberline {4.1}Efecto de $\rho _{i}$ con $\mu _{i}$}{122}{section.4.1}%
 \contentsline {section}{\numberline {4.2}Ajuste de los modelos de regresión sin reestricción en $\rho _{i}$}{123}{section.4.2}%
 \contentsline {subsection}{\numberline {4.2.1}Modelo log-normal sesgado}{124}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}Modelo probit sesgado con variable latente}{124}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}Modelo probit ordenado sesgado con variable latente}{125}{subsection.4.2.3}%
-\contentsline {section}{\numberline {4.3}Ajuste del Modelo log-normal sesgado, datos simulados}{126}{section.4.3}%
-\contentsline {subsection}{\numberline {4.3.1}Modelos con interceptos en cada área pequeña}{126}{subsection.4.3.1}%
-\contentsline {section}{\numberline {4.4}Ajuste del Modelo probit sesgado con variable latente, datos simulados}{130}{section.4.4}%
-\contentsline {subsection}{\numberline {4.4.1}Modelos sin interceptos en cáda área pequeña}{130}{subsection.4.4.1}%
-\contentsline {subsection}{\numberline {4.4.2}Modelos con interceptos en cada área pequeña}{133}{subsection.4.4.2}%
-\contentsline {subsection}{\numberline {4.4.3}Modelos con único intercepto en todas las áreas pequeñas}{137}{subsection.4.4.3}%
-\contentsline {section}{\numberline {4.5}Ajuste del Modelo probit ordenado sesgado con variable latente, datos simulados}{141}{section.4.5}%
+\contentsline {subsection}{\numberline {4.2.2}Modelo probit sesgado con variable latente}{125}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Modelo probit ordenado sesgado con variable latente}{126}{subsection.4.2.3}%
+\contentsline {section}{\numberline {4.3}Ajuste del modelo log-normal sesgado, datos simulados}{127}{section.4.3}%
+\contentsline {subsection}{\numberline {4.3.1}Modelos con interceptos en cada área pequeña}{127}{subsection.4.3.1}%
+\contentsline {section}{\numberline {4.4}Ajuste del modelo probit sesgado con variable latente, datos simulados}{131}{section.4.4}%
+\contentsline {subsection}{\numberline {4.4.1}Modelos sin interceptos en cáda área pequeña}{131}{subsection.4.4.1}%
+\contentsline {subsection}{\numberline {4.4.2}Modelos con interceptos en cada área pequeña}{134}{subsection.4.4.2}%
+\contentsline {subsection}{\numberline {4.4.3}Modelos con único intercepto en todas las áreas pequeñas}{138}{subsection.4.4.3}%
+\contentsline {section}{\numberline {4.5}Ajuste del modelo probit ordenado sesgado con variable latente, datos simulados}{141}{section.4.5}%
 \contentsline {subsection}{\numberline {4.5.1}Modelos sin interceptos en cáda área pequeña}{141}{subsection.4.5.1}%
-\contentsline {subsection}{\numberline {4.5.2}Modelos con interceptos en cada área pequeña}{145}{subsection.4.5.2}%
-\contentsline {subsection}{\numberline {4.5.3}Modelos con único intercepto en todas las áreas pequeñas}{148}{subsection.4.5.3}%
-\contentsline {section}{\numberline {4.6}Análisis descriptivo del conjunto de datos del ICTPC}{151}{section.4.6}%
-\contentsline {section}{\numberline {4.7}Ajuste del Modelo log-normal asimétrico, datos del ICTPC}{154}{section.4.7}%
-\contentsline {subsection}{\numberline {4.7.1}Validación (entrenamiento-prueba)}{159}{subsection.4.7.1}%
-\contentsline {subsection}{\numberline {4.7.2}Pronóstico de nuevas observaciones $(n_{i}=0)$}{160}{subsection.4.7.2}%
-\contentsline {section}{\numberline {4.8}Ajuste del Modelo probit sesgado con variable latente, datos del ICTPC}{162}{section.4.8}%
-\contentsline {subsection}{\numberline {4.8.1}Validación (entrenamiento-prueba)}{165}{subsection.4.8.1}%
-\contentsline {section}{\numberline {4.9}Ajuste del Modelo probit ordenado sesgado con variable latente, datos del ICTPC}{166}{section.4.9}%
+\contentsline {subsection}{\numberline {4.5.2}Modelos con interceptos en cada área pequeña}{144}{subsection.4.5.2}%
+\contentsline {subsection}{\numberline {4.5.3}Modelos con único intercepto en todas las áreas pequeñas}{147}{subsection.4.5.3}%
+\contentsline {section}{\numberline {4.6}Análisis descriptivo del conjunto de datos del ICTPC}{150}{section.4.6}%
+\contentsline {section}{\numberline {4.7}Ajuste del modelo log-normal asimétrico, datos del ICTPC}{153}{section.4.7}%
+\contentsline {subsection}{\numberline {4.7.1}Validación (entrenamiento-prueba)}{158}{subsection.4.7.1}%
+\contentsline {subsection}{\numberline {4.7.2}Pronóstico de nuevas observaciones $(n_{i}=0)$}{159}{subsection.4.7.2}%
+\contentsline {section}{\numberline {4.8}Ajuste del modelo probit sesgado con variable latente, datos del ICTPC}{161}{section.4.8}%
+\contentsline {subsection}{\numberline {4.8.1}Validación (entrenamiento-prueba)}{164}{subsection.4.8.1}%
+\contentsline {section}{\numberline {4.9}Ajuste del modelo probit ordenado sesgado con variable latente, datos del ICTPC}{165}{section.4.9}%
 \contentsline {subsection}{\numberline {4.9.1}Validación (entrenamiento-prueba)}{170}{subsection.4.9.1}%
 \contentsline {section}{\numberline {4.10}Estimaciones de $\beta $ en los tres modelos, datos del ICTPC}{170}{section.4.10}%
 \contentsline {chapter}{\MakeUppercase []{CAPÍTULO 5.} \ DISCUSIÓN DE LOS RESULTADOS}{173}{chapter.5}%

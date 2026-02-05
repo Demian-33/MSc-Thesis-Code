@@ -1,4 +1,4 @@
-This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2025.11.27)  28 JAN 2026 20:30
+This is XeTeX, Version 3.141592653-2.6-0.999997 (MiKTeX 25.4) (preloaded format=xelatex 2025.11.27)  5 FEB 2026 01:08
 entering extended mode
  \write18 enabled.
  %&-line parsing enabled.
@@ -1277,7 +1277,7 @@ File: pgflibraryfadings.code.tex 2025-08-29 v3.1.11a (3.1.11a)
 e.tex
 Library (tcolorbox): 'tcbposter.code.tex' version '6.8.0'
 )
-Package hyperref Info: Option `colorlinks' set `true' on input line 219.
+Package hyperref Info: Option `colorlinks' set `true' on input line 221.
 )
 (C:\Users\Lesau\AppData\Local\Programs\MiKTeX\tex/latex/biblatex\biblatex.sty
 Package: biblatex 2025/07/10 v3.21 programmable bibliographies (PK/MW)
@@ -1521,9 +1521,6 @@ h' as default language. on input line 32.
  (Main-Doc.aux (c-0-preambulo.aux) (c-i-introduccion.aux)
 (c-v-metodologia.aux) (c-vi-resultados.aux
 
-LaTeX Warning: Label `fig:ch-vi-probit-estudio-rho-mu' multiply defined.
-
-
 LaTeX Warning: Label `ch-vi-logsn-i-rho11' multiply defined.
 
 
@@ -1531,6 +1528,9 @@ LaTeX Warning: Label `ch-vi-cdmx-tabla-descripcion' multiply defined.
 
 
 LaTeX Warning: Label `ch-vi-cdmx-lognormal-tabla' multiply defined.
+
+
+LaTeX Warning: Label `ch-vi-cdmx-lognormal-personas' multiply defined.
 
 
 LaTeX Warning: Label `ch-vi-cdmx-lognormal-personas' multiply defined.
@@ -1545,7 +1545,7 @@ LaTeX Warning: Label `ch-vi-cdmx-probit-personas' multiply defined.
 LaTeX Warning: Label `ch-vi-cdmx-probitord-tabla' multiply defined.
 
 
-LaTeX Warning: Label `ch-vi-cdmx-probit-metricas' multiply defined.
+LaTeX Warning: Label `ch-vi-cdmx-probitord-personas' multiply defined.
 
 ) (c-vii-discusion.aux) (c-viii-conclusiones.aux) (c-x-anexos.aux))
 \openout1 = `Main-Doc.aux'.
@@ -1867,7 +1867,7 @@ CAPÍTULO 3.
 File: Figuras/c-v/areas-pequenas.pdf Graphic file (type pdf)
 <use Figuras/c-v/areas-pequenas.pdf>
  [64] [65] [66] [67] [68]
-Overfull \hbox (20.57123pt too wide) in paragraph at lines 133--142
+Overfull \hbox (25.57521pt too wide) in paragraph at lines 133--142
  [][] 
  []
 
@@ -1884,10 +1884,18 @@ Overfull \hbox (21.49712pt too wide) detected at line 816
  []
 
 [91]
+
+Package caption Warning: \label without proper reference on input line 849.
+See the caption package documentation for explanation.
+
+
+LaTeX Warning: Reference `fig:ch-v-dag' on page 92 undefined on input line 829.
+
+
 File: Figuras/c-v/dag-log-normal-sesgado.pdf Graphic file (type pdf)
 <use Figuras/c-v/dag-log-normal-sesgado.pdf>
 
-Overfull \hbox (11.23567pt too wide) in paragraph at lines 852--853
+Overfull \hbox (11.23567pt too wide) in paragraph at lines 851--852
 [][] 
  []
 
@@ -1924,12 +1932,12 @@ ignored error: Infinite glue shrinkage found in box being split [98] [99]
 \pydata@fh@0=\write10
 \openout10 = `_DB69A45B57D1917E7F997C0BEB98EA00.data.minted'.
 
-runsystem(latexminted config  --timestamp 20260128203009 DB69A45B57D1917E7F997C
+runsystem(latexminted config  --timestamp 20260205010816 DB69A45B57D1917E7F997C
 0BEB98EA00)...executed.
 
 
 (_DB69A45B57D1917E7F997C0BEB98EA00.config.minted)
-runsystem(latexminted cleanconfig  --timestamp 20260128203009 DB69A45B57D1917E7
+runsystem(latexminted cleanconfig  --timestamp 20260205010816 DB69A45B57D1917E7
 F997C0BEB98EA00)...executed.
 
  (_minted/default.style.minted) (_minted/D5A963280CD8600051D9F7BB252F1722.highl
@@ -2083,7 +2091,12 @@ Overfull \hbox (9.33336pt too wide) detected at line 5
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
-) [123]
+)
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 85--93
+ [][] 
+ []
+
+[123]
 File: Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-unico-rho
 11.pdf Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-unico-rho1
@@ -2160,11 +2173,16 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 108--116
+ [][] 
+ []
+
+[124]
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico-rho11.p
 df Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico-rho11.pd
 f>
- [124]
+
 (Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-unico-rho1
 1.txt
 Overfull \hbox (9.33336pt too wide) detected at line 1
@@ -2237,12 +2255,16 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 131--139
+ [][] 
+ []
+
+[125]
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unic
 o-rho11.pdf Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico
 -rho11.pdf>
- [125]
-(Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-5-interceptos-varios.txt
+ (Figuras/c-vi/Tablas/log-normal-sesgado-muestreo-5-interceptos-varios.txt
 Overfull \hbox (5.87494pt too wide) detected at line 14
 $\OT1/cmr/m/n/12 10$
  []
@@ -2348,11 +2370,16 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 252--261
+ [][] 
+ []
+
+[126]
 File: Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-varios.pdf
  Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-5-interceptos-varios.pdf>
 
- [126]
+ [127]
 (Figuras/c-vi/Metricas/log-normal-sesgado-muestreo-5-interceptos-varios.txt
 Overfull \hbox (6.75pt too wide) detected at line 7
 $\OT1/cmr/bx/n/12 20$
@@ -2482,7 +2509,12 @@ Overfull \hbox (9.33336pt too wide) detected at line 27
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
-) [127]
+)
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 296--305
+ [][] 
+ []
+
+[128]
 File: Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-varios.pd
 f Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/log-normal-sesgado-muestreo-25-interceptos-varios.pdf
@@ -2508,7 +2540,7 @@ Overfull \hbox (11.74988pt too wide) detected at line 10
 $\OT1/cmr/m/n/12 442$
  []
 
-) [128]
+) [129]
 File: Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-25-interceptos-varios.pdf G
 raphic file (type pdf)
 <use Figuras/c-vi/SSVS/log-normal-sesgado-muestreo-25-interceptos-varios.pdf>
@@ -2597,7 +2629,12 @@ Overfull \hbox (9.33336pt too wide) detected at line 17
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
-) [129]
+)
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 434--443
+ [][] 
+ []
+
+[130]
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-no.pdf Graphic
  file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-no.pdf>
@@ -2611,7 +2648,7 @@ Overfull \hbox (5.87494pt too wide) detected at line 10
 $\OT1/cmr/m/n/12 28$
  []
 
-) [130]
+) [131]
 File: Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-no.pdf Graphic fi
 le (type pdf)
 <use Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-no.pdf>
@@ -2716,10 +2753,14 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 477--486
+ [][] 
+ []
+
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-no.pdf Graphi
 c file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-no.pdf>
- [131] (Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-no.txt
+[132] (Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-no.txt
 Overfull \hbox (6.75pt too wide) detected at line 9
 $\OT1/cmr/bx/n/12 56$
  []
@@ -2733,7 +2774,7 @@ $\OT1/cmr/m/n/12 100$
 File: Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-no.pdf Graphic f
 ile (type pdf)
 <use Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-no.pdf>
- [132] (Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-varios.txt
+ (Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-varios.txt
 Overfull \hbox (9.33336pt too wide) detected at line 9
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -2839,24 +2880,29 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 523--532
+ [][] 
+ []
+
+[133]
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-varios.pdf Gra
 phic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-varios.pdf>
- [133] (Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-varios.txt
+ (Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-varios.txt
 Overfull \hbox (6.75pt too wide) detected at line 9
-$\OT1/cmr/bx/n/12 20$
+$\OT1/cmr/bx/n/12 19$
  []
 
 
-Overfull \hbox (11.74988pt too wide) detected at line 10
-$\OT1/cmr/m/n/12 102$
+Overfull \hbox (5.87494pt too wide) detected at line 10
+$\OT1/cmr/m/n/12 97$
  []
 
-)
+) [134]
 File: Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-varios.pdf Graphi
 c file (type pdf)
 <use Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-varios.pdf>
- [134] (Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-varios.txt
+ (Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-varios.txt
 Overfull \hbox (9.33336pt too wide) detected at line 9
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -2967,13 +3013,17 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 565--574
+ [][] 
+ []
+
+[135]
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-varios.pdf Gr
 aphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-varios.pdf>
- [135]
-(Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-varios.txt
+ (Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-varios.txt
 Overfull \hbox (6.75pt too wide) detected at line 9
-$\OT1/cmr/bx/n/12 67$
+$\OT1/cmr/bx/n/12 63$
  []
 
 
@@ -2981,11 +3031,11 @@ Overfull \hbox (11.74988pt too wide) detected at line 10
 $\OT1/cmr/m/n/12 404$
  []
 
-)
+) [136]
 File: Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-varios.pdf Graph
 ic file (type pdf)
 <use Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-varios.pdf>
- [136] (Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-unico.txt
+ (Figuras/c-vi/Tablas/probit-sesgado-muestreo-5-interceptos-unico.txt
 Overfull \hbox (9.33336pt too wide) detected at line 13
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -3081,10 +3131,15 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 610--619
+ [][] 
+ []
+
+[137]
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-unico.pdf Grap
 hic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-5-interceptos-unico.pdf>
- [137] (Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-unico.txt
+ (Figuras/c-vi/Metricas/probit-sesgado-muestreo-5-interceptos-unico.txt
 Overfull \hbox (6.75pt too wide) detected at line 9
 $\OT1/cmr/bx/n/12 19$
  []
@@ -3094,11 +3149,11 @@ Overfull \hbox (5.87494pt too wide) detected at line 10
 $\OT1/cmr/m/n/12 37$
  []
 
-)
+) [138]
 File: Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-unico.pdf Graphic
  file (type pdf)
 <use Figuras/c-vi/SSVS/probit-sesgado-muestreo-5-interceptos-unico.pdf>
- [138] (Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-unico.txt
+ (Figuras/c-vi/Tablas/probit-sesgado-muestreo-25-interceptos-unico.txt
 Overfull \hbox (9.33336pt too wide) detected at line 13
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -3199,10 +3254,14 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 652--661
+ [][] 
+ []
+
 File: Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico.pdf Gra
 phic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-sesgado-muestreo-25-interceptos-unico.pdf>
- [139] (Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-unico.txt
+[139] (Figuras/c-vi/Metricas/probit-sesgado-muestreo-25-interceptos-unico.txt
 Overfull \hbox (6.75pt too wide) detected at line 9
 $\OT1/cmr/bx/n/12 62$
  []
@@ -3216,8 +3275,7 @@ $\OT1/cmr/m/n/12 148$
 File: Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-unico.pdf Graphi
 c file (type pdf)
 <use Figuras/c-vi/SSVS/probit-sesgado-muestreo-25-interceptos-unico.pdf>
- [140]
-(Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-5-interceptos-no.txt
+ (Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-5-interceptos-no.txt
 Overfull \hbox (9.33336pt too wide) detected at line 13
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -3308,11 +3366,16 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 701--710
+ [][] 
+ []
+
+[140]
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-no.pd
 f Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-no.pdf
 >
- [141]
+
 (Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-5-interceptos-no.txt
 Overfull \hbox (6.75pt too wide) detected at line 5
 $\OT1/cmr/bx/n/12 16$
@@ -3323,11 +3386,12 @@ Overfull \hbox (5.87494pt too wide) detected at line 6
 $\OT1/cmr/m/n/12 29$
  []
 
-)
+) [141]
 File: Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-no.pdf G
 raphic file (type pdf)
 <use Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-no.pdf>
- (Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-no.txt
+
+(Figuras/c-vi/Tablas/probit-ordenado-sesgado-muestreo-25-interceptos-no.txt
 Overfull \hbox (9.33336pt too wide) detected at line 13
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -3427,12 +3491,16 @@ Overfull \hbox (9.33336pt too wide) detected at line 19
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
-) [142]
+)
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 743--752
+ [][] 
+ []
+
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-no.p
 df Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-no.pd
 f>
-
+[142]
 (Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-no.txt
 Overfull \hbox (6.75pt too wide) detected at line 5
 $\OT1/cmr/bx/n/12 55$
@@ -3443,7 +3511,7 @@ Overfull \hbox (11.74988pt too wide) detected at line 6
 $\OT1/cmr/m/n/12 127$
  []
 
-) [143]
+)
 File: Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-no.pdf 
 Graphic file (type pdf)
 <use Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-no.pdf>
@@ -3548,7 +3616,12 @@ Overfull \hbox (9.33336pt too wide) detected at line 27
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
-) [144]
+)
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 788--797
+ [][] 
+ []
+
+[143]
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-vario
 s.pdf Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-varios
@@ -3565,7 +3638,7 @@ Overfull \hbox (5.87494pt too wide) detected at line 6
 $\OT1/cmr/m/n/12 64$
  []
 
-) [145]
+) [144]
 File: Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-varios.p
 df Graphic file (type pdf)
 <use Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-varios.pd
@@ -3683,11 +3756,15 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 830--839
+ [][] 
+ []
+
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-vari
 os.pdf Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-vario
 s.pdf>
- [146]
+[145]
 (Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-varios.t
 xt
 Overfull \hbox (6.75pt too wide) detected at line 5
@@ -3799,7 +3876,12 @@ Overfull \hbox (9.33336pt too wide) detected at line 21
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
-) [147]
+)
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 875--884
+ [][] 
+ []
+
+[146]
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-unico
 .pdf Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-5-interceptos-unico.
@@ -3816,7 +3898,7 @@ Overfull \hbox (5.87494pt too wide) detected at line 6
 $\OT1/cmr/m/n/12 28$
  []
 
-) [148]
+) [147]
 File: Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pd
 f Graphic file (type pdf)
 <use Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-5-interceptos-unico.pdf
@@ -3918,11 +4000,15 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
+Overfull \hbox (48.96875pt too wide) in paragraph at lines 917--926
+ [][] 
+ []
+
 File: Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unic
 o.pdf Graphic file (type pdf)
 <use Figuras/c-vi/Scatter/probit-ordenado-sesgado-muestreo-25-interceptos-unico
 .pdf>
- [149]
+[148]
 (Figuras/c-vi/Metricas/probit-ordenado-sesgado-muestreo-25-interceptos-unico.tx
 t
 Overfull \hbox (6.75pt too wide) detected at line 5
@@ -3939,88 +4025,115 @@ File: Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-unico.p
 df Graphic file (type pdf)
 <use Figuras/c-vi/SSVS/probit-ordenado-sesgado-muestreo-25-interceptos-unico.pd
 f>
- [150]
+ [149]
 File: Figuras/c-vi/CDMX/dist-log-ict.pdf Graphic file (type pdf)
 <use Figuras/c-vi/CDMX/dist-log-ict.pdf>
 File: Figuras/c-vi/CDMX/dist-log-ict-ambito.pdf Graphic file (type pdf)
 <use Figuras/c-vi/CDMX/dist-log-ict-ambito.pdf>
- [151]
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+ [150]
+Overfull \hbox (3.88124pt too wide) in paragraph at lines 1053--1053
+[]|\TU/lmr/bx/n/12 Alcaldia| 
+ []
+
+
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 2102$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1551$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 3177$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1504$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1277$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1564$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1245$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 2531$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 2163$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1430$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 1069$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 3741$
  []
 
 
-Overfull \hbox (5.87494pt too wide) detected at line 1055
+Overfull \hbox (5.87494pt too wide) detected at line 1053
 $\OT1/cmr/m/n/12 2290$
  []
 
-ignored error: Infinite glue shrinkage found in box being split [152]
+ignored error: Infinite glue shrinkage found in box being split [151]
+Overfull \hbox (5.87494pt too wide) detected at line 1064
+$\OT1/cmr/m/n/12 313 206$
+ []
+
+
+Overfull \hbox (5.87494pt too wide) detected at line 1065
+$\OT1/cmr/m/n/12 1984$
+ []
+
 File: Figuras/c-vi/CDMX/dist-probit.pdf Graphic file (type pdf)
 <use Figuras/c-vi/CDMX/dist-probit.pdf>
 File: Figuras/c-vi/CDMX/dist-probitord.pdf Graphic file (type pdf)
 <use Figuras/c-vi/CDMX/dist-probitord.pdf>
- [153]
+[152] (Figuras/c-vi/CDMX/log-normal-sesgado-tabla.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-tabla.txt)
+Overfull \hbox (17.56836pt too wide) in alignment at lines 1109--1109
+ [] [] [] [] [] [] [] [] 
+ []
+
 (Figuras/c-vi/CDMX/log-normal-sesgado-tabla.txt)
-ignored error: Infinite glue shrinkage found in box being split [154]
+Overfull \hbox (17.56836pt too wide) in alignment at lines 1109--1109
+ [] [] [] [] [] [] [] [] 
+ []
+
+ignored error: Infinite glue shrinkage found in box being split [153]
 (Figuras/c-vi/CDMX/log-normal-sesgado-personas.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-personas.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-personas.txt
+Overfull \hbox (7.19678pt too wide) in paragraph at lines 1--1
+[]|\TU/lmr/m/n/12 Azcapotzalco| 
+ []
+
+
 Overfull \hbox (5.87494pt too wide) detected at line 1
 $\OT1/cmr/m/n/12 12$
  []
@@ -4146,6 +4259,11 @@ $\OT1/cmr/m/n/12 34$
  []
 
 
+Overfull \hbox (3.93277pt too wide) in paragraph at lines 27--27
+[]|\TU/lmr/m/n/12 Cuauhtémoc| 
+ []
+
+
 Overfull \hbox (5.87494pt too wide) detected at line 27
 $\OT1/cmr/m/n/12 11$
  []
@@ -4165,14 +4283,14 @@ Overfull \hbox (5.87494pt too wide) detected at line 31
 $\OT1/cmr/m/n/12 18$
  []
 
-) [155]
+) [154]
 File: Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpi.pdf Graphic file (type pd
 f)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpi.pdf>
 File: Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpei.pdf Graphic file (type p
 df)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-mapavb-lpei.pdf>
- [156]
+ [155]
 File: Figuras/c-vi/CDMX/log-normal-sesgado-mapahmc-lpi.pdf Graphic file (type p
 df)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-mapahmc-lpi.pdf>
@@ -4572,18 +4690,19 @@ $\OT1/cmr/m/n/12 84$
  []
 
 )
-Overfull \hbox (5.87494pt too wide) detected at line 1170
+Overfull \hbox (5.87494pt too wide) detected at line 1169
 $\OT1/cmr/m/n/12 31$
  []
 
-[157]
+ignored error: Infinite glue shrinkage found in box being split [156]
 File: Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020VB.pdf Graphic file (type
  pdf)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020VB.pdf>
 File: Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020HMC.pdf Graphic file (typ
 e pdf)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-scatter8020HMC.pdf>
- [158] (Figuras/c-vi/CDMX/log-normal-sesgado-metricas8020.txt
+ [157]
+(Figuras/c-vi/CDMX/log-normal-sesgado-metricas8020.txt
 Overfull \hbox (17.62482pt too wide) detected at line 1
 $\OT1/cmr/m/n/12 6057$
  []
@@ -4609,21 +4728,21 @@ $\OT1/cmr/bx/n/12 46$
  []
 
 )
-Overfull \hbox (17.62482pt too wide) detected at line 1199
+Overfull \hbox (17.62482pt too wide) detected at line 1198
 $\OT1/cmr/m/n/12 1222$
  []
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1203.
+(hyperref)                removing `math shift' on input line 1202.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `subscript' on input line 1203.
+(hyperref)                removing `subscript' on input line 1202.
 
 
 Package hyperref Warning: Token not allowed in a PDF string (Unicode):
-(hyperref)                removing `math shift' on input line 1203.
+(hyperref)                removing `math shift' on input line 1202.
 
 File: Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoVB.pdf Graphic file
  (type pdf)
@@ -4631,9 +4750,29 @@ File: Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoVB.pdf Graphic file
 File: Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoHMC.pdf Graphic fil
 e (type pdf)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronosticoHMC.pdf>
-[159] (Figuras/c-vi/CDMX/log-normal-sesgado-pronostico0-tabla.txt)
+[158] (Figuras/c-vi/CDMX/log-normal-sesgado-pronostico0-tabla.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-pronostico0-tabla.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-pronostico0-tabla.txt
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 1--1
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 3--3
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (4.73137pt too wide) in paragraph at lines 5--5
+[]|$\OML/cmm/m/it/12 ^^[[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 7--7
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
 Overfull \hbox (9.33336pt too wide) detected at line 7
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
@@ -4641,6 +4780,11 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 7
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 3$
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 9--9
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
  []
 
 
@@ -4679,11 +4823,11 @@ $\OT1/cmr/bx/n/12 89$
  []
 
 )
-Overfull \hbox (17.62482pt too wide) detected at line 1243
+Overfull \hbox (17.62482pt too wide) detected at line 1242
 $\OT1/cmr/m/n/12 4992$
  []
 
-[160]
+[159]
 File: Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronostico1VB.pdf Graphic fil
 e (type pdf)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronostico1VB.pdf>
@@ -4692,8 +4836,27 @@ le (type pdf)
 <use Figuras/c-vi/CDMX/log-normal-sesgado-scatterpronostico1HMC.pdf>
  (Figuras/c-vi/CDMX/log-normal-sesgado-pronostico1-tabla.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-pronostico1-tabla.txt)
-(Figuras/c-vi/CDMX/log-normal-sesgado-pronostico1-tabla.txt)
-(Figuras/c-vi/CDMX/log-normal-sesgado-metricas-pronostico1.txt
+(Figuras/c-vi/CDMX/log-normal-sesgado-pronostico1-tabla.txt
+Overfull \hbox (1.34073pt too wide) in paragraph at lines 1--1
+[]|\TU/lmr/m/n/12 NA| 
+ []
+
+
+Overfull \hbox (1.34073pt too wide) in paragraph at lines 3--3
+[]|\TU/lmr/m/n/12 NA| 
+ []
+
+
+Overfull \hbox (1.34073pt too wide) in paragraph at lines 5--5
+[]|\TU/lmr/m/n/12 NA| 
+ []
+
+
+Overfull \hbox (1.34073pt too wide) in paragraph at lines 7--7
+[]|\TU/lmr/m/n/12 NA| 
+ []
+
+) (Figuras/c-vi/CDMX/log-normal-sesgado-metricas-pronostico1.txt
 Overfull \hbox (17.62482pt too wide) detected at line 3
 $\OT1/cmr/m/n/12 8218$
  []
@@ -4719,11 +4882,16 @@ $\OT1/cmr/bx/n/12 67$
  []
 
 )
-Overfull \hbox (17.62482pt too wide) detected at line 1287
+Overfull \hbox (17.62482pt too wide) detected at line 1286
 $\OT1/cmr/m/n/12 2889$
  []
 
-[161] (Figuras/c-vi/CDMX/probit-sesgado-tabla.txt)
+[160] (Figuras/c-vi/CDMX/probit-sesgado-tabla.txt)
+(Figuras/c-vi/CDMX/probit-sesgado-tabla.txt)
+Overfull \hbox (17.56836pt too wide) in alignment at lines 1308--1308
+ [] [] [] [] [] [] [] [] 
+ []
+
 (Figuras/c-vi/CDMX/probit-sesgado-tabla.txt
 Overfull \hbox (9.33336pt too wide) detected at line 33
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
@@ -5025,7 +5193,11 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 )
-ignored error: Infinite glue shrinkage found in box being split [162]
+Overfull \hbox (17.56836pt too wide) in alignment at lines 1308--1308
+ [] [] [] [] [] [] [] [] 
+ []
+
+ignored error: Infinite glue shrinkage found in box being split [161]
 (Figuras/c-vi/CDMX/probit-sesgado-personas.txt)
 (Figuras/c-vi/CDMX/probit-sesgado-personas.txt
 Overfull \hbox (5.87494pt too wide) detected at line 1
@@ -5173,16 +5345,16 @@ $\OT1/cmr/m/n/12 33$
  []
 
 )
-Overfull \hbox (5.87494pt too wide) detected at line 1325
+Overfull \hbox (5.87494pt too wide) detected at line 1324
 $\OT1/cmr/m/n/12 27$
  []
 
-ignored error: Infinite glue shrinkage found in box being split [163]
+ignored error: Infinite glue shrinkage found in box being split [162]
 File: Figuras/c-vi/CDMX/probit-sesgado-mapavb-lpi.pdf Graphic file (type pdf)
 <use Figuras/c-vi/CDMX/probit-sesgado-mapavb-lpi.pdf>
 File: Figuras/c-vi/CDMX/probit-sesgado-mapahmc-lpi.pdf Graphic file (type pdf)
 <use Figuras/c-vi/CDMX/probit-sesgado-mapahmc-lpi.pdf>
- [164]
+ [163]
 File: Figuras/c-vi/CDMX/probit-sesgado-scatter8020VB.pdf Graphic file (type pdf
 )
 <use Figuras/c-vi/CDMX/probit-sesgado-scatter8020VB.pdf>
@@ -5196,38 +5368,214 @@ $\OT1/cmr/bx/n/12 98$
  []
 
 )
-Overfull \hbox (17.62482pt too wide) detected at line 1363
+Overfull \hbox (17.62482pt too wide) detected at line 1362
 $\OT1/cmr/m/n/12 5558$
  []
 
-[165] (Figuras/c-vi/CDMX/probit-ordenado-sesgado-tabla.txt)
+[164] (Figuras/c-vi/CDMX/probit-ordenado-sesgado-tabla.txt)
 (Figuras/c-vi/CDMX/probit-ordenado-sesgado-tabla.txt)
-(Figuras/c-vi/CDMX/probit-ordenado-sesgado-tabla.txt)
-ignored error: Infinite glue shrinkage found in box being split [166]
+(Figuras/c-vi/CDMX/probit-ordenado-sesgado-tabla.txt
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 1--1
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 3--3
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 5--5
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 7--7
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 9--9
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 11--11
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 13--13
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 15--15
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (3.68277pt too wide) in paragraph at lines 17--17
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 19--19
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 21--21
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 23--23
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 25--25
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 27--27
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 29--29
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (7.93283pt too wide) in paragraph at lines 31--31
+[]|$\OML/cmm/m/it/12 ^^Z[]$| 
+ []
+
+
+Overfull \hbox (2.82649pt too wide) in paragraph at lines 33--33
+[]|$\OML/cmm/m/it/12 ^^N[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 35--35
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 37--37
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 39--39
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 41--41
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 43--43
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 45--45
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 47--47
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 49--49
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (4.69179pt too wide) in paragraph at lines 51--51
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 53--53
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 55--55
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 57--57
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 59--59
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 61--61
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 63--63
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+
+Overfull \hbox (8.94185pt too wide) in paragraph at lines 65--65
+[]|$\OML/cmm/m/it/12 ^^V[]$| 
+ []
+
+)
+ignored error: Infinite glue shrinkage found in box being split [165]
 (Figuras/c-vi/CDMX/probit-ordenado-sesgado-personas.txt)
 (Figuras/c-vi/CDMX/probit-ordenado-sesgado-personas.txt)
-(Figuras/c-vi/CDMX/probit-ordenado-sesgado-personas.txt) [167]
+(Figuras/c-vi/CDMX/probit-ordenado-sesgado-personas.txt
+Overfull \hbox (7.19678pt too wide) in paragraph at lines 1--1
+[]|\TU/lmr/m/n/12 Azcapotzalco| 
+ []
+
+
+Overfull \hbox (3.93277pt too wide) in paragraph at lines 27--27
+[]|\TU/lmr/m/n/12 Cuauhtémoc| 
+ []
+
+) [166]
+ignored error: Infinite glue shrinkage found in box being split [167]
 File: Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpi.pdf Graphic file (ty
 pe pdf)
 <use Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpi.pdf>
 File: Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpei.pdf Graphic file (t
 ype pdf)
 <use Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapavb-lpei.pdf>
- [168]
 File: Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpi.pdf Graphic file (t
 ype pdf)
 <use Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpi.pdf>
 File: Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpei.pdf Graphic file (
 type pdf)
 <use Figuras/c-vi/CDMX/probit-ordenado-sesgado-mapahmc-lpei.pdf>
+ [168]
 File: Figuras/c-vi/CDMX/probit-ordenado-sesgado-scatter8020VB.pdf Graphic file 
 (type pdf)
 <use Figuras/c-vi/CDMX/probit-ordenado-sesgado-scatter8020VB.pdf>
 File: Figuras/c-vi/CDMX/probit-ordenado-sesgado-scatter8020HMC.pdf Graphic file
  (type pdf)
 <use Figuras/c-vi/CDMX/probit-ordenado-sesgado-scatter8020HMC.pdf>
- [169]
-(Figuras/c-vi/CDMX/probit-ordenado-sesgado-metricas8020.txt
+
+[169] (Figuras/c-vi/CDMX/probit-ordenado-sesgado-metricas8020.txt
 Overfull \hbox (13.5pt too wide) detected at line 5
 $\OT1/cmr/bx/n/12 100$
  []
@@ -5251,9 +5599,23 @@ Package hyperref Warning: Token not allowed in a PDF string (Unicode):
 
 [170] (Figuras/c-vi/CDMX/log-normal-sesgado-beta.txt)
 (Figuras/c-vi/CDMX/log-normal-sesgado-beta.txt)
+Overfull \hbox (1.19731pt too wide) in paragraph at lines 1481--1481
+[]|$[]$| 
+ []
+
 (Figuras/c-vi/CDMX/log-normal-sesgado-beta.txt
-Overfull \hbox (9.33336pt too wide) detected at line 5
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 1--1
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 3--3
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 5--5
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5279,6 +5641,16 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 5
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 5
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 7--7
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5297,8 +5669,8 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 
-Overfull \hbox (9.33336pt too wide) detected at line 9
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 9--9
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5309,6 +5681,21 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 9
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 9
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 11--11
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 13--13
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5327,8 +5714,13 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 
-Overfull \hbox (9.33336pt too wide) detected at line 17
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 15--15
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 17--17
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5339,6 +5731,26 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 17
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 17
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 19--19
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 21--21
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 23--23
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5357,8 +5769,8 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 
-Overfull \hbox (9.33336pt too wide) detected at line 25
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 25--25
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5369,6 +5781,36 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 25
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 25
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 27--27
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 29--29
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 31--31
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 33--33
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 35--35
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5389,6 +5831,11 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
 
 Overfull \hbox (9.33336pt too wide) detected at line 35
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 37--37
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5407,6 +5854,11 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
  []
 
 
+Overfull \hbox (12.7558pt too wide) in paragraph at lines 39--39
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
 Overfull \hbox (9.33336pt too wide) detected at line 39
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
  []
@@ -5419,6 +5871,11 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
 
 Overfull \hbox (9.33336pt too wide) detected at line 39
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (12.7558pt too wide) in paragraph at lines 41--41
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5438,9 +5895,18 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 ) (Figuras/c-vi/CDMX/probit-sesgado-beta.txt)
 (Figuras/c-vi/CDMX/probit-sesgado-beta.txt)
+Overfull \hbox (1.19731pt too wide) in paragraph at lines 1498--1498
+[]|$[]$| 
+ []
+
 (Figuras/c-vi/CDMX/probit-sesgado-beta.txt
-Overfull \hbox (9.33336pt too wide) detected at line 3
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 1--1
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 3--3
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5466,6 +5932,21 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 3
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 3
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 5--5
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 7--7
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5474,11 +5955,31 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 9--9
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
 Overfull \hbox (9.33336pt too wide) detected at line 9
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 11--11
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 13--13
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 15--15
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
 Overfull \hbox (9.33336pt too wide) detected at line 15
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
  []
@@ -5501,6 +6002,11 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 15
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 1$
+ []
+
+
+Overfull \hbox (12.7558pt too wide) in paragraph at lines 17--17
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5515,9 +6021,18 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 ) [171] (Figuras/c-vi/CDMX/probit-ordenado-sesgado-beta.txt)
 (Figuras/c-vi/CDMX/probit-ordenado-sesgado-beta.txt)
+Overfull \hbox (1.19731pt too wide) in paragraph at lines 1514--1514
+[]|$[]$| 
+ []
+
 (Figuras/c-vi/CDMX/probit-ordenado-sesgado-beta.txt
-Overfull \hbox (9.33336pt too wide) detected at line 3
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 1--1
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (4.25568pt too wide) in paragraph at lines 3--3
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5543,6 +6058,21 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 3
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 3
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 5--5
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 7--7
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5573,6 +6103,16 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 7
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 9--9
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 11--11
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5581,8 +6121,13 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
  []
 
 
-Overfull \hbox (9.33336pt too wide) detected at line 15
-$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 13--13
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 15--15
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5608,11 +6153,31 @@ $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
 
 Overfull \hbox (9.33336pt too wide) detected at line 15
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (9.33336pt too wide) detected at line 15
+$\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 17--17
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
+ []
+
+
+Overfull \hbox (8.50574pt too wide) in paragraph at lines 19--19
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
 Overfull \hbox (9.33336pt too wide) detected at line 19
 $\OMS/cmsy/m/n/12 ^^@\OT1/cmr/m/n/12 0$
+ []
+
+
+Overfull \hbox (12.7558pt too wide) in paragraph at lines 21--21
+[]|$\OML/cmm/m/it/12 ^^L[]$| 
  []
 
 
@@ -5746,19 +6311,22 @@ L3 programming layer <2025-11-06>
  ***********
 
 
+LaTeX Warning: There were undefined references.
+
+
 LaTeX Warning: There were multiply-defined labels.
 
 Package rerunfilecheck Info: File `Main-Doc.out' has not changed.
-(rerunfilecheck)             Checksum: 3D779B15E5C307543184AB5EB9116AD7;24934.
+(rerunfilecheck)             Checksum: 500D603E0631AE8D329FD761E9C35E8A;24934.
 Package logreq Info: Writing requests to 'Main-Doc.run.xml'.
 \openout1 = `Main-Doc.run.xml'.
 
  ) 
 Here is how much of TeX's memory you used:
- 53848 strings out of 402987
- 1229175 string characters out of 5448523
- 2389237 words of memory out of 5000000
- 81547 multiletter control sequences out of 15000+600000
+ 53855 strings out of 402987
+ 1229424 string characters out of 5448523
+ 2389400 words of memory out of 5000000
+ 81550 multiletter control sequences out of 15000+600000
  642716 words of font info for 131 fonts, out of 8000000 for 9000
  1348 hyphenation exceptions out of 8191
  121i,27n,124p,2408b,5700s stack positions out of 10000i,1000n,20000p,200000b,200000s
